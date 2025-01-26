@@ -25,7 +25,7 @@ export default function Library() {
       String.fromCharCode(65 + i)
     ),
     lists: {
-      A: ["Apple", "Ant", "Ape"],
+      A: ["Abdominal Pain", "Acne", "Albinism", "Alcoholism", "Allergies", "Alzhemier's Disease", "Anaemia", "Anxiety", "Appendicitis", "Arthritis", "Asthma", "Autism"],
       B: ["Boy", "Ball", "Bat"],
       C: ["Cat", "Car", "Cow"],
       D: ["Dog", "Donut", "Dance"],
@@ -132,7 +132,7 @@ export default function Library() {
             {glossary.alphabets.map((alphabet, index) => (
               <View
                 key={alphabet}
-                style={[styles.alphabetSection, { height: 120 }]}
+                style={[styles.alphabetSection, { height: "inherit" }]}
               >
                 <Text style={styles.alphabetTitle}>{alphabet}</Text>
                 <View style={styles.listContainer}>
@@ -159,16 +159,16 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   libraryTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 19,
+    fontWeight: 800,
     marginBottom: 16,
   },
   categoriesContainer: {
     marginBottom: 24,
   },
   categoriesTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 14,
+    fontWeight: 800,
     marginBottom: 8,
   },
   categoryItem: {
@@ -180,7 +180,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   categoryTitle: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: 500,
     marginTop: 4,
     textAlign: "center",
   },
@@ -188,9 +189,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   glossaryTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: 800,
+    marginBottom: 16,
   },
   alphabetButtonsContainer: {
     marginBottom: 16,
@@ -205,36 +206,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#ddd",
     width: "24px",
     height: "24px",
-    borderRadius: 10,
-    backgroundColor: "#DEE5DB"
+    borderRadius: 11,
+    backgroundColor: "#DEE5DB",
   },
   selectedAlphabetButton: {
-    backgroundColor: "#007AFF",
+    backgroundColorr: "#000000",
   },
   alphabetButtonText: {
     fontSize: 13,
     color: "#000000",
-    fontWeight: 700
+    fontWeight: 700,
   },
   glossaryListContainer: {
     flex: 1,
   },
   alphabetSection: {
-    marginBottom: 16,
+    marginBottom: 10,
     paddingHorizontal: 16,
   },
   alphabetTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 24,
+    fontWeight: 700,
     marginBottom: 8,
   },
   listContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 14,
+    gap: 11,
   },
   listItemText: {
-    fontSize: 16,
+    fontSize: 13,
     marginBottom: 8,
   },
 });

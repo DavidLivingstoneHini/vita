@@ -53,10 +53,6 @@ export default function LoginScreen() {
         expirationTime.toString()
       );
 
-      // Alert.alert(
-      //   "Success",
-      //   "login successful! Please log in with your credentials."
-      // );
       router.push("/(tabs)/home");
     } catch (error) {
       console.error("Sign-in error:", error?.message || "Unknown error");
@@ -93,7 +89,7 @@ export default function LoginScreen() {
           alignItems: "center",
           marginVertical: 20,
           flexDirection: "column",
-          top: 40,
+          top: 30,
         }}
       >
         <Image

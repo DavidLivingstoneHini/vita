@@ -11,12 +11,12 @@ const forYouData = Array.from({ length: 10 }, (_, i) => ({
 
 // Dummy data for "Editor's Pick"
 const editorsPick = {
-  image: 'https://picsum.photos/200/300?random=100',
+  image: 'https://picsum.photos/200/300?random=800',
   descriptionTitle: 'Why We Love It', 
   text: 'This image is our editor\'s favorite pick of the week. It showcases a beautiful scenery that will leave you breathless.',
 };
 
-// Dummy data for buttons (limited to 21 to fit within 3 rows of 7)
+// Dummy data for buttons 
 const buttonsData = Array.from({ length: 21 }, (_, i) => ({
   id: i,
   text: i === 0? 'For You' : `Button ${i}`,
@@ -192,14 +192,14 @@ const forYouStyles = StyleSheet.create({
     borderRadius: 8,
   },
   descriptionTitle: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 800,
-    marginBottom: -2,
+    marginTop: 8,
     color: '#000000',
   },
   forYouText: {
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: 13,
+    marginTop: 3,
   },
   listTitleContainer: {
     flexDirection: 'row',
