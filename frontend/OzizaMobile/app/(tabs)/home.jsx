@@ -21,8 +21,8 @@ const images = [
 const ItemImage1 = require("../../assets/images/bleach.png");
 const ItemImage2 = require("../../assets/images/hypertension.png");
 const ItemImage3 = require("../../assets/images/phobia.png");
-const ItemImage4 = require("../../assets/images/bmi.png");
-const ItemImage5 = require("../../assets/images/period.png");
+const ItemImage4 = require("../../assets/images/female-doc.png");
+const ItemImage5 = require("../../assets/images/female-doc2.png");
 const ItemImage6 = require("../../assets/images/eclipse.png");
 const LogoImage = require("../../assets/images/ozizawhite.png");
 
@@ -41,12 +41,8 @@ const Home = () => {
   ];
 
   const lifestyleListItems = [
-    { id: 1, image: ItemImage4, title: "BMI Checker" },
-    { id: 2, image: ItemImage5, title: "Period Tracker" },
-    { id: 3, image: ItemImage6, title: "Symptom" },
-    { id: 4, image: ItemImage4, title: "BMI Checker" },
-    { id: 5, image: ItemImage5, title: "BMI Checker" },
-    { id: 6, image: ItemImage6, title: "BMI Checker" },
+    { id: 1, image: ItemImage4, title: "" },
+    { id: 2, image: ItemImage4, title: "" },
   ];
 
   const [activeIndex, setActiveIndex] = React.useState(0);
@@ -109,12 +105,12 @@ const Home = () => {
         </View>
 
         {/* Health List Section */}
-        <View style={styles.listContainer}>
+        <View style={[styles.listContainer, { marginTop: 16 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Health Conditions</Text>
             <TouchableOpacity>
               <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>F
+                <Text style={styles.seeMoreText}>SEE MORE</Text>
                 <Image
                   source={chevronIcon}
                   style={{
@@ -144,7 +140,7 @@ const Home = () => {
         {/* Lifestyle List Section */}
         <View style={[styles.listContainer, { marginTop: 20 }]}>
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Lifestyle Tools</Text>
+            <Text style={styles.listTitle}>Inspirations</Text>
             <TouchableOpacity>
               <View style={styles.seeMoreContainer}>
                 <Text style={styles.seeMoreText}>SEE MORE</Text>
@@ -163,9 +159,9 @@ const Home = () => {
           <FlatList
             data={lifestyleListItems}
             renderItem={({ item }) => (
-              <View style={styles.listItem}>
-                <Image source={item.image} style={styles.listItemImage} />
-                <Text style={styles.listItemTitle}>{item.title}</Text>
+              <View style={styles.listlifeItem}>
+                <Image source={item.image} style={styles.listlifeItemImage} />
+                {/* <Text style={styles.listItemTitle}>{item.title}</Text> */}
               </View>
             )}
             keyExtractor={(item) => item.id.toString()}
@@ -254,6 +250,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#0C1549",
   },
+  listlifeItem: {
+    width: 350,
+    marginRight: 6,
+  },
+  listlifeItemImage: {
+    width: 340,
+    height: 240,
+    borderRadius: 8,
+  },
   swiper: {
     height: 200,
   },
@@ -267,10 +272,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   paginationCircle: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#ccc",
+    width: 12,
+    height: 12,
+    borderRadius: "100%",
+    borderWidth: 2,
+    borderColor: "#ccc",
     marginHorizontal: 3,
   },
   activeCircle: {
