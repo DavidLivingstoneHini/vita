@@ -251,11 +251,11 @@ const styles = StyleSheet.create({
     color: "#0C1549",
   },
   listlifeItem: {
-    width: 350,
+    width: 330,
     marginRight: 6,
   },
   listlifeItemImage: {
-    width: 340,
+    width: 320,
     height: 240,
     borderRadius: 8,
   },
