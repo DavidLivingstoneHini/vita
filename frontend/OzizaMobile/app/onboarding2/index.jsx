@@ -6,9 +6,11 @@ import {
   StyleSheet,
   Pressable,
 } from "react-native";
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 
 export default function OnboardScreen2() {
+  const router = useRouter();
+
   return (
     <ImageBackground
       source={require("../../assets/images/background2.png")}
@@ -28,14 +30,13 @@ export default function OnboardScreen2() {
             for immediate assistance.
           </Text>
           <Pressable
+            onPress={() => router.push("/signup")}
             style={({ pressed }) => [
               styles.button,
               pressed && styles.buttonPressed,
             ]}
           >
-            <Link href="/login" style={styles.nextButtonText}>
-              Continue
-            </Link>
+            <Text style={styles.nextButtonText}>Continue</Text>
           </Pressable>
         </View>
       </View>
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 700,
+    fontWeight: "700",
     marginBottom: 10,
     color: "#FFFFFF",
   },
@@ -90,15 +91,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#FFFFFF",
     marginBottom: 20,
-  },
-  nextButton: {
-    padding: 15,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: "#FFFFFF",
   },
   button: {
     padding: 12,
@@ -116,7 +108,7 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     fontSize: 16,
-    fontWeight: 700,
+    fontWeight: "700",
     color: "#FFFFFF",
   },
 });

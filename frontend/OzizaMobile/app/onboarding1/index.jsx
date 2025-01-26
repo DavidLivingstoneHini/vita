@@ -1,10 +1,19 @@
-import React from 'react';
-import { View, Text, ImageBackground, StyleSheet, TouchableOpacity } from 'react-native';
+import React from "react";
+import {
+  View,
+  Text,
+  ImageBackground,
+  StyleSheet,
+  Pressable,
+} from "react-native";
+import { useRouter } from "expo-router";
 
 export default function OnboardScreen1() {
+  const router = useRouter();
+
   return (
     <ImageBackground
-      source={{ uri: 'https://picsum.photos/200/300' }} // Replace with your image URL
+      source={require("../../assets/images/background.png")}
       style={styles.backgroundImage}
       resizeMode="cover"
     >
@@ -14,11 +23,21 @@ export default function OnboardScreen1() {
       </View>
       <View style={styles.contentContainer}>
         <View style={styles.bottomContent}>
-          <Text style={styles.title}>Welcome to Our App</Text>
-          <Text style={styles.text}>Discover new experiences and make memories with our community.</Text>
-          <TouchableOpacity style={styles.nextButton}>
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
+          <Text style={styles.title}>Real-Time Health Support and Updates</Text>
+          <Text style={styles.text}>
+            Stay informed with the latest trending health news, utilize advanced
+            health tools on-the-go, and connect with emergency services anytime
+            for immediate assistance.
+          </Text>
+          <Pressable
+            onPress={() => router.push("/onboarding2")}
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.buttonPressed,
+            ]}
+          >
+            <Text style={styles.nextButtonText}>Continue</Text>
+          </Pressable>
         </View>
       </View>
     </ImageBackground>
@@ -30,32 +49,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   progressBarContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20, 
-    marginBottom: 0, 
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 40,
+    marginBottom: 0,
   },
   progressBar: {
-    width: 40,
-    height: 5,
-    backgroundColor: '#FFFFFF',
+    width: 80,
+    height: 4,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
     opacity: 0.5,
     marginHorizontal: 5,
   },
   activeProgressBar: {
     opacity: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   contentContainer: {
-    flex: 1, 
-    justifyContent: 'flex-end', // Changed to flex-end to move content to the bottom
-    backgroundColor: 'transparent', 
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "transparent",
   },
   bottomContent: {
-    paddingHorizontal: 20, 
-    paddingBottom: 40, // Added padding to give some space from the bottom
-    backgroundColor: 'transparent', 
-    shadowColor: '#000',
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    backgroundColor: "transparent",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
@@ -63,24 +83,32 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "700",
     marginBottom: 10,
+    color: "#FFFFFF",
   },
   text: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
+    color: "#FFFFFF",
     marginBottom: 20,
   },
-  nextButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20, 
+  button: {
+    padding: 12,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+  },
+  buttonPressed: {
+    opacity: 0.7,
+    backgroundColor: "#FFFFFF",
+    color: "black",
   },
   nextButtonText: {
-    fontSize: 18,
-    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });
