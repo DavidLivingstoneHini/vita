@@ -13,11 +13,10 @@ import {
 import Swiper from "react-native-swiper";
 
 // Image Sources
-const BackgroundImage = require("../../assets/images/background3.jpg");
 const images = [
   require("../../assets/images/background3.jpg"),
-  require("../../assets/images/background3.jpg"),
-  require("../../assets/images/background3.jpg"),
+  require("../../assets/images/background.png"),
+  require("../../assets/images/background2.png"),
 ];
 const ItemImage1 = require("../../assets/images/bleach.png");
 const ItemImage2 = require("../../assets/images/hypertension.png");
@@ -25,9 +24,9 @@ const ItemImage3 = require("../../assets/images/phobia.png");
 const ItemImage4 = require("../../assets/images/bmi.png");
 const ItemImage5 = require("../../assets/images/period.png");
 const ItemImage6 = require("../../assets/images/eclipse.png");
-const LogoImage = require("../../assets/images/oziza.png");
+const LogoImage = require("../../assets/images/ozizawhite.png");
 
-const searchIcon = require("../../assets/images/search-icon-unfocused.png");
+const searchIcon = require("../../assets/images/search.png");
 const notificationsIcon = require("../../assets/images/notification.png");
 const chevronIcon = require("../../assets/images/chevron.png");
 
@@ -72,13 +71,15 @@ const Home = () => {
         {/* Title and Text with Image Background */}
         <Swiper
           style={styles.swiper}
-          showsPagination={false} // We'll render custom pagination
-          onScroll={(e) => setActiveIndex(e.nativeEvent.index)}
-          autoplay={true} // Auto-slide
-          autoplayTimeout={3} // Slide every 3 seconds
+          showsPagination={false}
+          onIndexChanged={(index) => {
+            setActiveIndex(index);
+          }}
+          autoplay={true}
+          autoplayTimeout={3}
         >
           {images.map((image, index) => (
-            <View key={index} style={styles.slide}>
+            <View key={`slide-${index}`} style={styles.slide}>
               <ImageBackground source={image} style={styles.backgroundImage}>
                 <View style={styles.overlay}>
                   <Text style={styles.title}>
@@ -186,9 +187,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 10,
+    padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderBottomColor: "#000000",
+    backgroundColor: "#000000",
   },
   logo: {
     width: 98,
@@ -272,7 +274,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 3,
   },
   activeCircle: {
-    backgroundColor: "#333",
+    backgroundColor: "#000000",
   },
 });
 
