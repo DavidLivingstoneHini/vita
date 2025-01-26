@@ -1,51 +1,83 @@
-import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 
-const api = axios.create({
-  baseURL: "http://localhost:8000/api/v1/",
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
+// Function to refresh access token using the refresh token
 const refreshTokens = async () => {
   try {
     const refreshToken = await SecureStore.getItemAsync("refresh_token");
-    const response = await api.post("users/token/refresh/", {
-      refresh: refreshToken,
-    });
+    const response = await fetch(
+      "http://192.168.251.90:8000/api/v1/users/token/refresh/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          refresh: refreshToken,
+        }),
+      }
+    );
 
-    await SecureStore.setItemAsync("access_token", response.data.access);
-    await SecureStore.setItemAsync("refresh_token", response.data.refresh);
+    if (!response.ok) {
+      throw new Error(`Token refresh failed: ${response.statusText}`);
+    }
 
-    return response.data.access;
+    const data = await response.json();
+
+    // Save new tokens in SecureStore
+    await SecureStore.setItemAsync("access_token", data.access);
+    await SecureStore.setItemAsync("refresh_token", data.refresh);
+
+    return data.access;
   } catch (error) {
-    console.error("Token refresh error:", error.response?.data);
+    console.error("Token refresh error:", error.message);
     return null;
   }
 };
 
-// api.interceptors.push({
-//   async request(config) {
-//     const accessToken = await SecureStore.getItemAsync("access_token");
-//     if (accessToken) {
-//       config.headers.Authorization = `Bearer ${accessToken}`;
-//     }
+// Function to send API requests with token authentication
+const apiRequest = async (url, options = {}) => {
+  try {
+    // If this is the sign-up request, skip the Authorization header
+    if (url.includes("login") || url.includes("signup")) {
+      options.headers = {
+        ...options.headers,
+      };
+    } else {
+      // Add Authorization header for other API requests
+      const accessToken = await SecureStore.getItemAsync("access_token");
+      const expirationTime = await SecureStore.getItemAsync("expiration_time");
 
-//     const expirationTime = await SecureStore.getItemAsync("expiration_time");
-//     if (expirationTime && Date.now() > expirationTime) {
-//       try {
-//         const newAccessToken = await refreshTokens();
-//         if (newAccessToken) {
-//           config.headers.Authorization = `Bearer ${newAccessToken}`;
-//         }
-//       } catch (error) {
-//         console.error("Token refresh error during interceptor:", error.response?.data);
-//       }
-//     }
+      // If the token has expired, refresh it
+      if (expirationTime && Date.now() > expirationTime) {
+        const newAccessToken = await refreshTokens();
+        if (newAccessToken) {
+          options.headers = {
+            ...options.headers,
+            Authorization: `Bearer ${newAccessToken}`,
+          };
+        }
+      } else if (accessToken) {
+        options.headers = {
+          ...options.headers,
+          Authorization: `Bearer ${accessToken}`,
+        };
+      }
+    }
 
-//     return config;
-//   },
-// });
+    // Send the request
+    const response = await fetch(url, options);
 
-export default api;
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error("Request error:", error.message);
+    throw error;
+  }
+};
+
+export default {
+  apiRequest,
+};

@@ -1,37 +1,79 @@
 import React from "react";
-import { Text, View, TouchableOpacity, Image, TextInput } from "react-native";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
-import { ScrollView } from "react-native";
+import { Link, useRouter } from "expo-router";
 import api from "../../services/api";
-import { SecureStore } from "expo-secure-store";
+import * as SecureStore from "expo-secure-store";
 
 export default function SignUpScreen() {
   const [passwordVisibility, setPasswordVisibility] = React.useState(true);
-
-  // Api states
+  const [passwordVisibility2, setPasswordVisibility2] = React.useState(true);
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [phoneNumber, setPhoneNumber] = React.useState("");
+  const [repeatPassword, setRepeatPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [passwordMatch, setPasswordMatch] = React.useState(true);
+  const router = useRouter();
 
   const handleSignUp = async () => {
-    console.log('Sign Up button pressed');
+    if (password !== repeatPassword) {
+      setPasswordMatch(false);
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await api.post("users/signup/", {
-        full_name: fullName,
-        email,
-        password,
-        phone_number: phoneNumber,
-      });
+      const response = await api.apiRequest(
+        "http://192.168.251.90:8000/api/v1/users/signup/",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            full_name: fullName,
+            email,
+            password,
+            phone_number: phoneNumber,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      await SecureStore.setItemAsync("access_token", response.data.access);
-      await SecureStore.setItemAsync("refresh_token", response.data.refresh);
+      console.log("Response from server:", response);
 
-      console.log("Sign-up successful:", response.data);
+      // Save tokens to SecureStore
+      await SecureStore.setItemAsync("access_token", response.access);
+      await SecureStore.setItemAsync("refresh_token", response.refresh);
+
+      // Calculate and store expiration time
+      const expiresIn = response.expires_in;
+      const expirationTime = new Date(expiresIn).getTime();
+      await SecureStore.setItemAsync(
+        "expiration_time",
+        expirationTime.toString()
+      );
+
+      Alert.alert(
+        "Success",
+        "Sign-up successful! Please log in with your credentials."
+      );
+      router.push("/login");
     } catch (error) {
-      console.error("Sign-up error:", error.response.data);
+      console.error("Sign-up error:", error?.message || "Unknown error");
+      Alert.alert("Error", "Sign-up failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,11 +127,7 @@ export default function SignUpScreen() {
       {/* Input Fields */}
       <View style={{ paddingHorizontal: 20, marginBottom: 20, marginTop: 4 }}>
         <View
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 1,
-            marginBottom: 5,
-          }}
+          style={{ paddingHorizontal: 10, paddingVertical: 1, marginBottom: 5 }}
         >
           <TextInput
             style={{
@@ -106,11 +144,7 @@ export default function SignUpScreen() {
           />
         </View>
         <View
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 1,
-            marginBottom: 5,
-          }}
+          style={{ paddingHorizontal: 10, paddingVertical: 1, marginBottom: 5 }}
         >
           <TextInput
             style={{
@@ -127,11 +161,7 @@ export default function SignUpScreen() {
           />
         </View>
         <View
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 1,
-            marginBottom: 5,
-          }}
+          style={{ paddingHorizontal: 10, paddingVertical: 1, marginBottom: 5 }}
         >
           <TextInput
             style={{
@@ -188,6 +218,8 @@ export default function SignUpScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Repeat Password Field */}
         <View
           style={{
             paddingHorizontal: 10,
@@ -205,9 +237,12 @@ export default function SignUpScreen() {
               borderRadius: 5,
             }}
             placeholder="Repeat Password"
-            value={""}
-            onChangeText={""}
-            secureTextEntry={passwordVisibility}
+            value={repeatPassword}
+            onChangeText={(text) => {
+              setRepeatPassword(text);
+              setPasswordMatch(text === password);
+            }}
+            secureTextEntry={passwordVisibility2}
           />
           <TouchableOpacity
             style={{
@@ -216,9 +251,9 @@ export default function SignUpScreen() {
               top: 16,
               color: "gray",
             }}
-            onPress={() => setPasswordVisibility(!passwordVisibility)}
+            onPress={() => setPasswordVisibility2(!passwordVisibility2)}
           >
-            {passwordVisibility ? (
+            {passwordVisibility2 ? (
               <MaterialCommunityIcons
                 name="eye-off"
                 size={24}
@@ -228,10 +263,15 @@ export default function SignUpScreen() {
               <MaterialCommunityIcons name="eye" size={24} color="#808080" />
             )}
           </TouchableOpacity>
+          {!passwordMatch && repeatPassword.length > 0 && (
+            <Text style={{ color: "red", fontSize: 12 }}>
+              Passwords do not match.
+            </Text>
+          )}
         </View>
       </View>
 
-      {/* Sign In Button */}
+      {/* Sign Up Button */}
       <View style={{ marginHorizontal: 20, marginBottom: 15 }}>
         <TouchableOpacity
           style={{
@@ -241,10 +281,15 @@ export default function SignUpScreen() {
             borderRadius: 5,
           }}
           onPress={handleSignUp}
+          disabled={loading || !passwordMatch}
         >
-          <Text style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>
-            Sign Up
-          </Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>
+              Sign Up
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 

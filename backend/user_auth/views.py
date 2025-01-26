@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.views import TokenViewBase
 from.serializers import PasswordChangeSerializer
+from datetime import timedelta, datetime
+from rest_framework_simplejwt.settings import api_settings
 
 from .serializers import LoginSerializer, UserSerializer, RegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -15,9 +17,11 @@ class SignUpView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
+            expiration_time = datetime.utcnow() + api_settings.ACCESS_TOKEN_LIFETIME
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
+                'expires_in': expiration_time.isoformat() + 'Z',
                 "user": UserSerializer(user).data,
                 "message": "Registration successful"
             }, status=status.HTTP_201_CREATED)
@@ -29,9 +33,12 @@ class LoginView(APIView):
         if serializer.is_valid():
             user = serializer.validated_data
             refresh = RefreshToken.for_user(user)
+            # Calculate expiration time by adding ACCESS_TOKEN_LIFETIME to the current time
+            expiration_time = datetime.utcnow() + api_settings.ACCESS_TOKEN_LIFETIME
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
+                'expires_in': expiration_time.isoformat() + 'Z',
                 "user": UserSerializer(user).data,
                 "message": "Login successful"
             }, status=status.HTTP_200_OK)

@@ -1,10 +1,10 @@
+import React, { useState, useEffect } from "react";
 import { Redirect } from "expo-router";
 import { Text, View } from "react-native";
-import { SecureStore } from "expo-secure-store";
-import React, { useState, useEffect } from "react";
+import * as SecureStore from "expo-secure-store";
 
 export default function Index() {
-  const [redirectTo, setRedirectTo] = useState("(tabs)/home"); // Default redirect
+  const [redirectTo, setRedirectTo] = useState("onboarding2"); // Default redirect
 
   useEffect(() => {
     const checkIfRegistered = async () => {

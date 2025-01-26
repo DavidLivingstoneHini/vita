@@ -1,30 +1,68 @@
 import React from "react";
-import { Text, View, TouchableOpacity, Image, TextInput } from "react-native";
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  Image,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
-import { SecureStore } from "expo-secure-store";
-// import api from "../../services/api";
+import api from "../../services/api";
+import * as SecureStore from "expo-secure-store";
 
 export default function LoginScreen() {
   const [passwordVisibility, setPasswordVisibility] = React.useState(true);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const router = useRouter();
 
   const handleLogin = async () => {
+    setLoading(true);
     try {
-      const response = await api.post("users/login/", {
-        email,
-        password,
-      });
+      const response = await api.apiRequest(
+        "http://192.168.251.90:8000/api/v1/users/login/",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      await SecureStore.setItemAsync("access_token", response.data.access);
-      await SecureStore.setItemAsync("refresh_token", response.data.refresh);
+      console.log("Response from server:", response);
 
-      console.log("Login successful:", response.data);
+      // Save tokens to SecureStore
+      await SecureStore.setItemAsync("access_token", response.access);
+      await SecureStore.setItemAsync("refresh_token", response.refresh);
+
+      // Calculate and store expiration time
+      const expiresIn = response.expires_in;
+      const expirationTime = new Date(expiresIn).getTime();
+      await SecureStore.setItemAsync(
+        "expiration_time",
+        expirationTime.toString()
+      );
+
+      // Alert.alert(
+      //   "Success",
+      //   "login successful! Please log in with your credentials."
+      // );
+      router.push("/(tabs)/home");
     } catch (error) {
-      console.error("Login error:", error.response.data);
+      console.error("Sign-in error:", error?.message || "Unknown error");
+      Alert.alert("Error", "Sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -163,10 +201,15 @@ export default function LoginScreen() {
             borderRadius: 5,
           }}
           onPress={handleLogin}
+          disabled={loading}
         >
-          <Text style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>
-            Sign In
-          </Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>
+              Sign In
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
