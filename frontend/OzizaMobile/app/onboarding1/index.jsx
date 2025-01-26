@@ -23,11 +23,11 @@ export default function OnboardScreen1() {
       </View>
       <View style={styles.contentContainer}>
         <View style={styles.bottomContent}>
-          <Text style={styles.title}>Real-Time Health Support and Updates</Text>
+          <Text style={styles.title}>Comprehensive Health Resources</Text>
           <Text style={styles.text}>
-            Stay informed with the latest trending health news, utilize advanced
-            health tools on-the-go, and connect with emergency services anytime
-            for immediate assistance.
+            Access a vast library of over 100+ articles on various health
+            conditions, stay updated on new content, and get notifications about
+            activity on your followed topics.
           </Text>
           <Pressable
             onPress={() => router.push("/onboarding2")}
@@ -36,7 +36,7 @@ export default function OnboardScreen1() {
               pressed && styles.buttonPressed,
             ]}
           >
-            <Text style={styles.nextButtonText}>Continue</Text>
+            <Text style={styles.nextButtonText}>Next</Text>
           </Pressable>
         </View>
       </View>
