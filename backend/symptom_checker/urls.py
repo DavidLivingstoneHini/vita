@@ -16,3 +16,4 @@ urlpatterns = [
     path('diagnose/', SymptomCheckerView.as_view()),
     path('diagnose/disclaimer/', SymptomCheckerDisclaimerView.as_view()),
 ]
+
