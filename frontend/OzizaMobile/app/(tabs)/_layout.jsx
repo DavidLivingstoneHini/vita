@@ -1,9 +1,15 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { View, Text, Image } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import Home from "./home";
 import News from "./news";
 import Library from "./library";
+import Settings from "./settings";
 
 import libraryIcon from "../../assets/images/library-icon-unfocused.png";
 import libraryIconFocused from "../../assets/images/library-icon-focused.png";
@@ -26,15 +32,21 @@ function DiscoverScreen() {
   );
 }
 
-function MoreScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>More!</Text>
-    </View>
-  );
-}
+function TabLayout() {
+  const navigation = useNavigation();
+  const route = useRoute();
 
-export default function TabLayout() {
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params?.reset) {
+        navigation.reset({
+          index: 2,
+          routes: [{ name: "TabLayout" }],
+        });
+      }
+    }, [navigation, route])
+  );
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -43,7 +55,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: "#000000",
         tabBarInactiveTintColor: "#828282",
         tabBarStyle: {
-          height: 70,
+          height: 65,
         },
       }}
     >
@@ -65,7 +77,7 @@ export default function TabLayout() {
           tabBarLabel: "Library",
           tabBarLabelStyle: {
             fontSize: 11.5,
-            fontWeight: 500
+            fontWeight: 500,
           },
         })}
       />
@@ -87,7 +99,7 @@ export default function TabLayout() {
           tabBarLabel: "News",
           tabBarLabelStyle: {
             fontSize: 11.5,
-            fontWeight: 500
+            fontWeight: 500,
           },
         })}
       />
@@ -109,7 +121,7 @@ export default function TabLayout() {
           tabBarLabel: "Home",
           tabBarLabelStyle: {
             fontSize: 11.5,
-            fontWeight: 500
+            fontWeight: 500,
           },
         })}
       />
@@ -131,13 +143,13 @@ export default function TabLayout() {
           tabBarLabel: "Discover",
           tabBarLabelStyle: {
             fontSize: 11.5,
-            fontWeight: 500
+            fontWeight: 500,
           },
         })}
       />
       <Tab.Screen
-        name="More"
-        component={MoreScreen}
+        name="Settings"
+        component={Settings}
         options={({ focused }) => ({
           tabBarIcon: ({ focused, color, size }) => (
             <Image
@@ -150,13 +162,15 @@ export default function TabLayout() {
               }}
             />
           ),
-          tabBarLabel: "More",
+          tabBarLabel: "Settings",
           tabBarLabelStyle: {
             fontSize: 11.5,
-            fontWeight: 500
+            fontWeight: 500,
           },
         })}
       />
     </Tab.Navigator>
   );
 }
+
+export default TabLayout;
