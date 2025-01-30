@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function EmergencyServicesScreen({ navigation }) {
   return (
@@ -15,9 +14,12 @@ export default function EmergencyServicesScreen({ navigation }) {
           <Text style={styles.headerText}>Home</Text>
         </View>
         <View style={styles.headerCenter}>
-          <Text style={styles.subHeaderText}>Emergency Services</Text>
+          <Text style={styles.subHeaderText}>
+            Are you in an Emergency Do you need help
+          </Text>
           <Text style={styles.subSubHeaderText}>
-            Quickly get help in emergency situations
+            Tap the required emergency service to call them or use their
+            official help numbers{" "}
           </Text>
         </View>
       </View>
@@ -52,7 +54,9 @@ export default function EmergencyServicesScreen({ navigation }) {
 
       {/* Red Text at the Bottom */}
       <Text style={styles.footerText}>
-        In case of emergency, call the numbers above.
+        Please make sure to be specific on the type of emergency and also the
+        location of the incident to make it easier for the emergency services to
+        locate you{" "}
       </Text>
     </View>
   );
@@ -64,9 +68,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    backgroundColor: "red",
-    borderBottomLeftRadius: "100%",
-    borderBottomRightRadius: "100%",
+    backgroundColor: "#C92035",
+    borderBottomLeftRadius: 190,
+    borderBottomRightRadius: 190,
     paddingVertical: 30,
     paddingHorizontal: 20,
     flexDirection: "column",
@@ -87,25 +91,30 @@ const styles = StyleSheet.create({
     marginTop: -5,
   },
   subHeaderText: {
-    fontSize: 14,
+    fontSize: 22,
     color: "#fff",
-    fontWeight: "bold",
+    fontWeight: 700,
+    paddingHorizontal: 30,
   },
   subSubHeaderText: {
     fontSize: 12,
+    fontWeight: 500,
     color: "#fff",
+    marginBottom: 20,
+    paddingHorizontal: 30,
   },
   buttonsContainer: {
-    marginTop: 20,
+    marginTop: 50,
     paddingHorizontal: 20,
   },
   emergencyButton: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 15,
-    paddingHorizontal: 10,
+    height: 88,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: "red",
+    borderColor: "#C92035",
     borderRadius: 5,
     marginBottom: 10,
   },
@@ -115,19 +124,22 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   emergencyButtonText: {
-    fontSize: 16,
+    fontSize: 22,
+    marginLeft: 20,
+    fontWeight: 700,
     flex: 1,
-    color: "red",
+    color: "#000000",
   },
   emergencyButtonNumber: {
-    fontSize: 16,
-    color: "red",
-    fontWeight: "bold",
+    fontSize: 24,
+    color: "#C92035",
+    fontWeight: 700,
   },
   footerText: {
-    fontSize: 14,
-    color: "red",
+    fontSize: 13,
+    color: "#C92035",
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 30,
+    paddingHorizontal: 18,
   },
 });

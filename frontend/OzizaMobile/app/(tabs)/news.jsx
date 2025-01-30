@@ -12,8 +12,8 @@ const forYouData = Array.from({ length: 10 }, (_, i) => ({
 // Dummy data for "Editor's Pick"
 const editorsPick = {
   image: 'https://picsum.photos/200/300?random=800',
-  descriptionTitle: 'Why We Love It', 
-  text: 'This image is our editor\'s favorite pick of the week. It showcases a beautiful scenery that will leave you breathless.',
+  descriptionTitle: 'Local Heroes of Health care  in Africa', 
+  text: 'Get to know the heroes who are making big impacts on the communities through health innovation and projects',
 };
 
 // Dummy data for buttons 
@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
     borderBottomColor: '#ddd',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: 700,
   },
   buttonsContainer: {
     paddingVertical: 12,
