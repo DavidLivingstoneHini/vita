@@ -13,21 +13,21 @@ const InspirationScreen = ({ navigation }) => {
   const dummyData = [
     {
       id: 1,
-      image: require("../../../assets/images/inspiration1.png"),
+      image: require("../../assets/images/inspiration1.png"),
       title: "I survived Breast Cancer",
       subtitle:
         "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
     },
     {
       id: 2,
-      image: require("../../../assets/images/inspiration2.jpg"),
+      image: require("../../assets/images/inspiration2.jpg"),
       title: "How to deal with stigmatization",
       subtitle:
         "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
     },
     {
       id: 3,
-      image: require("../../../assets/images/inspiration3.jpg"),
+      image: require("../../assets/images/inspiration3.jpg"),
       title: "Staying sober after rehabilitation",
       subtitle:
         "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
@@ -45,7 +45,10 @@ const InspirationScreen = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="#000" />
+          <Image
+            source={require("../../assets/images/back-arrow.png")}
+            style={styles.backArrow}
+          />
         </TouchableOpacity>
         <Text style={styles.title}>Inspiration</Text>
       </View>
@@ -79,9 +82,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "bold",
-    marginLeft: 10,
   },
   scrollView: {
     padding: 20,
@@ -111,6 +113,11 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 15,
     marginLeft: 15,
+  },
+  backArrow: {
+    width: 18,
+    height: 18,
+    marginRight: 10,
   },
 });
 

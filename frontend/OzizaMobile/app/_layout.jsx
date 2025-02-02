@@ -17,7 +17,7 @@ export default function RootLayout() {
 
   if (!authenticated) {
     return (
-      <Stack screenOptions={{headerShown: false}}>
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen
           name="onboarding1/index"
@@ -27,21 +27,23 @@ export default function RootLayout() {
           name="onboarding2/index"
           options={{ title: "onboarding2" }}
         />
-        <Stack.Screen
-          name="login/index"
-          options={{ title: "login" }}
-        />
-        <Stack.Screen
-          name="signup/index"
-          options={{ title: "signup" }}
-        />
+        <Stack.Screen name="login/index" options={{ title: "login" }} />
+        <Stack.Screen name="signup/index" options={{ title: "signup" }} />
       </Stack>
     );
   }
 
   return (
     <Stack>
-      <Stack.Screen name="home/index" options={{ title: "home" }} />
+      <Stack.Screen
+        name="inspiration/index"
+        options={{ title: "inspiration" }}
+      />
+      <Stack.Screen name="findoctor/index" options={{ title: "findoctor" }} />
+      <Stack.Screen name="events/index" options={{ title: "events" }} />
+      <Stack.Screen name="emergency/index" options={{ title: "emergency" }} />
+      <Stack.Screen name="doctorlist/index" options={{ title: "doctorlist" }} />
+      <Stack.Screen name="gym/index" options={{ title: "gym" }} />
     </Stack>
   );
 }

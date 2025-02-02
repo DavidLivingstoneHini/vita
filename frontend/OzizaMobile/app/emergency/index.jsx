@@ -9,7 +9,10 @@ export default function EmergencyServicesScreen({ navigation }) {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign name="arrowleft" size={24} color="#fff" />
+            <Image
+              source={require("../../assets/images/back-arrow-white.png")}
+              style={styles.backArrow}
+            />
           </TouchableOpacity>
           <Text style={styles.headerText}>Home</Text>
         </View>
@@ -28,7 +31,7 @@ export default function EmergencyServicesScreen({ navigation }) {
       <View style={styles.buttonsContainer}>
         <TouchableOpacity style={styles.emergencyButton}>
           <Image
-            source={require("../../../assets/images/ambulance-icon.png")}
+            source={require("../../assets/images/ambulance-icon.png")}
             style={styles.buttonIcon}
           />
           <Text style={styles.emergencyButtonText}>Ambulance</Text>
@@ -36,7 +39,7 @@ export default function EmergencyServicesScreen({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity style={styles.emergencyButton}>
           <Image
-            source={require("../../../assets/images/firetruck.png")}
+            source={require("../../assets/images/firetruck.png")}
             style={styles.buttonIcon}
           />{" "}
           <Text style={styles.emergencyButtonText}>Fire Service</Text>
@@ -44,7 +47,7 @@ export default function EmergencyServicesScreen({ navigation }) {
         </TouchableOpacity>
         <TouchableOpacity style={styles.emergencyButton}>
           <Image
-            source={require("../../../assets/images/police-icon.png")}
+            source={require("../../assets/images/police-icon.png")}
             style={styles.buttonIcon}
           />
           <Text style={styles.emergencyButtonText}>Police</Text>
@@ -69,8 +72,8 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#C92035",
-    borderBottomLeftRadius: 190,
-    borderBottomRightRadius: 190,
+    borderBottomLeftRadius: 170,
+    borderBottomRightRadius: 170,
     paddingVertical: 30,
     paddingHorizontal: 20,
     flexDirection: "column",
@@ -81,23 +84,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   headerText: {
-    fontSize: 18,
+    fontSize: 17,
     color: "#fff",
     fontWeight: "bold",
     marginLeft: 10,
+    marginBottom: 40,
   },
   headerCenter: {
     alignItems: "center",
     marginTop: -5,
+    marginBottom: 10,
   },
   subHeaderText: {
-    fontSize: 22,
+    fontSize: 20,
     color: "#fff",
     fontWeight: 700,
     paddingHorizontal: 30,
+    marginBottom: 10,
   },
   subSubHeaderText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 500,
     color: "#fff",
     marginBottom: 20,
@@ -124,7 +130,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   emergencyButtonText: {
-    fontSize: 22,
+    fontSize: 21,
     marginLeft: 20,
     fontWeight: 700,
     flex: 1,
@@ -136,10 +142,16 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
   footerText: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#C92035",
     textAlign: "center",
     marginTop: 30,
     paddingHorizontal: 18,
+  },
+  backArrow: {
+    width: 18,
+    height: 18,
+    marginRight: 5,
+    marginTop: -26.5,
   },
 });

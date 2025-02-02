@@ -55,14 +55,14 @@ const DoctorListScreen = ({ route, navigation }) => {
       id: 1,
       name: "Dr. John Doe",
       specialization: "Physiotherapy",
-      image: require("../../../assets/images/doctor1.png"),
+      image: require("../../assets/images/doctor1.png"),
       location: "2.5 km away",
     },
     {
       id: 2,
-      name: "Dr. Jane Smith",
+      name: "Dr. John Smith",
       specialization: "Physiotherapy",
-      image: require("../../../assets/images/doctor2.png"),
+      image: require("../../assets/images/doctor2.png"),
       location: "5.1 km away",
     },
   ];
@@ -72,21 +72,21 @@ const DoctorListScreen = ({ route, navigation }) => {
       id: 3,
       name: "Dr. Bob Johnson",
       specialization: "Dentist",
-      image: require("../../../assets/images/doctor3.png"),
+      image: require("../../assets/images/doctor3.png"),
       location: "1.2 km away",
     },
     {
       id: 4,
       name: "Dr. Alice Brown",
       specialization: "Cardiologist",
-      image: require("../../../assets/images/doctor4.png"),
+      image: require("../../assets/images/doctor4.png"),
       location: "3.8 km away",
     },
     {
       id: 5,
       name: "Dr. Mike Davis",
       specialization: "Pediatrician",
-      image: require("../../../assets/images/doctor5.png"),
+      image: require("../../assets/images/doctor5.png"),
       location: "4.5 km away",
     },
   ];
@@ -94,19 +94,19 @@ const DoctorListScreen = ({ route, navigation }) => {
   const getSpecializationIcon = (specializationText) => {
     switch (specializationText.toLowerCase()) {
       case "physiotherapy":
-        return require("../../../assets/images/physiotherapy.png");
+        return require("../../assets/images/physiotherapy.png");
       case "dentist":
-        return require("../../../assets/images/dentist.png");
+        return require("../../assets/images/dentist.png");
       case "cardiologist":
-        return require("../../../assets/images/cardiologist.png");
+        return require("../../assets/images/cardiologist.png");
       case "pediatrician":
-        return require("../../../assets/images/pediatrician.png");
+        return require("../../assets/images/pediatrician.png");
       case "optometrist":
-        return require("../../../assets/images/optometrist.png");
+        return require("../../assets/images/optometrist.png");
       case "herbal doctor":
-        return require("../../../assets/images/herbal-doctor.png");
+        return require("../../assets/images/herbal-doctor.png");
       default:
-        return require("../../../assets/images/dentist.png");
+        return require("../../assets/images/dentist.png");
     }
   };
 
@@ -153,7 +153,10 @@ const DoctorListScreen = ({ route, navigation }) => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="#000" />
+          <Image
+            source={require("../../assets/images/back-arrow.png")}
+            style={styles.backArrow}
+          />
         </TouchableOpacity>
         <Text style={styles.title}>Find a Doctor</Text>
       </View>
@@ -186,7 +189,7 @@ const DoctorListScreen = ({ route, navigation }) => {
                     color:
                       selectedSpecializationId === specialization.id
                         ? TEXT_COLOR
-                        : "#000",
+                        : "#FFFFFF",
                   },
                 ]}
               >
@@ -223,7 +226,15 @@ const DoctorListScreen = ({ route, navigation }) => {
       <Text style={styles.recommendationsTitle}>Recommendations</Text>
       <ScrollView style={styles.doctorList}>
         {filteredRecommendedDoctors.map((doctor) => (
-          <TouchableOpacity key={doctor.id} style={styles.doctorButton}>
+          <TouchableOpacity
+            key={doctor.id}
+            style={[
+              styles.doctorButton,
+              styles.doctorButtonBackground,
+              styles.doctorListItemSpacing,
+            ]}
+            onPress={() => console.log(`Doctor ${doctor.name} pressed`)}
+          >
             <Image source={doctor.image} style={styles.doctorImage} />
             <View style={styles.doctorInfo}>
               <Text style={styles.doctorName}>{doctor.name}</Text>
@@ -242,7 +253,15 @@ const DoctorListScreen = ({ route, navigation }) => {
       <Text style={styles.nearYouTitle}>Doctors Near You</Text>
       <ScrollView style={styles.doctorList}>
         {filteredNearYouDoctors.map((doctor) => (
-          <TouchableOpacity key={doctor.id} style={styles.doctorButton}>
+          <TouchableOpacity
+            key={doctor.id}
+            style={[
+              styles.doctorButton,
+              styles.doctorButtonBackground,
+              styles.doctorListItemSpacing,
+            ]}
+            onPress={() => console.log(`Doctor ${doctor.name} pressed`)}
+          >
             <Image source={doctor.image} style={styles.doctorImage} />
             <View style={styles.doctorInfo}>
               <Text style={styles.doctorName}>{doctor.name}</Text>
@@ -275,9 +294,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "bold",
-    marginLeft: 10,
   },
   filterTitle: {
     fontSize: 16,
@@ -290,23 +308,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   specializationButton: {
-    paddingHorizontal: 10, // Adjusted for icon and text
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 15,
     borderRadius: 5,
     marginRight: 10,
   },
   specializationIconTextContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10, // Adjust based on your icon size and button padding
+    paddingHorizontal: 10,
   },
   specializationIcon: {
-    width: 20, // Adjust the size based on your icon
-    height: 20, // Adjust the size based on your icon
-    marginRight: 8, // Space between icon and text
+    width: 20,
+    height: 20,
+    marginRight: 8,
   },
   specializationText: {
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: 800,
+    color: "#FFFFFF",
   },
   recommendationsTitle: {
     fontSize: 16,
@@ -322,13 +342,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+  },
+  doctorButtonBackground: {
+    backgroundColor: "#E2E4EA",
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  doctorListItemSpacing: {
+    marginBottom: 14,
   },
   doctorImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 12,
     marginRight: 15,
   },
   doctorInfo: {
@@ -357,6 +383,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginHorizontal: 20,
     marginTop: 25,
+  },
+  backArrow: {
+    width: 18,
+    height: 18,
+    marginRight: 10,
   },
 });
 
