@@ -1,25 +1,33 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from "react-native"
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 // Dummy data for "For You" section
 const forYouData = Array.from({ length: 10 }, (_, i) => ({
   id: i,
   image: `https://picsum.photos/200/300?random=${i}`,
-  descriptionTitle: `Image ${i} Description Title`, 
+  descriptionTitle: `Image ${i} Description Title`,
   text: `Image ${i} Description`,
 }));
 
 // Dummy data for "Editor's Pick"
 const editorsPick = {
-  image: 'https://picsum.photos/200/300?random=800',
-  descriptionTitle: 'Local Heroes of Health care  in Africa', 
-  text: 'Get to know the heroes who are making big impacts on the communities through health innovation and projects',
+  image: "https://picsum.photos/200/300?random=800",
+  descriptionTitle: "Local Heroes of Health care  in Africa",
+  text: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
 };
 
-// Dummy data for buttons 
+// Dummy data for buttons
 const buttonsData = Array.from({ length: 21 }, (_, i) => ({
   id: i,
-  text: i === 0? 'For You' : `Button ${i}`,
+  text: i === 0 ? "For You" : `Button ${i}`,
 }));
 
 const News = () => {
@@ -50,36 +58,53 @@ const News = () => {
           style={styles.multiRowScrollView}
         >
           <View style={styles.buttonRowsContainer}>
-            {Array.from({ length: 3 }, (_, rowIndex) => ( // 3 rows
-              <View key={rowIndex} style={styles.buttonRow}>
-                {buttonsData.slice(rowIndex * 7, (rowIndex + 1) * 7).map((button) => ( // 7 buttons per row
-                  <TouchableOpacity
-                    key={button.id}
-                    style={[
-                      styles.smallButton,
-                      selectedButton.id === button.id && styles.selectedSmallButton,
-                    ]}
-                    onPress={() => setSelectedButton(button)}
-                  >
-                    <Text style={[styles.smallButtonText, selectedButton.id === button.id && { color: '#fff' }]}>
-                      {button.text}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ))}
+            {Array.from(
+              { length: 3 },
+              (
+                _,
+                rowIndex // 3 rows
+              ) => (
+                <View key={rowIndex} style={styles.buttonRow}>
+                  {buttonsData.slice(rowIndex * 7, (rowIndex + 1) * 7).map(
+                    (
+                      button // 7 buttons per row
+                    ) => (
+                      <TouchableOpacity
+                        key={button.id}
+                        style={[
+                          styles.smallButton,
+                          selectedButton.id === button.id &&
+                            styles.selectedSmallButton,
+                        ]}
+                        onPress={() => setSelectedButton(button)}
+                      >
+                        <Text
+                          style={[
+                            styles.smallButtonText,
+                            selectedButton.id === button.id && {
+                              color: "#fff",
+                            },
+                          ]}
+                        >
+                          {button.text}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  )}
+                </View>
+              )
+            )}
           </View>
         </ScrollView>
       </View>
 
-      <View style={styles.contentContainer}>
-        {renderContent()}
-      </View>
+      <View style={styles.contentContainer}>{renderContent()}</View>
     </View>
   );
 };
 
 const ForYouContent = ({ selectedButton }) => {
+  const navigation = useNavigation();
   return (
     <ScrollView style={forYouStyles.forYouContainer}>
       {/* Editor's Pick Section */}
@@ -90,23 +115,33 @@ const ForYouContent = ({ selectedButton }) => {
           style={forYouStyles.editorsPickImage}
           resizeMode="cover"
         />
-        <Text style={forYouStyles.descriptionTitle}>{editorsPick.descriptionTitle}</Text>
+        <Text style={forYouStyles.descriptionTitle}>
+          {editorsPick.descriptionTitle}
+        </Text>
         <Text style={forYouStyles.forYouText}>{editorsPick.text}</Text>
       </View>
 
       {/* Vertical List of Images */}
       <View style={forYouStyles.listTitleContainer}>
         <Text style={forYouStyles.listTitle}>{selectedButton.text}</Text>
-        <TouchableOpacity onPress={() => console.log('See All pressed')}><Text style={forYouStyles.seeAll}>See All</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate("events/index")}>
+          <Text style={forYouStyles.seeAll}>See All</Text>
+        </TouchableOpacity>
       </View>
       {forYouData.map((item) => (
-        <TouchableOpacity key={item.id} style={forYouStyles.forYouItem} onPress={() => console.log(`Image ${item.id} pressed`)}>
+        <TouchableOpacity
+          key={item.id}
+          style={forYouStyles.forYouItem}
+          onPress={() => console.log(`Image ${item.id} pressed`)}
+        >
           <Image
             source={{ uri: item.image }}
             style={forYouStyles.forYouImage}
             resizeMode="cover"
           />
-          <Text style={forYouStyles.descriptionTitle}>{item.descriptionTitle}</Text>
+          <Text style={forYouStyles.descriptionTitle}>
+            {item.descriptionTitle}
+          </Text>
           <Text style={forYouStyles.forYouText}>{item.text}</Text>
         </TouchableOpacity>
       ))}
@@ -117,13 +152,13 @@ const ForYouContent = ({ selectedButton }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: "#ddd",
   },
   title: {
     fontSize: 18,
@@ -135,15 +170,15 @@ const styles = StyleSheet.create({
     height: 160,
   },
   buttonRowsContainer: {
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   buttonRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: 8,
   },
   multiRowScrollView: {
-    width: '100%',
+    width: "100%",
   },
   smallButton: {
     marginRight: 8,
@@ -151,14 +186,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#828282',
+    backgroundColor: "#828282",
   },
   selectedSmallButton: {
-    backgroundColor: '#1C3612',
+    backgroundColor: "#1C3612",
   },
   smallButtonText: {
     fontSize: 12,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   contentContainer: {
     flex: 1,
@@ -175,11 +210,11 @@ const forYouStyles = StyleSheet.create({
   },
   editorsPickTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
   },
   editorsPickImage: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: 8,
   },
@@ -187,7 +222,7 @@ const forYouStyles = StyleSheet.create({
     marginBottom: 16,
   },
   forYouImage: {
-    width: '100%',
+    width: "100%",
     height: 150,
     borderRadius: 8,
   },
@@ -195,25 +230,25 @@ const forYouStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 800,
     marginTop: 8,
-    color: '#000000',
+    color: "#000000",
   },
   forYouText: {
     fontSize: 13,
     marginTop: 3,
   },
   listTitleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   listTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   seeAll: {
     fontSize: 12,
-    color: '#000000',
+    color: "#000000",
     fontWeight: 500,
   },
 });

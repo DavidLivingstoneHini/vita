@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from "react-native";
 import Swiper from "react-native-swiper";
+import { useNavigation } from '@react-navigation/native';
 
 // Image Sources
 const images = [
@@ -46,6 +47,7 @@ const Home = () => {
   ];
 
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
@@ -141,7 +143,9 @@ const Home = () => {
         <View style={[styles.listContainer, { marginTop: 20 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Inspirations</Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("inspiration/index")}
+            >
               <View style={styles.seeMoreContainer}>
                 <Text style={styles.seeMoreText}>SEE MORE</Text>
                 <Image

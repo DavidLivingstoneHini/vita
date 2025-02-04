@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const InspirationScreen = ({ navigation }) => {
   const dummyData = [
@@ -41,10 +42,12 @@ const InspirationScreen = ({ navigation }) => {
     navigation.navigate("InspirationDetails", { id });
   };
 
+  const navigation1 = useNavigation();
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation1.navigate("Home")}>
           <Image
             source={require("../../assets/images/back-arrow.png")}
             style={styles.backArrow}

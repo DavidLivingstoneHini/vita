@@ -3,19 +3,22 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View, 
   TouchableOpacity,
   Image,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { Link, useRouter } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 
 const SettingsPage = () => {
-  const [userName, setUserName] = useState("John Doe");
-  const [userEmail, setUserEmail] = useState("johndoe@example.com");
+  const [userName, setUserName] = useState("Swae Stone");
+  const [userEmail, setUserEmail] = useState("kwamelivingstone77@icloud.com");
   const [userProfilePicture, setUserProfilePicture] = useState(
     "https://picsum.photos/60"
   );
+
+  const navigation = useNavigation();
 
   // Function to get user initials
   const getUserInitials = (name) => {
@@ -89,7 +92,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("")}
+            onPress={() => navigation.navigate("changepassword/index")}
           >
             <Text style={styles.listItemText}>Change Password</Text>
             <Image

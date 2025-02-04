@@ -13,6 +13,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
+import Toast from "react-native-simple-toast";
 
 export default function SignUpScreen() {
   const [passwordVisibility, setPasswordVisibility] = React.useState(true);
@@ -35,7 +36,7 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const response = await api.apiRequest(
-        "http://192.168.251.90:8000/api/v1/users/signup/",
+        "http://192.168.169.90:8000/api/v1/users/signup/",
         {
           method: "POST",
           body: JSON.stringify({
@@ -64,16 +65,28 @@ export default function SignUpScreen() {
         expirationTime.toString()
       );
 
-      Alert.alert(
-        "Success",
-        "Sign-up successful! Please log in with your credentials."
-      );
+      // Alert.alert(
+      //   "Success",
+      //   "Sign-up successful! Please log in with your credentials."
+      // );
+      Toast.show("sign-up successful, please log in with your credentials");
       router.push("/login");
     } catch (error) {
       console.error("Sign-up error:", error?.message || "Unknown error");
-      Alert.alert("Error", "Sign-up failed. Please try again.");
+      const errorMessage = getErrorMessage(error);
+      Toast.show(errorMessage, Toast.LONG);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to extract or generate a user-friendly error message
+  const getErrorMessage = (error) => {
+    if (error.response && error.response.data) {
+      // Assuming your API returns error details in the response data
+      return error?.message || "Invalid email or password";
+    } else {
+      return "An unknown error occurred. Please try again.";
     }
   };
 
