@@ -19,7 +19,7 @@ const ChangePasswordScreen = ({ navigation }) => {
     setLoading(true);
     try {
       const response = await api.apiRequest(
-        "http://192.168.169.90:8000/api/v1/password/change/",
+        "http://192.168.169.90:8000/api/v1/users/password/change/",
         {
           method: "POST",
           body: JSON.stringify({
