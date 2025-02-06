@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  RefreshControl,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -32,6 +33,7 @@ const buttonsData = Array.from({ length: 21 }, (_, i) => ({
 
 const News = () => {
   const [selectedButton, setSelectedButton] = useState(buttonsData[0]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const renderContent = () => {
     if (selectedButton.id === 0) {
@@ -45,13 +47,26 @@ const News = () => {
     }
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    // TO DO: Implement your refresh logic here (e.g., API calls, data updates)
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000); // Simulate refresh delay
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>News</Text>
       </View>
 
-      <View style={styles.buttonsContainer}>
+      <View
+        style={styles.buttonsContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}

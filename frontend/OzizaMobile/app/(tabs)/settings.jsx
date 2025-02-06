@@ -243,9 +243,6 @@ const styles = StyleSheet.create({
   },
   settingsLabelContainer: {
     padding: 15,
-    backgroundColor: "#f7f7f7",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

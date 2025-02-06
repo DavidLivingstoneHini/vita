@@ -85,10 +85,11 @@ const Home = () => {
         {isSearchBoxVisible ? (
           <View style={styles.searchBoxContainer}>
             <SearchBox onClose={handleSearchBoxClose} style={styles.searchBox} />
-            <View style={{ width: 8 }} />
+            <View style={styles.closeIconContainer}>
             <TouchableOpacity onPress={handleSearchBoxClose}>
               <Feather name="x" size={20} color="#fff" />
             </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <>
@@ -368,12 +369,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginRight: 20,
     width: "100%",
   },
   searchBox: {
-    width: "90%",
+    width: "55%",
+  },
+  closeIconContainer: {
+    position: 'absolute',
+    right: 10,
+    top: 25,
+    fontSize: 12,
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, TouchableOpacity, Image, FlatList, Text } from "react-native";
+import { View, TextInput, Dimensions, TouchableOpacity, Image, FlatList, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { search } from "../utils/searchUtils";
 import { useNavigation } from "@react-navigation/native";
@@ -16,14 +16,14 @@ const SearchBox = ({ onClose }) => {
       const searchResults = search(text);
       if (searchResults.length > 0) {
         setResults(searchResults);
-        setNoResults(false); // Reset no results flag
+        setNoResults(false); 
       } else {
         setResults([]);
-        setNoResults(true); // Set no results flag
+        setNoResults(true); 
       }
     } else {
       setResults([]);
-      setNoResults(false); // Reset no results flag
+      setNoResults(false); 
     }
   };
 
@@ -32,14 +32,14 @@ const SearchBox = ({ onClose }) => {
       const searchResults = search(searchQuery);
       if (searchResults.length > 0) {
         setResults(searchResults);
-        setNoResults(false); // Reset no results flag
+        setNoResults(false); 
       } else {
         setResults([]);
-        setNoResults(true); // Set no results flag
+        setNoResults(true); 
       }
     } else {
       setResults([]);
-      setNoResults(false); // Reset no results flag
+      setNoResults(false);
     }
   };
 
@@ -105,7 +105,7 @@ const styles = {
     borderRadius: 5,
     borderWidth: 1,
     borderColor: "#ddd",
-    width: 320,
+    width: '90%',
   },
   searchInput: {
     height: 40,
