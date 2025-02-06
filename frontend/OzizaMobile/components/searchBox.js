@@ -1,29 +1,96 @@
 import React, { useState } from "react";
-import { View, TextInput, TouchableOpacity, Image } from "react-native";
+import { View, TextInput, TouchableOpacity, Image, FlatList, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { search } from "../utils/searchUtils";
+import { useNavigation } from "@react-navigation/native";
 
-const SearchBox = ({ onClose, onSubmit }) => {
+const SearchBox = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [noResults, setNoResults] = useState(false); // New state for no results found
+  const navigation = useNavigation();
+
+  const handleQueryChange = (text) => {
+    setSearchQuery(text);
+    if (text.trim() !== "") {
+      const searchResults = search(text);
+      if (searchResults.length > 0) {
+        setResults(searchResults);
+        setNoResults(false); // Reset no results flag
+      } else {
+        setResults([]);
+        setNoResults(true); // Set no results flag
+      }
+    } else {
+      setResults([]);
+      setNoResults(false); // Reset no results flag
+    }
+  };
 
   const handleSearch = () => {
-    onSubmit(searchQuery);
+    if (searchQuery.trim() !== "") {
+      const searchResults = search(searchQuery);
+      if (searchResults.length > 0) {
+        setResults(searchResults);
+        setNoResults(false); // Reset no results flag
+      } else {
+        setResults([]);
+        setNoResults(true); // Set no results flag
+      }
+    } else {
+      setResults([]);
+      setNoResults(false); // Reset no results flag
+    }
+  };
+
+  const handleResultSelect = (result) => {
+    if (result.screen && result.params) {
+      navigation.navigate(result.screen, result.params);
+    } else {
+      console.log("Invalid result selected:", result);
+      // Handle the error or provide feedback to the user
+    }
+    setResults([]); // Clear results after selection
+    setSearchQuery(""); // Clear search query after selection
+    setNoResults(false); // Reset no results flag after selection
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search anything..."
-        value={searchQuery}
-        onChangeText={(text) => setSearchQuery(text)}
-        onSubmitEditing={handleSearch}
-      />
+    <View>
+      <View style={styles.container}>
       <TouchableOpacity
-        style={styles.searchIconContainer}
-        onPress={handleSearch}
-      >
-        <Feather name="search" size={20} color="#666" />
-      </TouchableOpacity>
+          style={styles.searchIconContainer}
+          onPress={handleSearch}
+        >
+          <Feather name="search" size={20} color="#666" />
+        </TouchableOpacity>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search anything..."
+          value={searchQuery}
+          onChangeText={handleQueryChange}
+        />
+        
+      </View>
+      {noResults ? (
+        <Text style={styles.noResultsText}>
+          No results found for your search "{searchQuery}"
+        </Text>
+      ) : results.length > 0 ? (
+        <FlatList
+          style={styles.resultsContainer}
+          data={results}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.resultItem}
+              onPress={() => handleResultSelect(item)}
+            >
+              <Text style={styles.resultTitle}>{item.title}</Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item.title}
+        />
+      ) : null}
     </View>
   );
 };
@@ -38,20 +105,41 @@ const styles = {
     borderRadius: 5,
     borderWidth: 1,
     borderColor: "#ddd",
+    width: 320,
   },
   searchInput: {
-    flex: 1,
     height: 40,
     fontSize: 16,
     paddingHorizontal: 10,
+    width: '100%',
   },
   searchIconContainer: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 5,
   },
   closeIconContainer: {
     position: "absolute",
     right: 10,
     top: 10,
+  },
+  resultsContainer: {
+    marginTop: 10,
+    paddingHorizontal: 10,
+    width: '80%',
+  },
+  resultItem: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  resultTitle: {
+    fontSize: 16,
+    color: "#333",
+  },
+  noResultsText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 10,
   },
 };
 

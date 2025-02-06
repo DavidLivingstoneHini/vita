@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Dimensions,
   ScrollView,
-  TouchableWithoutFeedback,
+  RefreshControl,
 } from "react-native";
 import Swiper from "react-native-swiper";
 import { useNavigation } from "@react-navigation/native";
@@ -53,7 +53,7 @@ const Home = () => {
   const navigation = useNavigation();
   const [isSearchBoxVisible, setIsSearchBoxVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isOutsidePressed, setIsOutsidePressed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleSearchSubmit = (query) => {
     console.log("Searching for:", query);
@@ -65,16 +65,13 @@ const Home = () => {
     setIsSearchBoxVisible(false);
   };
 
-  const handleOutsidePress = () => {
-    setIsOutsidePressed(true);
+  const onRefresh = () => {
+    setRefreshing(true);
+    // TO DO: Implement your refresh logic here (e.g., API calls, data updates)
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000); // Simulate refresh delay
   };
-
-  useEffect(() => {
-    if (isOutsidePressed && isSearchBoxVisible) {
-      handleSearchBoxClose();
-      setIsOutsidePressed(false);
-    }
-  }, [isOutsidePressed, isSearchBoxVisible]);
 
   return (
     <View style={styles.container}>
@@ -87,7 +84,7 @@ const Home = () => {
       >
         {isSearchBoxVisible ? (
           <View style={styles.searchBoxContainer}>
-            <SearchBox onSubmit={handleSearchSubmit} style={styles.searchBox} />
+            <SearchBox onClose={handleSearchBoxClose} style={styles.searchBox} />
             <View style={{ width: 8 }} />
             <TouchableOpacity onPress={handleSearchBoxClose}>
               <Feather name="x" size={20} color="#fff" />
@@ -126,125 +123,128 @@ const Home = () => {
         )}
       </View>
 
-      <TouchableWithoutFeedback onPress={handleOutsidePress}>
-        <View style={{ flex: 1 }}>
-          <ScrollView vertical showsVerticalScrollIndicator={false}>
-            {/* Title and Text with Image Background */}
-            <Swiper
-              style={styles.swiper}
-              showsPagination={false}
-              onIndexChanged={(index) => {
-                setActiveIndex(index);
-              }}
-              autoplay={true}
-              autoplayTimeout={3}
-            >
-              {images.map((image, index) => (
-                <View key={`slide-${index}`} style={styles.slide}>
-                  <ImageBackground
-                    source={image}
-                    style={styles.backgroundImage}
-                  >
-                    <View style={styles.overlay}>
-                      <Text style={styles.title}>
-                        Ghana launches “PharmaDrones”...
-                      </Text>
-                      <Text style={styles.description}>
-                        Ghana has launched a drone system that seeks to
-                        facilitate the delivery of prescriptions, nationwide.
-                      </Text>
-                    </View>
-                  </ImageBackground>
+      <ScrollView
+        vertical
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1, width: "100%" }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Title and Text with Image Background */}
+        <Swiper
+          style={styles.swiper}
+          showsPagination={false}
+          onIndexChanged={(index) => {
+            setActiveIndex(index);
+          }}
+          autoplay={true}
+          autoplayTimeout={3}
+        >
+          {images.map((image, index) => (
+            <View key={`slide-${index}`} style={styles.slide}>
+              <ImageBackground
+                source={image}
+                style={styles.backgroundImage}
+              >
+                <View style={styles.overlay}>
+                  <Text style={styles.title}>
+                    Ghana launches “PharmaDrones”...
+                  </Text>
+                  <Text style={styles.description}>
+                    Ghana has launched a drone system that seeks to facilitate
+                    the delivery of prescriptions, nationwide.
+                  </Text>
                 </View>
-              ))}
-            </Swiper>
-
-            {/* Custom Pagination (Slider Circles) */}
-            <View style={styles.pagination}>
-              {images.map((image, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.paginationCircle,
-                    activeIndex === index && styles.activeCircle,
-                  ]}
-                />
-              ))}
+              </ImageBackground>
             </View>
+          ))}
+        </Swiper>
 
-            {/* Health List Section */}
-            <View style={[styles.listContainer, { marginTop: 16 }]}>
-              <View style={styles.listHeader}>
-                <Text style={styles.listTitle}>Health Conditions</Text>
-                <TouchableOpacity>
-                  <View style={styles.seeMoreContainer}>
-                    <Text style={styles.seeMoreText}>SEE MORE</Text>
-                    <Image
-                      source={chevronIcon}
-                      style={{
-                        width: 13,
-                        height: 13,
-                        marginLeft: 5,
-                        color: "#03053D",
-                      }}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-              <FlatList
-                data={healthListItems}
-                renderItem={({ item }) => (
-                  <View style={styles.listItem}>
-                    <Image source={item.image} style={styles.listItemImage} />
-                    <Text style={styles.listItemTitle}>{item.title}</Text>
-                  </View>
-                )}
-                keyExtractor={(item) => item.id.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              />
-            </View>
-
-            {/* Lifestyle List Section */}
-            <View style={[styles.listContainer, { marginTop: 20 }]}>
-              <View style={styles.listHeader}>
-                <Text style={styles.listTitle}>Inspirations</Text>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("inspiration/index")}
-                >
-                  <View style={styles.seeMoreContainer}>
-                    <Text style={styles.seeMoreText}>SEE MORE</Text>
-                    <Image
-                      source={chevronIcon}
-                      style={{
-                        width: 13,
-                        height: 13,
-                        marginLeft: 5,
-                        color: "#03053D",
-                      }}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-              <FlatList
-                data={lifestyleListItems}
-                renderItem={({ item }) => (
-                  <View style={styles.listlifeItem}>
-                    <Image
-                      source={item.image}
-                      style={styles.listlifeItemImage}
-                    />
-                    {/* <Text style={styles.listItemTitle}>{item.title}</Text> */}
-                  </View>
-                )}
-                keyExtractor={(item) => item.id.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              />
-            </View>
-          </ScrollView>
+        {/* Custom Pagination (Slider Circles) */}
+        <View style={styles.pagination}>
+          {images.map((image, index) => (
+            <View
+              key={index}
+              style={[
+                styles.paginationCircle,
+                activeIndex === index && styles.activeCircle,
+              ]}
+            />
+          ))}
         </View>
-      </TouchableWithoutFeedback>
+
+        {/* Health List Section */}
+        <View style={[styles.listContainer, { marginTop: 16 }]}>
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Health Conditions</Text>
+            <TouchableOpacity>
+              <View style={styles.seeMoreContainer}>
+                <Text style={styles.seeMoreText}>SEE MORE</Text>
+                <Image
+                  source={chevronIcon}
+                  style={{
+                    width: 13,
+                    height: 13,
+                    marginLeft: 5,
+                    color: "#03053D",
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={healthListItems}
+            renderItem={({ item }) => (
+              <View style={styles.listItem}>
+                <Image source={item.image} style={styles.listItemImage} />
+                <Text style={styles.listItemTitle}>{item.title}</Text>
+              </View>
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+
+        {/* Lifestyle List Section */}
+        <View style={[styles.listContainer, { marginTop: 20 }]}>
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Inspirations</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("inspiration/index")}
+            >
+              <View style={styles.seeMoreContainer}>
+                <Text style={styles.seeMoreText}>SEE MORE</Text>
+                <Image
+                  source={chevronIcon}
+                  style={{
+                    width: 13,
+                    height: 13,
+                    marginLeft: 5,
+                    color: "#03053D",
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={lifestyleListItems}
+            renderItem={({ item }) => (
+              <View style={styles.listlifeItem}>
+                <Image
+                  source={item.image}
+                  style={styles.listlifeItemImage}
+                />
+                {/* <Text style={styles.listItemTitle}>{item.title}</Text> */}
+              </View>
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -373,13 +373,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   searchBox: {
-    width: "55%",
-  },
-  closeIcon: {
-    width: "10%",
-    height: 20,
-    color: "#fff",
-    marginRight: 8,
+    width: "90%",
   },
 });
 
