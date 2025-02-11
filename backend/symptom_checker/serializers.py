@@ -41,3 +41,10 @@ class SymptomDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Symptom
         fields = ['id', 'name', 'weight']
+
+class ConditionDetailSerializer(serializers.ModelSerializer):
+    symptoms = SymptomSerializer(many=True, read_only=True)
+    class Meta:
+        model = Disease
+        fields = ['id', 'name', 'description', 'symptoms', 'treatment']
+

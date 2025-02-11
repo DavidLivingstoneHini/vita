@@ -1,11 +1,11 @@
 from django.urls import path
-from.views import (
+from .views import (
     SymptomListView,
     DiseaseListView,
     DiseaseDetailView,
     SymptomDetailView,
     SymptomCheckerView,
-    SymptomCheckerDisclaimerView
+    SymptomCheckerDisclaimerView, ConditionDetailView, SymptomSearchView
 )
 
 urlpatterns = [
@@ -15,5 +15,6 @@ urlpatterns = [
     path('diseases/<int:pk>/', DiseaseDetailView.as_view()),
     path('diagnose/', SymptomCheckerView.as_view()),
     path('diagnose/disclaimer/', SymptomCheckerDisclaimerView.as_view()),
+    path('conditions/<int:condition_id>/', ConditionDetailView.as_view()),
+    path('symptoms/search/', SymptomSearchView.as_view()),
 ]
-
