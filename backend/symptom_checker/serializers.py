@@ -1,20 +1,23 @@
 from rest_framework import serializers
-from.models import Symptom, Disease, Diagnosis, DiseaseSymptom, DiagnosisDisease
+from .models import Symptom, Disease, Diagnosis, DiseaseSymptom, DO_Term
+
 
 class SymptomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Symptom
         fields = ['id', 'name', 'weight']
 
+
 class DiseaseSerializer(serializers.ModelSerializer):
     symptoms = serializers.SerializerMethodField()
 
     class Meta:
         model = Disease
-        fields = ['id', 'name', 'symptoms', 'description']
+        fields = ['id', 'name', 'symptoms', 'description', 'do_term']
 
     def get_symptoms(self, obj):
         return SymptomSerializer(obj.symptoms.all(), many=True).data
+
 
 class DiagnosisSerializer(serializers.ModelSerializer):
     diseases = serializers.SerializerMethodField()
@@ -32,19 +35,14 @@ class DiagnosisSerializer(serializers.ModelSerializer):
             })
         return diseases
 
-class DiseaseDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Disease
-        fields = ['id', 'name', 'description', 'symptoms']
 
-class SymptomDetailSerializer(serializers.ModelSerializer):
+class DO_TermSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Symptom
-        fields = ['id', 'name', 'weight']
+        model = DO_Term
+        fields = ['id', 'do_id', 'name', 'definition']
 
 class ConditionDetailSerializer(serializers.ModelSerializer):
     symptoms = SymptomSerializer(many=True, read_only=True)
     class Meta:
         model = Disease
         fields = ['id', 'name', 'description', 'symptoms', 'treatment']
-
