@@ -1,7 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from.models import Symptom, Disease, Diagnosis, DO_Term, DiagnosisDisease
-from.serializers import SymptomSerializer, DiseaseSerializer, DiagnosisSerializer, DO_TermSerializer, ConditionDetailSerializer
+from .models import Symptom, Disease, Diagnosis, DO_Term, DiagnosisDisease
+from .serializers import SymptomSerializer, DiseaseSerializer, DiagnosisSerializer, DO_TermSerializer, ConditionDetailSerializer
 from django.db.models import Sum, Q
 import spacy
 from sklearn.metrics.pairwise import cosine_similarity
@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Load pre-trained Spacy English Medical Model
 # nlp = spacy.load("en_core_medlg")
 nlp = spacy.load("en_core_web_lg")
+
 class SymptomListView(generics.ListAPIView):
     queryset = Symptom.objects.all()
     serializer_class = SymptomSerializer
@@ -30,17 +31,15 @@ class SymptomCheckerView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         try:
+            diagnosis_obj = serializer.save()  # Create a Diagnosis instance
             symptoms = serializer.validated_data['symptoms']
             potential_diseases = self.get_potential_diseases(symptoms)
-            diagnosis = serializer.save()
             for disease, confidence_score in potential_diseases:
-                DiagnosisDisease.objects.create(diagnosis=diagnosis, disease=disease, confidence_score=confidence_score)
-        except KeyError:
-            return Response({"error": "Symptoms not provided"}, status.HTTP_400_BAD_REQUEST)
+                DiagnosisDisease.objects.create(diagnosis=diagnosis_obj, disease=disease, confidence_score=confidence_score)
         except Exception as e:
             # Log the error and return a response
             print(e)  # Replace with logging
-            return Response({"error": "Internal Server Error"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def get_potential_diseases(self, symptoms):
         symptom_to_do_id_mapping = self.symptom_to_do_id(symptoms)

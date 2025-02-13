@@ -27,6 +27,8 @@ class DiagnosisSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'diseases', 'symptoms']
 
     def get_diseases(self, obj):
+        if isinstance(obj, dict):  # Check if obj is a dict
+            return []
         diseases = []
         for dd in obj.diseases.through.objects.filter(diagnosis=obj):
             diseases.append({
@@ -35,6 +37,10 @@ class DiagnosisSerializer(serializers.ModelSerializer):
             })
         return diseases
 
+    def validate(self, data):
+        if 'symptoms' not in data:
+            raise serializers.ValidationError("Symptoms are required")
+        return data
 
 class DO_TermSerializer(serializers.ModelSerializer):
     class Meta:
