@@ -16,6 +16,7 @@ import Swiper from "react-native-swiper";
 import { useNavigation } from "@react-navigation/native";
 import SearchBox from "../../components/searchBox";
 import { Feather } from "@expo/vector-icons";
+import Header from "../../components/Header";
 
 // Image Sources
 const images = [
@@ -57,6 +58,7 @@ const Home = () => {
   const [isSearchBoxVisible, setIsSearchBoxVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const handleSearchSubmit = (query) => {
     console.log("Searching for:", query);
@@ -77,52 +79,11 @@ const Home = () => {
   return (
     <View style={styles.container}>
       {/* Header Section */}
-      <View
-        style={[
-          styles.header,
-          isSearchBoxVisible ? styles.headerSearchMode : null,
-        ]}
-      >
-        {isSearchBoxVisible ? (
-          <View style={styles.searchBoxContainer}>
-            <SearchBox onClose={handleSearchBoxClose} style={styles.searchBox} />
-            <View style={styles.closeIconContainer}>
-              <TouchableOpacity onPress={handleSearchBoxClose}>
-                <Feather name="x" size={screenWidth * 0.05} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <>
-            <TouchableOpacity onPress={() => setIsSearchBoxVisible(true)}>
-              <Image
-                source={searchIcon}
-                style={{
-                  width: screenWidth * 0.06,
-                  height: screenWidth * 0.06,
-                  color: "#03053D",
-                  marginLeft: screenWidth * 0.02,
-                }}
-              />
-            </TouchableOpacity>
-
-            <Image
-              source={LogoImage}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Image
-              source={notificationsIcon}
-              style={{
-                width: screenWidth * 0.06,
-                height: screenWidth * 0.06,
-                color: "#03053D",
-                marginRight: screenWidth * 0.02,
-              }}
-            />
-          </>
-        )}
-      </View>
+      <Header 
+  isSearchVisible={isSearchVisible}
+  onSearchPress={() => setIsSearchVisible(true)}
+  onSearchClose={() => setIsSearchVisible(false)}
+/>
 
       <ScrollView
         vertical

@@ -45,7 +45,7 @@ function TabLayout() {
             name: "TabLayout",
             state: {
               routes: [
-                { name: 'Home' }
+                { name: 'home' }
               ],
               index: 0,
             }
