@@ -103,7 +103,7 @@ const News = () => {
           </View>
         </View>
 
-        <ScrollView
+        <View
           style={styles.mainContent}
           showsVerticalScrollIndicator={false}
           stickyHeaderIndices={[0]}
@@ -150,9 +150,8 @@ const News = () => {
           </View>
         </ScrollView>
       </View>
-      </ScrollView>
-
       <View style={styles.contentContainer}>{renderContent()}</View>
+      </View>
     </View>
     </SafeAreaView>
  );
@@ -251,6 +250,7 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     paddingVertical: vh * 1.5,
     paddingHorizontal: vw * 4,
+    marginBottom: vh * 1,
   },
   buttonRowsContainer: {
     flexDirection: "column",
@@ -288,7 +288,8 @@ const forYouStyles = StyleSheet.create({
     flex: 1,
   },
   editorsPickContainer: {
-    marginBottom: vh * 3,
+    marginBottom: vh * 2,
+    marginTop: vh * 1, 
   },
   editorsPickTitle: {
     fontWeight: "bold",
