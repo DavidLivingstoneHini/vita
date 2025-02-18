@@ -26,7 +26,5 @@ export const search = (query) => {
     }
   });
 
-  // Add more content types to search as needed
-
   return results;
 };

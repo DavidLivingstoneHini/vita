@@ -48,6 +48,10 @@ export default function RootLayout() {
         name="changepassword/index"
         options={{ title: "changepassword" }}
       />
+      <Stack.Screen
+        name="articles/index"
+        options={{ title: "articles" }}
+      />
     </Stack>
   );
 }

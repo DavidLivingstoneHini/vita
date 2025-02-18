@@ -10,6 +10,7 @@ import {
   Dimensions,
   ScrollView,
   RefreshControl,
+  useWindowDimensions,
 } from "react-native";
 import Swiper from "react-native-swiper";
 import { useNavigation } from "@react-navigation/native";
@@ -35,6 +36,8 @@ const notificationsIcon = require("../../assets/images/notification.png");
 const chevronIcon = require("../../assets/images/chevron.png");
 
 const Home = () => {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  
   const healthListItems = [
     { id: 1, image: ItemImage1, title: "Skin Bleaching" },
     { id: 2, image: ItemImage2, title: "Hypertension" },
@@ -57,7 +60,6 @@ const Home = () => {
 
   const handleSearchSubmit = (query) => {
     console.log("Searching for:", query);
-    // TO DO: Implement app-wide search logic here
     setSearchQuery(query);
   };
 
@@ -67,10 +69,9 @@ const Home = () => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    // TO DO: Implement your refresh logic here (e.g., API calls, data updates)
     setTimeout(() => {
       setRefreshing(false);
-    }, 2000); // Simulate refresh delay
+    }, 2000);
   };
 
   return (
@@ -86,9 +87,9 @@ const Home = () => {
           <View style={styles.searchBoxContainer}>
             <SearchBox onClose={handleSearchBoxClose} style={styles.searchBox} />
             <View style={styles.closeIconContainer}>
-            <TouchableOpacity onPress={handleSearchBoxClose}>
-              <Feather name="x" size={20} color="#fff" />
-            </TouchableOpacity>
+              <TouchableOpacity onPress={handleSearchBoxClose}>
+                <Feather name="x" size={screenWidth * 0.05} color="#fff" />
+              </TouchableOpacity>
             </View>
           </View>
         ) : (
@@ -97,15 +98,14 @@ const Home = () => {
               <Image
                 source={searchIcon}
                 style={{
-                  width: 25,
-                  height: 25,
+                  width: screenWidth * 0.06,
+                  height: screenWidth * 0.06,
                   color: "#03053D",
-                  marginLeft: 8,
+                  marginLeft: screenWidth * 0.02,
                 }}
               />
             </TouchableOpacity>
 
-            {/* **Logo Image** */}
             <Image
               source={LogoImage}
               style={styles.logo}
@@ -114,10 +114,10 @@ const Home = () => {
             <Image
               source={notificationsIcon}
               style={{
-                width: 25,
-                height: 25,
+                width: screenWidth * 0.06,
+                height: screenWidth * 0.06,
                 color: "#03053D",
-                marginRight: 8,
+                marginRight: screenWidth * 0.02,
               }}
             />
           </>
@@ -150,7 +150,7 @@ const Home = () => {
               >
                 <View style={styles.overlay}>
                   <Text style={styles.title}>
-                    Ghana launches “PharmaDrones”...
+                    Ghana launches "PharmaDrones"...
                   </Text>
                   <Text style={styles.description}>
                     Ghana has launched a drone system that seeks to facilitate
@@ -162,7 +162,7 @@ const Home = () => {
           ))}
         </Swiper>
 
-        {/* Custom Pagination (Slider Circles) */}
+        {/* Custom Pagination */}
         <View style={styles.pagination}>
           {images.map((image, index) => (
             <View
@@ -176,7 +176,7 @@ const Home = () => {
         </View>
 
         {/* Health List Section */}
-        <View style={[styles.listContainer, { marginTop: 16 }]}>
+        <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Health Conditions</Text>
             <TouchableOpacity>
@@ -185,8 +185,8 @@ const Home = () => {
                 <Image
                   source={chevronIcon}
                   style={{
-                    width: 13,
-                    height: 13,
+                    width: screenWidth * 0.03,
+                    height: screenWidth * 0.03,
                     marginLeft: 5,
                     color: "#03053D",
                   }}
@@ -209,7 +209,7 @@ const Home = () => {
         </View>
 
         {/* Lifestyle List Section */}
-        <View style={[styles.listContainer, { marginTop: 20 }]}>
+        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Inspirations</Text>
             <TouchableOpacity
@@ -220,8 +220,8 @@ const Home = () => {
                 <Image
                   source={chevronIcon}
                   style={{
-                    width: 13,
-                    height: 13,
+                    width: screenWidth * 0.03,
+                    height: screenWidth * 0.03,
                     marginLeft: 5,
                     color: "#03053D",
                   }}
@@ -237,7 +237,6 @@ const Home = () => {
                   source={item.image}
                   style={styles.listlifeItemImage}
                 />
-                {/* <Text style={styles.listItemTitle}>{item.title}</Text> */}
               </View>
             )}
             keyExtractor={(item) => item.id.toString()}
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 12,
+    padding: Dimensions.get('window').width * 0.03,
     borderBottomWidth: 1,
     borderBottomColor: "#000000",
     backgroundColor: "#000000",
@@ -267,44 +266,45 @@ const styles = StyleSheet.create({
   headerSearchMode: {
     justifyContent: "center",
     alignItems: "center",
-    padding: 10,
+    padding: Dimensions.get('window').width * 0.025,
   },
   logo: {
-    width: 98,
-    height: 39,
+    width: Dimensions.get('window').width * 0.25,
+    height: Dimensions.get('window').height * 0.05,
+    resizeMode: 'contain',
   },
   backgroundImage: {
     width: "100%",
-    height: 200,
+    height: Dimensions.get('window').height * 0.25,
     justifyContent: "flex-end",
   },
   overlay: {
     backgroundColor: "rgba(226, 213, 213, 0.5)",
-    padding: 10,
-    margin: 10,
+    padding: Dimensions.get('window').width * 0.025,
+    margin: Dimensions.get('window').width * 0.025,
     width: "95%",
   },
   title: {
     color: "black",
-    fontSize: 16,
-    fontWeight: 700,
+    fontSize: Dimensions.get('window').width * 0.04,
+    fontWeight: "700",
   },
   description: {
     color: "black",
-    fontSize: 14,
+    fontSize: Dimensions.get('window').width * 0.035,
   },
   listContainer: {
-    padding: 10,
+    padding: Dimensions.get('window').width * 0.025,
   },
   listHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: Dimensions.get('window').height * 0.012,
   },
   listTitle: {
-    fontSize: 16,
-    fontWeight: 700,
+    fontSize: Dimensions.get('window').width * 0.04,
+    fontWeight: "700",
     color: "#0C1549",
   },
   seeMoreContainer: {
@@ -312,36 +312,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   seeMoreText: {
-    fontSize: 8,
-    fontWeight: 700,
+    fontSize: Dimensions.get('window').width * 0.02,
+    fontWeight: "700",
     color: "black",
   },
   listItem: {
-    width: 120,
-    marginRight: 10,
+    width: Dimensions.get('window').width * 0.3,
+    marginRight: Dimensions.get('window').width * 0.025,
   },
   listItemImage: {
-    width: 115,
-    height: 130,
+    width: Dimensions.get('window').width * 0.28,
+    height: Dimensions.get('window').width * 0.32,
     borderRadius: 6,
   },
   listItemTitle: {
-    fontSize: 12,
-    fontWeight: 600,
+    fontSize: Dimensions.get('window').width * 0.03,
+    fontWeight: "600",
     textAlign: "center",
     color: "#0C1549",
   },
   listlifeItem: {
-    width: 330,
-    marginRight: 6,
+    width: Dimensions.get('window').width * 0.85,
+    marginRight: Dimensions.get('window').width * 0.015,
   },
   listlifeItemImage: {
-    width: 320,
-    height: 240,
+    width: Dimensions.get('window').width * 0.82,
+    height: Dimensions.get('window').width * 0.6,
     borderRadius: 8,
   },
   swiper: {
-    height: 200,
+    height: Dimensions.get('window').height * 0.25,
   },
   slide: {
     flex: 1,
@@ -350,12 +350,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: Dimensions.get('window').height * 0.012,
   },
   paginationCircle: {
-    width: 12,
-    height: 12,
-    borderRadius: "100%",
+    width: Dimensions.get('window').width * 0.03,
+    height: Dimensions.get('window').width * 0.03,
+    borderRadius: Dimensions.get('window').width * 0.015,
     borderWidth: 2,
     borderColor: "#ccc",
     marginHorizontal: 3,
@@ -364,13 +364,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#000000",
   },
   searchBoxContainer: {
-    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginRight: 20,
+    paddingVertical: Dimensions.get('window').height * 0.01,
+    paddingHorizontal: Dimensions.get('window').width * 0.04,
+    marginRight: Dimensions.get('window').width * 0.05,
     width: "100%",
   },
   searchBox: {
@@ -378,9 +377,9 @@ const styles = StyleSheet.create({
   },
   closeIconContainer: {
     position: 'absolute',
-    right: 10,
-    top: 25,
-    fontSize: 12,
+    right: Dimensions.get('window').width * 0.03,
+    top: Dimensions.get('window').height * 0.03,
+    fontSize: Dimensions.get('window').width * 0.03,
   },
 });
 

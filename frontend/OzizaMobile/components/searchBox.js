@@ -44,15 +44,15 @@ const SearchBox = ({ onClose }) => {
   };
 
   const handleResultSelect = (result) => {
+    console.log("Selected result:", result);
     if (result.screen && result.params) {
       navigation.navigate(result.screen, result.params);
+      setResults([]);
+      setSearchQuery("");
+      setNoResults(false);
     } else {
       console.log("Invalid result selected:", result);
-      // Handle the error or provide feedback to the user
     }
-    setResults([]); // Clear results after selection
-    setSearchQuery(""); // Clear search query after selection
-    setNoResults(false); // Reset no results flag after selection
   };
 
   return (

@@ -4,7 +4,7 @@ import { Text, View } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
 export default function Index() {
-  const [redirectTo, setRedirectTo] = useState("onboarding1"); // Default redirect
+  const [redirectTo, setRedirectTo] = useState("/(tabs)/home"); // Default redirect
 
   useEffect(() => {
     const checkIfRegistered = async () => {

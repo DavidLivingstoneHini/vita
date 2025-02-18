@@ -41,7 +41,15 @@ function TabLayout() {
       if (route.params?.reset) {
         navigation.reset({
           index: 2,
-          routes: [{ name: "TabLayout" }],
+          routes: [{ 
+            name: "TabLayout",
+            state: {
+              routes: [
+                { name: 'Home' }
+              ],
+              index: 0,
+            }
+          }],
         });
       }
     }, [navigation, route])

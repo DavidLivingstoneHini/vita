@@ -54,11 +54,9 @@ export default function LoginScreen() {
         expirationTime.toString()
       );
 
-      router.push("/(tabs)/home", {
-        params: {
-          reset: true,
-        },
-      });
+      router.push("/(tabs)", {
+        screen: "home"
+      });s
     } catch (error) {
       console.error("Sign-in error:", error?.message || "Unknown error");
       const errorMessage = getErrorMessage(error);
