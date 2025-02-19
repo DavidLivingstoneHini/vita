@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
@@ -13,7 +12,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
-import Toast from "react-native-simple-toast";
+import Toast from 'react-native-toast-message';
 
 export default function SignUpScreen() {
   const [passwordVisibility, setPasswordVisibility] = React.useState(true);
@@ -65,16 +64,25 @@ export default function SignUpScreen() {
         expirationTime.toString()
       );
 
-      // Alert.alert(
-      //   "Success",
-      //   "Sign-up successful! Please log in with your credentials."
-      // );
-      Toast.show("sign-up successful, please log in with your credentials");
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Sign-up successful! Please log in with your credentials.',
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
+      
       router.push("/login");
     } catch (error) {
       console.error("Sign-up error:", error?.message || "Unknown error");
       const errorMessage = getErrorMessage(error);
-      Toast.show(errorMessage, Toast.LONG);
+      Toast.show({
+        type: 'error',
+        text1: 'Sign-up Error',
+        text2: errorMessage,
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
     } finally {
       setLoading(false);
     }

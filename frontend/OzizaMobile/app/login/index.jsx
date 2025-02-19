@@ -5,16 +5,15 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
+import Toast from 'react-native-toast-message';
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
-import Toast from "react-native-simple-toast";
 
 export default function LoginScreen() {
   const [passwordVisibility, setPasswordVisibility] = React.useState(true);
@@ -56,11 +55,17 @@ export default function LoginScreen() {
 
       router.push("/(tabs)", {
         screen: "home"
-      });s
+      });
     } catch (error) {
       console.error("Sign-in error:", error?.message || "Unknown error");
       const errorMessage = getErrorMessage(error);
-      Toast.show(errorMessage, Toast.LONG);
+      Toast.show({
+        type: 'error',
+        text1: 'Login Error',
+        text2: errorMessage,
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
     } finally {
       setLoading(false);
     }

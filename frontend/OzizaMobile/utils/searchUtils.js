@@ -6,18 +6,23 @@ export const search = (query) => {
 
   // Search articles
   dataStore.articles.forEach((article) => {
-    if (article.title.toLowerCase().includes(lowerCaseQuery) || article.content.toLowerCase().includes(lowerCaseQuery)) {
+    if (article.title.toLowerCase().includes(lowerCaseQuery) || 
+        article.content.toLowerCase().includes(lowerCaseQuery)) {
       results.push({
         title: article.title,
-        screen: article.screen,
-        params: article.params,
+        // Change the screen name to match your navigation setup
+        screen: "articles/index", // This should match the screen name in your navigation
+        params: {
+          articleId: article.id
+        },
       });
     }
   });
 
   // Search health conditions
   dataStore.healthConditions.forEach((condition) => {
-    if (condition.title.toLowerCase().includes(lowerCaseQuery) || condition.description.toLowerCase().includes(lowerCaseQuery)) {
+    if (condition.title.toLowerCase().includes(lowerCaseQuery) || 
+        condition.description.toLowerCase().includes(lowerCaseQuery)) {
       results.push({
         title: condition.title,
         screen: condition.screen,
