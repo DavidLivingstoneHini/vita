@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
   useFocusEffect,
@@ -24,6 +24,26 @@ import moreIconFocused from "../../assets/images/more-icon-focused.png";
 
 const Tab = createBottomTabNavigator();
 
+// Screen dimensions
+const { width, height } = Dimensions.get("window");
+
+// Responsive font size function
+const responsiveFontSize = (size) => {
+  const scaleFactor = width / 375; // Base width: iPhone SE
+  const newSize = size * scaleFactor;
+  return Math.ceil(newSize);
+};
+
+// Responsive height function
+const responsiveHeight = (h) => {
+  return height * (h / 812); // Assuming base height of 812 (iPhone XS Max)
+};
+
+// Responsive width function
+const responsiveWidth = (w) => {
+  return width * (w / 375); // Assuming base width of 375 (iPhone SE)
+};
+
 function DiscoverScreen() {
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -41,15 +61,15 @@ function TabLayout() {
       if (route.params?.reset) {
         navigation.reset({
           index: 2,
-          routes: [{ 
-            name: "TabLayout",
-            state: {
-              routes: [
-                { name: 'home' }
-              ],
-              index: 0,
-            }
-          }],
+          routes: [
+            {
+              name: "TabLayout",
+              state: {
+                routes: [{ name: "home" }],
+                index: 0,
+              },
+            },
+          ],
         });
       }
     }, [navigation, route])
@@ -63,7 +83,8 @@ function TabLayout() {
         tabBarActiveTintColor: "#000000",
         tabBarInactiveTintColor: "#828282",
         tabBarStyle: {
-          height: 65,
+          height: responsiveHeight(70),
+          paddingHorizontal: responsiveWidth(15),
         },
       }}
     >
@@ -75,8 +96,8 @@ function TabLayout() {
             <Image
               source={focused ? libraryIconFocused : libraryIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: responsiveWidth(24), // Responsive icon width
+                height: responsiveHeight(24), // Responsive icon height
                 resizeMode: "contain",
                 tintColor: color,
               }}
@@ -84,8 +105,8 @@ function TabLayout() {
           ),
           tabBarLabel: "Library",
           tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
+            fontSize: responsiveFontSize(11.5),
+            fontWeight: "500",
           },
         })}
       />
@@ -97,8 +118,8 @@ function TabLayout() {
             <Image
               source={focused ? newsIconFocused : newsIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: responsiveWidth(24), // Responsive icon width
+                height: responsiveHeight(24), // Responsive icon height
                 resizeMode: "contain",
                 tintColor: color,
               }}
@@ -106,8 +127,8 @@ function TabLayout() {
           ),
           tabBarLabel: "News",
           tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
+            fontSize: responsiveFontSize(11.5),
+            fontWeight: "500",
           },
         })}
       />
@@ -119,8 +140,8 @@ function TabLayout() {
             <Image
               source={focused ? homeIconFocused : homeIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: responsiveWidth(24), // Responsive icon width
+                height: responsiveHeight(24), // Responsive icon height
                 resizeMode: "contain",
                 tintColor: color,
               }}
@@ -128,8 +149,8 @@ function TabLayout() {
           ),
           tabBarLabel: "Home",
           tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
+            fontSize: responsiveFontSize(11.5),
+            fontWeight: "500",
           },
         })}
       />
@@ -141,8 +162,8 @@ function TabLayout() {
             <Image
               source={focused ? discoverIconFocused : discoverIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: responsiveWidth(24), // Responsive icon width
+                height: responsiveHeight(24), // Responsive icon height
                 resizeMode: "contain",
                 tintColor: color,
               }}
@@ -150,8 +171,8 @@ function TabLayout() {
           ),
           tabBarLabel: "Discover",
           tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
+            fontSize: responsiveFontSize(11.5),
+            fontWeight: "500",
           },
         })}
       />
@@ -163,8 +184,8 @@ function TabLayout() {
             <Image
               source={focused ? moreIconFocused : moreIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: responsiveWidth(24), // Responsive icon width
+                height: responsiveHeight(24), // Responsive icon height
                 resizeMode: "contain",
                 tintColor: color,
               }}
@@ -172,8 +193,8 @@ function TabLayout() {
           ),
           tabBarLabel: "Settings",
           tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
+            fontSize: responsiveFontSize(11.5),
+            fontWeight: "500",
           },
         })}
       />
@@ -182,3 +203,4 @@ function TabLayout() {
 }
 
 export default TabLayout;
+
