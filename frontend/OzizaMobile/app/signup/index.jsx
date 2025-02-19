@@ -6,6 +6,11 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
+  ScrollView,
+  SafeAreaView,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -13,6 +18,8 @@ import { Link, useRouter } from "expo-router";
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
 import Toast from 'react-native-toast-message';
+
+const { width, height } = Dimensions.get('window');
 
 export default function SignUpScreen() {
   const [passwordVisibility, setPasswordVisibility] = React.useState(true);
@@ -52,11 +59,9 @@ export default function SignUpScreen() {
 
       console.log("Response from server:", response);
 
-      // Save tokens to SecureStore
       await SecureStore.setItemAsync("access_token", response.access);
       await SecureStore.setItemAsync("refresh_token", response.refresh);
 
-      // Calculate and store expiration time
       const expiresIn = response.expires_in;
       const expirationTime = new Date(expiresIn).getTime();
       await SecureStore.setItemAsync(
@@ -88,10 +93,8 @@ export default function SignUpScreen() {
     }
   };
 
-  // Helper function to extract or generate a user-friendly error message
   const getErrorMessage = (error) => {
     if (error.response && error.response.data) {
-      // Assuming your API returns error details in the response data
       return error?.message || "Invalid email or password";
     } else {
       return "An unknown error occurred. Please try again.";
@@ -99,311 +102,294 @@ export default function SignUpScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          paddingHorizontal: 15,
-          paddingVertical: 10,
-          borderBottomWidth: 1,
-          borderBottomColor: "#ddd",
-        }}
-      >
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
         <TouchableOpacity>
           <AntDesign name="arrowleft" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={{ fontSize: 16, fontWeight: "bold", marginLeft: 14 }}>
-          Sign up
-        </Text>
+        <Text style={styles.headerText}>Sign up</Text>
       </View>
 
-      {/* Logo Section */}
-      <View
-        style={{
-          alignItems: "center",
-          marginVertical: 20,
-          flexDirection: "column",
-          top: 4,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <Image
-          source={require("../../assets/images/oziza.png")}
-          style={{ width: 146, height: 58 }}
-          resizeMode="contain"
-        />
-        <Text
-          style={{
-            fontSize: 14,
-            marginTop: -8,
-            marginLeft: 40,
-            color: "#525252",
-          }}
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          ...health, for all
-        </Text>
-      </View>
-
-      {/* Input Fields */}
-      <View style={{ paddingHorizontal: 20, marginBottom: 20, marginTop: 4 }}>
-        <View
-          style={{ paddingHorizontal: 10, paddingVertical: 1, marginBottom: 5 }}
-        >
-          <TextInput
-            style={{
-              height: 50,
-              borderColor: "gray",
-              borderWidth: 1,
-              paddingHorizontal: 10,
-              marginVertical: 2,
-              borderRadius: 5,
-            }}
-            placeholder="Name"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-        </View>
-        <View
-          style={{ paddingHorizontal: 10, paddingVertical: 1, marginBottom: 5 }}
-        >
-          <TextInput
-            style={{
-              height: 50,
-              borderColor: "gray",
-              borderWidth: 1,
-              paddingHorizontal: 10,
-              marginVertical: 2,
-              borderRadius: 5,
-            }}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-          />
-        </View>
-        <View
-          style={{ paddingHorizontal: 10, paddingVertical: 1, marginBottom: 5 }}
-        >
-          <TextInput
-            style={{
-              height: 50,
-              borderColor: "gray",
-              borderWidth: 1,
-              paddingHorizontal: 10,
-              marginVertical: 2,
-              borderRadius: 5,
-            }}
-            placeholder="Phone number"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-          />
-        </View>
-        <View
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 1,
-            marginBottom: 10,
-          }}
-        >
-          <TextInput
-            style={{
-              height: 50,
-              borderColor: "gray",
-              borderWidth: 1,
-              paddingHorizontal: 10,
-              marginVertical: 2,
-              borderRadius: 5,
-            }}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={passwordVisibility}
-          />
-          <TouchableOpacity
-            style={{
-              position: "absolute",
-              right: 20,
-              top: 16,
-              color: "gray",
-            }}
-            onPress={() => setPasswordVisibility(!passwordVisibility)}
-          >
-            {passwordVisibility ? (
-              <MaterialCommunityIcons
-                name="eye-off"
-                size={24}
-                color="#808080"
-              />
-            ) : (
-              <MaterialCommunityIcons name="eye" size={24} color="#808080" />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Repeat Password Field */}
-        <View
-          style={{
-            paddingHorizontal: 10,
-            paddingVertical: 1,
-            marginBottom: 10,
-          }}
-        >
-          <TextInput
-            style={{
-              height: 50,
-              borderColor: "gray",
-              borderWidth: 1,
-              paddingHorizontal: 10,
-              marginVertical: 2,
-              borderRadius: 5,
-            }}
-            placeholder="Repeat Password"
-            value={repeatPassword}
-            onChangeText={(text) => {
-              setRepeatPassword(text);
-              setPasswordMatch(text === password);
-            }}
-            secureTextEntry={passwordVisibility2}
-          />
-          <TouchableOpacity
-            style={{
-              position: "absolute",
-              right: 20,
-              top: 16,
-              color: "gray",
-            }}
-            onPress={() => setPasswordVisibility2(!passwordVisibility2)}
-          >
-            {passwordVisibility2 ? (
-              <MaterialCommunityIcons
-                name="eye-off"
-                size={24}
-                color="#808080"
-              />
-            ) : (
-              <MaterialCommunityIcons name="eye" size={24} color="#808080" />
-            )}
-          </TouchableOpacity>
-          {!passwordMatch && repeatPassword.length > 0 && (
-            <Text style={{ color: "red", fontSize: 12 }}>
-              Passwords do not match.
-            </Text>
-          )}
-        </View>
-      </View>
-
-      {/* Sign Up Button */}
-      <View style={{ marginHorizontal: 20, marginBottom: 15 }}>
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#000",
-            paddingVertical: 12,
-            alignItems: "center",
-            borderRadius: 5,
-          }}
-          onPress={handleSignUp}
-          disabled={loading || !passwordMatch}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={{ color: "#fff", fontSize: 14, fontWeight: 700 }}>
-              Sign Up
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Alternative Sign In Options */}
-      <View style={{ alignItems: "center", marginBottom: 6 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: 10,
-            marginHorizontal: 40,
-          }}
-        >
-          <View style={{ flex: 1, height: 1, backgroundColor: "#D9D9D9" }} />
-          <Text
-            style={{ marginHorizontal: 10, fontSize: 16, color: "#6F6F6F" }}
-          >
-            or
-          </Text>
-          <View style={{ flex: 1, height: 1, backgroundColor: "#D9D9D9" }} />
-        </View>
-
-        <View
-          style={{
-            flexDirection: "column",
-            alignItems: "center",
-            width: "90%",
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              borderRadius: 5,
-              paddingVertical: 9,
-              paddingHorizontal: 20,
-              width: "98%",
-              borderColor: "#ccc",
-              borderWidth: 1,
-              marginVertical: 5,
-              alignSelf: "center",
-            }}
-          >
+          <View style={styles.logoContainer}>
             <Image
-              source={require("../../assets/images/devicon_google.png")}
-              style={{ width: 24, height: 24 }}
+              source={require("../../assets/images/oziza.png")}
+              style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={{ fontSize: 14, marginLeft: 60, color: "#6F6F6F" }}>
-              Continue with Google
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              borderRadius: 5,
-              paddingVertical: 9,
-              paddingHorizontal: 20,
-              width: "98%",
-              borderColor: "#ccc",
-              borderWidth: 1,
-              marginVertical: 5,
-              alignSelf: "center",
-            }}
-          >
-            <Image
-              source={require("../../assets/images/logos_facebook.png")}
-              style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-            />
-            <Text style={{ fontSize: 14, marginLeft: 60, color: "#6F6F6F" }}>
-              Continue with Facebook
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <Text style={styles.logoText}>...health, for all</Text>
+          </View>
 
-      {/* Sign Up Prompt */}
-      <View
-        style={{
-          justifyContent: "center",
-          alignItems: "center",
-          marginVertical: 20,
-        }}
-      >
-        <Text>
-          Already have an account?{" "}
-          <Text style={{ color: "#525252", fontWeight: 700, fontSize: 14 }}>
-            <Link href="/login">Sign in</Link>
-          </Text>
-        </Text>
-      </View>
-    </View>
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Name"
+                value={fullName}
+                onChangeText={setFullName}
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Phone number"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+              />
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={passwordVisibility}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setPasswordVisibility(!passwordVisibility)}
+              >
+                <MaterialCommunityIcons
+                  name={passwordVisibility ? "eye-off" : "eye"}
+                  size={24}
+                  color="#808080"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Repeat Password"
+                value={repeatPassword}
+                onChangeText={(text) => {
+                  setRepeatPassword(text);
+                  setPasswordMatch(text === password);
+                }}
+                secureTextEntry={passwordVisibility2}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setPasswordVisibility2(!passwordVisibility2)}
+              >
+                <MaterialCommunityIcons
+                  name={passwordVisibility2 ? "eye-off" : "eye"}
+                  size={24}
+                  color="#808080"
+                />
+              </TouchableOpacity>
+              {!passwordMatch && repeatPassword.length > 0 && (
+                <Text style={styles.errorText}>Passwords do not match.</Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={styles.signUpButton}
+              onPress={handleSignUp}
+              disabled={loading || !passwordMatch}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Sign Up</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.alternativeSignIn}>
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.orText}>or</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <View style={styles.socialButtonsContainer}>
+              <TouchableOpacity style={styles.socialButton}>
+                <Image
+                  source={require("../../assets/images/devicon_google.png")}
+                  style={styles.socialIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.socialButtonText}>Continue with Google</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.socialButton}>
+                <Image
+                  source={require("../../assets/images/logos_facebook.png")}
+                  style={styles.socialIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.socialButtonText}>Continue with Facebook</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.signInPrompt}>
+            <Text>
+              Already have an account?{" "}
+              <Text style={styles.signInLink}>
+                <Link href="/login">Sign in</Link>
+              </Text>
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+const styles = {
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  headerText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 14,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginVertical: height * 0.02,
+    paddingTop: height * 0.01,
+  },
+  logo: {
+    width: width * 0.4,
+    height: height * 0.06,
+  },
+  logoText: {
+    fontSize: 14,
+    marginTop: -8,
+    marginLeft: 40,
+    color: "#525252",
+  },
+  inputContainer: {
+    paddingHorizontal: width * 0.05,
+    marginBottom: height * 0.02,
+  },
+  inputWrapper: {
+    paddingHorizontal: 10,
+    paddingVertical: 1,
+    marginBottom: height * 0.01,
+  },
+  input: {
+    height: height * 0.06,
+    borderColor: "gray",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    marginVertical: 2,
+    borderRadius: 5,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 20,
+    top: "30%",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  buttonContainer: {
+    marginHorizontal: width * 0.05,
+    marginBottom: height * 0.02,
+  },
+  signUpButton: {
+    backgroundColor: "#000",
+    paddingVertical: height * 0.015,
+    alignItems: "center",
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  alternativeSignIn: {
+    alignItems: "center",
+    marginBottom: height * 0.01,
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: height * 0.01,
+    width: "80%",
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#D9D9D9",
+  },
+  orText: {
+    marginHorizontal: 10,
+    fontSize: 16,
+    color: "#6F6F6F",
+  },
+  socialButtonsContainer: {
+    flexDirection: "column",
+    alignItems: "center",
+    width: "90%",
+  },
+  socialButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 5,
+    paddingVertical: height * 0.012,
+    paddingHorizontal: width * 0.05,
+    width: "98%",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    marginVertical: 5,
+  },
+  socialIcon: {
+    width: 24,
+    height: 24,
+  },
+  socialButtonText: {
+    fontSize: 14,
+    marginLeft: width * 0.15,
+    color: "#6F6F6F",
+  },
+  signInPrompt: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: height * 0.02,
+  },
+  signInLink: {
+    color: "#525252",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+};

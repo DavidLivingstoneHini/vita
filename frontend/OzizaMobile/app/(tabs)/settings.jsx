@@ -3,13 +3,26 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View, 
+  View,
   TouchableOpacity,
   Image,
+  Dimensions, // Import Dimensions
+  PixelRatio
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { Link, useRouter } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
+
+// Get screen dimensions
+const { width, height } = Dimensions.get('window');
+
+// Responsive Font Size Function (optional, but helpful)
+const responsiveFontSize = (size) => {
+  const scaleFactor = width / 375; // Assuming a base width of 375 (iPhone SE)
+  const newSize = size * scaleFactor;
+  return Math.ceil(newSize); // Round to nearest whole number
+};
+
 
 const SettingsPage = () => {
   const [userName, setUserName] = useState("Swae Stone");
@@ -187,7 +200,7 @@ const SettingsPage = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Notifications */}
+        {/* Language & Regional Settings */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>LANGUAGE & REGIONAL SETTINGS</Text>
           <TouchableOpacity
@@ -242,99 +255,103 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   settingsLabelContainer: {
-    padding: 15,
+    paddingVertical: height * 0.02,   // 2% of screen height for vertical padding
+    paddingHorizontal: width * 0.04,  // 4% of screen width for horizontal padding
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   settingsLabel: {
-    fontSize: 18,
-    fontWeight: 700,
+    fontSize: responsiveFontSize(18), // Use responsive font size
+    fontWeight: "700",
+    // Add minimum and maximum font size constraints
+    fontSize: Math.max(Math.min(responsiveFontSize(18), 22), 16),
   },
   iconContainer: {
-    padding: 10,
+    padding: width * 0.02, // Responsive padding (2% of screen width)
   },
   icon: {
-    width: 20,
-    height: 20,
+    width: width * 0.05, // Responsive width (5% of screen width)
+    height: width * 0.05, // Responsive height (5% of screen width)
   },
   profileContainer: {
     flexDirection: "row",
-    padding: 20,
+    padding: width * 0.05, // Responsive padding (5% of screen width)
     alignItems: "center",
   },
   customProfilePicture: {
-    width: 75,
-    height: 75,
-    borderRadius: 100,
+    width: width * 0.2, // Responsive width (20% of screen width)
+    height: width * 0.2, // Responsive height (20% of screen width)
+    borderRadius: width * 0.1, // Responsive border radius (10% of screen width)
     backgroundColor: "#333",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: width * 0.04, // Responsive margin (4% of screen width)
   },
   initials: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14), // Use responsive font size
     color: "#fff",
   },
   profileInfo: {
     justifyContent: "center",
   },
   profileName: {
-    fontSize: 16,
-    fontWeight: 500,
+    fontSize: responsiveFontSize(16), // Use responsive font size
+    fontWeight: "500",
     color: "#0A0A0A",
   },
   profileEmail: {
-    fontSize: 12,
-    fontWeight: 400,
+    fontSize: responsiveFontSize(12), // Use responsive font size
+    fontWeight: "400",
     color: "#828282",
   },
   separator: {
     height: 1,
     backgroundColor: "#ddd",
-    marginVertical: 15,
+    marginVertical: height * 0.02, // Responsive margin (2% of screen height)
   },
   sectionContainer: {
-    marginHorizontal: 20,
-    marginBottom: 20,
+    marginHorizontal: width * 0.05, // Responsive margin (5% of screen width)
+    marginBottom: height * 0.02, // Responsive margin (2% of screen height)
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: 400,
+    fontSize: responsiveFontSize(12), // Use responsive font size
+    fontWeight: "400",
     color: "#828282",
-    marginBottom: 10,
+    marginBottom: height * 0.01, // Responsive margin (1% of screen height)
   },
   listItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: height * 0.01, // Responsive padding (1% of screen height)
   },
   listItemText: {
-    fontSize: 16,
-    fontWeight: 500,
+    fontSize: responsiveFontSize(16), // Use responsive font size
+    fontWeight: "500",
     color: "#0A0A0A",
   },
   arrowIcon: {
-    width: 20,
-    height: 20,
+    width: width * 0.05, // Responsive width (5% of screen width)
+    height: width * 0.05, // Responsive height (5% of screen width)
   },
   listItemSeparator: {
     height: 1,
     backgroundColor: "#ccc",
-    marginHorizontal: 15,
+    marginHorizontal: width * 0.04, // Responsive margin (4% of screen width)
   },
   logoutButton: {
-    margin: 20,
-    padding: 12,
+    margin: width * 0.05, // Responsive margin (5% of screen width)
+    padding: width * 0.03, // Responsive padding (3% of screen width)
     backgroundColor: "#000",
     borderRadius: 5,
     alignItems: "center",
   },
   logoutButtonText: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16), // Use responsive font size
     color: "#fff",
   },
 });
 
 export default SettingsPage;
+
