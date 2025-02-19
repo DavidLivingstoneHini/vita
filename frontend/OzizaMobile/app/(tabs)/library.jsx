@@ -1,3 +1,4 @@
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -5,12 +6,29 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Dimensions,
+  PixelRatio,
+  Platform,
 } from "react-native";
-import React, { useState, useRef } from "react";
+
+// Screen Dimensions
+const { width, height } = Dimensions.get("window");
+
+// Scaling function
+const scale = (size) => (width / 375) * size; // Assuming a base width of 375 (iPhone X)
+
+// Function to get safe area top padding
+const getSafeAreaTop = () => {
+  if (Platform.OS === "ios") {
+    return 40; // Adjust this value as needed for iOS
+  }
+  return 20; // Default value for Android
+};
 
 export default function Library() {
   const [selectedAlphabet, setSelectedAlphabet] = useState(null);
   const glossaryListRef = useRef(null);
+  const alphabetRefs = useRef({}); // Ref to store references to alphabet sections
 
   // Dummy data for categories
   const categories = Array.from({ length: 10 }, (_, i) => ({
@@ -134,12 +152,21 @@ export default function Library() {
 
   const scrollToAlphabet = (alphabet) => {
     setSelectedAlphabet(alphabet);
-    if (glossaryListRef.current) {
-      const alphabetIndex = glossary.alphabets.indexOf(alphabet);
-      glossaryListRef.current.scrollTo({
-        y: alphabetIndex * 120,
-        animated: true,
-      }); // updated height to 120
+
+    if (alphabetRefs.current[alphabet]) {
+      alphabetRefs.current[alphabet].measureLayout(
+        glossaryListRef.current,
+        (x, y) => {
+          glossaryListRef.current.scrollTo({
+            x: 0,
+            y: y,
+            animated: true,
+          });
+        },
+        (error) => {
+          console.log("Error measuring layout: ", error);
+        }
+      );
     }
   };
 
@@ -148,7 +175,11 @@ export default function Library() {
       {/* Library Title */}
       <Text style={styles.libraryTitle}>Library</Text>
 
-      <ScrollView vertical showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={glossaryListRef}
+        vertical
+        showsVerticalScrollIndicator={false}
+      >
         {/* Categories Section */}
         <View style={styles.categoriesContainer}>
           <Text style={styles.categoriesTitle}>Categories</Text>
@@ -187,8 +218,7 @@ export default function Library() {
                 key={alphabet}
                 style={[
                   styles.alphabetButton,
-                  selectedAlphabet === alphabet &&
-                    styles.selectedAlphabetButton,
+                  selectedAlphabet === alphabet && styles.selectedAlphabetButton,
                   { marginLeft: 0, marginRight: 8 },
                 ]}
                 onPress={() => scrollToAlphabet(alphabet)}
@@ -206,23 +236,23 @@ export default function Library() {
           </View>
 
           {/* Vertical List of Alphabets and their corresponding lists */}
-          <View ref={glossaryListRef} style={styles.glossaryListContainer}>
-            {glossary.alphabets.map((alphabet, index) => (
-              <View
-                key={alphabet}
-                style={[styles.alphabetSection, { height: "inherit" }]}
-              >
-                <Text style={styles.alphabetTitle}>{alphabet}</Text>
-                <View style={styles.listContainer}>
-                  {glossary.lists[alphabet].map((item) => (
-                    <Text key={item} style={styles.listItemText}>
-                      {item}
-                    </Text>
-                  ))}
-                </View>
+          {glossary.alphabets.map((alphabet, index) => (
+            <View
+              key={alphabet}
+              ref={(el) => (alphabetRefs.current[alphabet] = el)} // Store ref
+              style={[styles.alphabetSection, { height: "auto" }]}
+              onLayout={() => {}} // Force re-render and measure after layout
+            >
+              <Text style={styles.alphabetTitle}>{alphabet}</Text>
+              <View style={styles.listContainer}>
+                {glossary.lists[alphabet].map((item) => (
+                  <Text key={item} style={styles.listItemText}>
+                    {item}
+                  </Text>
+                ))}
               </View>
-            ))}
-          </View>
+            </View>
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -233,87 +263,95 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingHorizontal: scale(16),
+    paddingVertical: scale(24),
+    paddingTop: getSafeAreaTop(), // Add safe area padding
   },
   libraryTitle: {
-    fontSize: 19,
-    fontWeight: 800,
-    marginBottom: 16,
+    fontSize: scale(19),
+    fontWeight: "800",
+    marginBottom: scale(16),
+    textAlign: "left", // Align the title to the left
   },
   categoriesContainer: {
-    marginBottom: 24,
+    marginBottom: scale(24),
   },
   categoriesTitle: {
-    fontSize: 14,
-    fontWeight: 800,
-    marginBottom: 8,
+    fontSize: scale(14),
+    fontWeight: "800",
+    marginBottom: scale(8),
   },
   categoryItem: {
-    marginRight: 8,
-    width: 120,
+    marginRight: scale(8),
+    width: scale(120),
   },
   categoryImage: {
-    height: 120,
-    borderRadius: 8,
+    height: scale(120),
+    borderRadius: scale(8),
   },
   categoryTitle: {
-    fontSize: 12,
-    fontWeight: 500,
-    marginTop: 4,
+    fontSize: scale(12),
+    fontWeight: "500",
+    marginTop: scale(4),
     textAlign: "center",
   },
   glossaryContainer: {
     flex: 1,
   },
   glossaryTitle: {
-    fontSize: 14,
-    fontWeight: 800,
-    marginBottom: 16,
+    fontSize: scale(14),
+    fontWeight: "800",
+    marginBottom: scale(16),
   },
   alphabetButtonsContainer: {
-    marginBottom: 16,
-    justifyContent: "center",
+    marginBottom: scale(16),
+    justifyContent: "flex-start", // Align items to the start
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   alphabetButton: {
-    marginRight: 8,
-    marginBottom: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    marginRight: scale(8),
+    marginBottom: scale(8),
+    paddingVertical: scale(8),
+    paddingHorizontal: scale(10), // Adjusted padding
+    borderRadius: scale(8),
     backgroundColor: "#ddd",
-    width: "24px",
-    height: "24px",
-    borderRadius: 11,
+    minWidth: scale(28), // Adjusted width
+    height: scale(28),
+    borderRadius: scale(14), // Adjusted radius
     backgroundColor: "#DEE5DB",
+    alignItems: "center", // Center text vertically
+    justifyContent: "center", // Center text horizontally
   },
   selectedAlphabetButton: {
     backgroundColorr: "#000000",
   },
   alphabetButtonText: {
-    fontSize: 13,
+    fontSize: scale(13),
     color: "#000000",
-    fontWeight: 700,
+    fontWeight: "700",
+    textAlign: "center",
   },
   glossaryListContainer: {
     flex: 1,
   },
   alphabetSection: {
-    marginBottom: 10,
-    paddingHorizontal: 16,
+    marginBottom: scale(10),
+    paddingHorizontal: scale(16),
   },
   alphabetTitle: {
-    fontSize: 24,
-    fontWeight: 700,
-    marginBottom: 8,
+    fontSize: scale(24),
+    fontWeight: "700",
+    marginBottom: scale(8),
   },
   listContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 11,
+    gap: scale(11),
   },
   listItemText: {
-    fontSize: 13,
-    marginBottom: 8,
+    fontSize: scale(13),
+    marginBottom: scale(8),
   },
 });
+
