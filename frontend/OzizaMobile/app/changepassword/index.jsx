@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
+  useWindowDimensions,
+  PixelRatio,
+  Alert,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 
@@ -14,6 +16,16 @@ const ChangePasswordScreen = ({ navigation }) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { width, height } = useWindowDimensions();
+
+  // Function to scale font size based on screen width
+  const scaleFontSize = (size) => {
+    const scale = width / 375;
+    const newSize = size * scale;
+    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+  };
 
   const handleUpdatePassword = async () => {
     setLoading(true);
@@ -35,26 +47,30 @@ const ChangePasswordScreen = ({ navigation }) => {
       console.log("Response from server:", response);
     } catch (error) {
       console.error("Update error:", error?.message || "Unknown error");
-      Alert.alert("Error", "update password failed. Please try again.");
+      Alert.alert("Error", "Update password failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <ScrollView
+      contentContainerStyle={[styles.container, { paddingVertical: height * 0.02 }]}
+    >
+      <View style={[styles.header, { paddingHorizontal: width * 0.05 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={24} color="#000" />
+          <AntDesign name="arrowleft" size={scaleFontSize(24)} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={[styles.title, { fontSize: scaleFontSize(18) }]}>Settings</Text>
       </View>
 
-      <View style={styles.formContainer}>
+      <View style={[styles.formContainer, { marginHorizontal: width * 0.05 }]}>
         <View style={styles.formField}>
-          <Text style={styles.fieldTitle}>Current Password</Text>
+          <Text style={[styles.fieldTitle, { fontSize: scaleFontSize(15) }]}>
+            Current Password
+          </Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { height: height * 0.06 }]}
             secureTextEntry={true}
             value={currentPassword}
             onChangeText={(text) => setCurrentPassword(text)}
@@ -63,9 +79,11 @@ const ChangePasswordScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.formField}>
-          <Text style={styles.fieldTitle}>New Password</Text>
+          <Text style={[styles.fieldTitle, { fontSize: scaleFontSize(15) }]}>
+            New Password
+          </Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { height: height * 0.06 }]}
             secureTextEntry={true}
             value={newPassword}
             onChangeText={(text) => setNewPassword(text)}
@@ -74,9 +92,11 @@ const ChangePasswordScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.formField}>
-          <Text style={styles.fieldTitle}>Confirm New Password</Text>
+          <Text style={[styles.fieldTitle, { fontSize: scaleFontSize(15) }]}>
+            Confirm New Password
+          </Text>
           <TextInput
-            style={styles.textInput}
+            style={[styles.textInput, { height: height * 0.06 }]}
             secureTextEntry={true}
             value={confirmNewPassword}
             onChangeText={(text) => setConfirmNewPassword(text)}
@@ -85,10 +105,12 @@ const ChangePasswordScreen = ({ navigation }) => {
         </View>
 
         <TouchableOpacity
-          style={styles.updateButton}
+          style={[styles.updateButton, { paddingVertical: height * 0.02 }]}
           onPress={handleUpdatePassword}
         >
-          <Text style={styles.updateButtonText}>Update Password</Text>
+          <Text style={[styles.updateButtonText, { fontSize: scaleFontSize(13) }]}>
+            Update Password
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -97,54 +119,43 @@ const ChangePasswordScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 0,
-    paddingVertical: 0,
   },
   header: {
     paddingVertical: 10,
-    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
   },
   title: {
-    fontSize: 18,
     fontWeight: "bold",
     marginLeft: 10,
   },
   formContainer: {
-    marginHorizontal: 20,
     marginTop: 20,
   },
   formField: {
     marginBottom: 25,
   },
   fieldTitle: {
-    fontSize: 15,
-    fontWeight: 500,
+    fontWeight: "500",
     marginBottom: 5,
   },
   textInput: {
-    height: 45,
     borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
     backgroundColor: "#D9D9D9",
   },
   updateButton: {
     backgroundColor: "#061102",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
     borderRadius: 5,
+    alignItems: "center",
   },
   updateButtonText: {
     color: "#fff",
-    fontSize: 13,
-    fontWeight: 500,
-    textAlign: "center",
+    fontWeight: "500",
   },
 });
 
