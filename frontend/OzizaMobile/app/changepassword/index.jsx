@@ -6,26 +6,39 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  useWindowDimensions,
+  Dimensions,
   PixelRatio,
+  Platform,
   Alert,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-const ChangePasswordScreen = ({ navigation }) => {
+// Get screen dimensions
+const { width, height } = Dimensions.get("window");
+
+// Responsive Font Size Function
+const responsiveFontSize = (size) => {
+  const scaleFactor = width / 375; // Base width of 375
+  const newSize = size * scaleFactor;
+  return Math.ceil(newSize); // Round to nearest whole number
+};
+
+// Function to get safe area top padding
+const getSafeAreaTop = () => {
+  if (Platform.OS === "ios") {
+    return 40; // Adjust for iOS
+  }
+  return 20; // Default for Android
+};
+
+const ChangePasswordScreen = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { width, height } = useWindowDimensions();
-
-  // Function to scale font size based on screen width
-  const scaleFontSize = (size) => {
-    const scale = width / 375;
-    const newSize = size * scale;
-    return Math.round(PixelRatio.roundToNearestPixel(newSize));
-  };
+  const navigation = useNavigation();
 
   const handleUpdatePassword = async () => {
     setLoading(true);
@@ -55,18 +68,27 @@ const ChangePasswordScreen = ({ navigation }) => {
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.container, { paddingVertical: height * 0.02 }]}
+      contentContainerStyle={[styles.container, { paddingTop: getSafeAreaTop() }]}
     >
-      <View style={[styles.header, { paddingHorizontal: width * 0.05 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AntDesign name="arrowleft" size={scaleFontSize(24)} color="#000" />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate("(tabs)/settings")}>
+          <AntDesign
+            name="arrowleft"
+            size={responsiveFontSize(24)}
+            color="#000"
+          />
         </TouchableOpacity>
-        <Text style={[styles.title, { fontSize: scaleFontSize(18) }]}>Settings</Text>
+        <Text style={[styles.title, { fontSize: responsiveFontSize(18) }]}>
+          Change Password
+        </Text>
       </View>
 
-      <View style={[styles.formContainer, { marginHorizontal: width * 0.05 }]}>
+      {/* Form Container */}
+      <View style={styles.formContainer}>
+        {/* Current Password Field */}
         <View style={styles.formField}>
-          <Text style={[styles.fieldTitle, { fontSize: scaleFontSize(15) }]}>
+          <Text style={[styles.fieldTitle, { fontSize: responsiveFontSize(14) }]}>
             Current Password
           </Text>
           <TextInput
@@ -75,11 +97,13 @@ const ChangePasswordScreen = ({ navigation }) => {
             value={currentPassword}
             onChangeText={(text) => setCurrentPassword(text)}
             placeholder="Enter your current password"
+            placeholderTextColor="#828282"
           />
         </View>
 
+        {/* New Password Field */}
         <View style={styles.formField}>
-          <Text style={[styles.fieldTitle, { fontSize: scaleFontSize(15) }]}>
+          <Text style={[styles.fieldTitle, { fontSize: responsiveFontSize(14) }]}>
             New Password
           </Text>
           <TextInput
@@ -88,11 +112,13 @@ const ChangePasswordScreen = ({ navigation }) => {
             value={newPassword}
             onChangeText={(text) => setNewPassword(text)}
             placeholder="Enter your new password"
+            placeholderTextColor="#828282"
           />
         </View>
 
+        {/* Confirm New Password Field */}
         <View style={styles.formField}>
-          <Text style={[styles.fieldTitle, { fontSize: scaleFontSize(15) }]}>
+          <Text style={[styles.fieldTitle, { fontSize: responsiveFontSize(14) }]}>
             Confirm New Password
           </Text>
           <TextInput
@@ -101,14 +127,18 @@ const ChangePasswordScreen = ({ navigation }) => {
             value={confirmNewPassword}
             onChangeText={(text) => setConfirmNewPassword(text)}
             placeholder="Re-enter your new password"
+            placeholderTextColor="#828282"
           />
         </View>
 
+        {/* Update Password Button */}
         <TouchableOpacity
           style={[styles.updateButton, { paddingVertical: height * 0.02 }]}
           onPress={handleUpdatePassword}
         >
-          <Text style={[styles.updateButtonText, { fontSize: scaleFontSize(13) }]}>
+          <Text
+            style={[styles.updateButtonText, { fontSize: responsiveFontSize(16) }]}
+          >
             Update Password
           </Text>
         </TouchableOpacity>
@@ -121,35 +151,37 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: "#fff",
+    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
   },
   header: {
-    paddingVertical: 10,
     flexDirection: "row",
     alignItems: "center",
+    paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
   },
   title: {
-    fontWeight: "bold",
-    marginLeft: 10,
+    fontWeight: "700",
+    marginLeft: width * 0.04, // Responsive margin (4% of screen width)
   },
   formContainer: {
-    marginTop: 20,
+    marginTop: height * 0.02, // Responsive margin (2% of screen height)
   },
   formField: {
-    marginBottom: 25,
+    marginBottom: height * 0.03, // Responsive margin (3% of screen height)
   },
   fieldTitle: {
     fontWeight: "500",
-    marginBottom: 5,
+    color: "#0A0A0A",
+    marginBottom: height * 0.01, // Responsive margin (1% of screen height)
   },
   textInput: {
     borderColor: "#ccc",
     borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 10,
-    backgroundColor: "#D9D9D9",
+    borderRadius: 5,
+    paddingHorizontal: width * 0.04, // Responsive padding (4% of screen width)
+    backgroundColor: "#F5F5F5",
   },
   updateButton: {
-    backgroundColor: "#061102",
+    backgroundColor: "#000",
     borderRadius: 5,
     alignItems: "center",
   },
