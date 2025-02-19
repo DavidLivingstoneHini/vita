@@ -7,22 +7,30 @@ import {
   TouchableOpacity,
   Image,
   Dimensions, // Import Dimensions
-  PixelRatio
+  PixelRatio,
+  Platform, // Import Platform
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { Link, useRouter } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 
 // Get screen dimensions
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function (optional, but helpful)
+// Responsive Font Size Function
 const responsiveFontSize = (size) => {
   const scaleFactor = width / 375; // Assuming a base width of 375 (iPhone SE)
   const newSize = size * scaleFactor;
   return Math.ceil(newSize); // Round to nearest whole number
 };
 
+// Function to get safe area top padding
+const getSafeAreaTop = () => {
+  if (Platform.OS === "ios") {
+    return 40; // Adjust this value as needed for iOS
+  }
+  return 20; // Default value for Android
+};
 
 const SettingsPage = () => {
   const [userName, setUserName] = useState("Swae Stone");
@@ -207,7 +215,7 @@ const SettingsPage = () => {
             style={styles.listItem}
             onPress={() => console.log("Privacy Preferences Pressed")}
           >
-            <Text style={styles.listItemText}>Push Notifications</Text>
+            <Text style={styles.listItemText}>Language Preferences</Text>
             <Image
               source={require("../../assets/images/arrow-right.png")}
               style={styles.arrowIcon}
@@ -218,18 +226,7 @@ const SettingsPage = () => {
             style={styles.listItem}
             onPress={() => console.log("Email Notifications")}
           >
-            <Text style={styles.listItemText}>Email Notifications</Text>
-            <Image
-              source={require("../../assets/images/arrow-right.png")}
-              style={styles.arrowIcon}
-            />
-          </TouchableOpacity>
-          <View style={styles.listItemSeparator} />
-          <TouchableOpacity
-            style={styles.listItem}
-            onPress={() => console.log("Manage Permissions Pressed")}
-          >
-            <Text style={styles.listItemText}>SMS Notifications</Text>
+            <Text style={styles.listItemText}>Regional Settings</Text>
             <Image
               source={require("../../assets/images/arrow-right.png")}
               style={styles.arrowIcon}
@@ -253,19 +250,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingTop: getSafeAreaTop(), // Add safe area padding
   },
   settingsLabelContainer: {
-    paddingVertical: height * 0.02,   // 2% of screen height for vertical padding
-    paddingHorizontal: width * 0.04,  // 4% of screen width for horizontal padding
+    paddingVertical: height * 0.02, // 2% of screen height for vertical padding
+    paddingHorizontal: width * 0.04, // 4% of screen width for horizontal padding
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   settingsLabel: {
-    fontSize: responsiveFontSize(18), // Use responsive font size
+    fontSize: responsiveFontSize(20), // Use responsive font size
     fontWeight: "700",
     // Add minimum and maximum font size constraints
-    fontSize: Math.max(Math.min(responsiveFontSize(18), 22), 16),
+    fontSize: Math.max(Math.min(responsiveFontSize(20), 24), 18),
   },
   iconContainer: {
     padding: width * 0.02, // Responsive padding (2% of screen width)
