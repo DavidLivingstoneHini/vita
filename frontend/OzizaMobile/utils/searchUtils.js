@@ -1,3 +1,4 @@
+import ArticleScreen from "../app/articles";
 import { dataStore } from "./dataStore";
 
 export const search = (query) => {
@@ -11,7 +12,7 @@ export const search = (query) => {
       results.push({
         title: article.title,
         // Change the screen name to match your navigation setup
-        screen: "articles/index", // This should match the screen name in your navigation
+        screen: ArticleScreen,
         params: {
           articleId: article.id
         },

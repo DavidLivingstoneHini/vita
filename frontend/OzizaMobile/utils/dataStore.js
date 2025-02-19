@@ -1,3 +1,5 @@
+import ArticleScreen from "../app/articles";
+
 export const dataStore = {
   articles: [
     {
@@ -5,7 +7,7 @@ export const dataStore = {
       title: "Diabetes 101",
       content: "Learn about diabetes, its symptoms, and management.",
       image: "https://example.com/image1.jpg", // Replace with actual image URL
-      screen: "articles/index",
+      screen: ArticleScreen,
       params: { articleId: 1 },
     },
     {
@@ -13,7 +15,7 @@ export const dataStore = {
       title: "Healthy Eating",
       content: "Discover the principles of healthy eating.",
       image: "https://example.com/image2.jpg", // Replace with actual image URL
-      screen: "articles/index",
+      screen: ArticleScreen,
       params: { articleId: 2 },
     },
     // Add more articles as needed

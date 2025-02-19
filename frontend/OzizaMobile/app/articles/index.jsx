@@ -3,8 +3,9 @@ import { View, Text, Image, StyleSheet } from "react-native";
 import { dataStore } from "../../utils/dataStore";
 
 const ArticleScreen = ({ route }) => {
-  const { articleId } = route.params;
-  
+  // Add default params to avoid undefined errors
+  const { articleId } = route.params || { articleId: null };
+
   // Find the article by ID
   const article = dataStore.articles.find((a) => a.id === articleId);
 

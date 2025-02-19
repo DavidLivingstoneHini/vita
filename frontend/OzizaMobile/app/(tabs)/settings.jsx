@@ -6,11 +6,11 @@ import {
   View,
   TouchableOpacity,
   Image,
-  Dimensions, // Import Dimensions
+  Dimensions,
   PixelRatio,
-  Platform, // Import Platform
+  Platform,
 } from "react-native";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "expo-secure-store"; // Correct import
 import { Link, useRouter } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 
@@ -19,7 +19,7 @@ const { width, height } = Dimensions.get("window");
 
 // Responsive Font Size Function
 const responsiveFontSize = (size) => {
-  const scaleFactor = width / 375; // Assuming a base width of 375 (iPhone SE)
+  const scaleFactor = width / 375; // Base width of 375 (iPhone SE)
   const newSize = size * scaleFactor;
   return Math.ceil(newSize); // Round to nearest whole number
 };
@@ -27,9 +27,9 @@ const responsiveFontSize = (size) => {
 // Function to get safe area top padding
 const getSafeAreaTop = () => {
   if (Platform.OS === "ios") {
-    return 40; // Adjust this value as needed for iOS
+    return 40; // Adjust for iOS
   }
-  return 20; // Default value for Android
+  return 20; // Default for Android
 };
 
 const SettingsPage = () => {
@@ -49,14 +49,14 @@ const SettingsPage = () => {
     return initials.join("");
   };
 
-  // Mock function to retrieve user data from secure store
+  // Retrieve user data from secure store
   const retrieveUserData = async () => {
     try {
-      const storedUserName = await SecureStore.getItemAsync("full_name");
-      const storedUserEmail = await SecureStore.getItemAsync("email");
+      const storedUserName = await SecureStore.getItemAsync("full_name"); // Correct method
+      const storedUserEmail = await SecureStore.getItemAsync("email"); // Correct method
       const storedUserProfilePicture = await SecureStore.getItemAsync(
         "userProfilePicture"
-      );
+      ); // Correct method
 
       if (storedUserName) setUserName(storedUserName);
       if (storedUserEmail) setUserEmail(storedUserEmail);
@@ -64,7 +64,7 @@ const SettingsPage = () => {
         setUserProfilePicture(storedUserProfilePicture);
     } catch (error) {
       console.log("Error retrieving user data:", error);
-      // Dummy data will be displayed if retrieval fails
+      // Fallback to default data if retrieval fails
     }
   };
 

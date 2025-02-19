@@ -46,6 +46,7 @@ const SearchBox = ({ onClose }) => {
   const handleResultSelect = (result) => {
     console.log("Selected result:", result);
     if (result.screen && result.params) {
+      console.log("Navigating to:", result.screen, "with params:", result.params);
       navigation.navigate(result.screen, result.params);
       setResults([]);
       setSearchQuery("");
