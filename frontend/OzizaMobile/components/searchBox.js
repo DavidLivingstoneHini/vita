@@ -67,7 +67,7 @@ const SearchBox = ({ onClose }) => {
         </TouchableOpacity>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search anything..."
+          placeholder="Search..."
           value={searchQuery}
           onChangeText={handleQueryChange}
         />

@@ -6,7 +6,17 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Dimensions,
+  Platform,
+  SafeAreaView,
 } from "react-native";
+
+// Get device dimensions
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// Calculate responsive dimensions
+const scale = SCREEN_WIDTH / 375; // Using 375 as base width (iPhone X)
+const normalize = (size) => Math.round(scale * size);
 
 const EventScreen = ({ navigation }) => {
   const eventsYouMightLike = [
@@ -58,9 +68,12 @@ const EventScreen = ({ navigation }) => {
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Image
             source={require("../../assets/images/back-arrow.png")}
             style={styles.backArrow}
@@ -69,7 +82,10 @@ const EventScreen = ({ navigation }) => {
         <Text style={styles.eventTitle}>Event</Text>
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.sectionTitle}>Events you might like</Text>
         <ScrollView
           horizontal
@@ -78,45 +94,39 @@ const EventScreen = ({ navigation }) => {
         >
           {eventsYouMightLike.map((event) => (
             <View key={event.id} style={styles.imageCardContainerHorizontal}>
-              <Image source={event.image} style={styles.imageCardHorizontal} />
-              <View style={styles.textContainerHorizontalWrapper}>
-                <View style={styles.textContainerHorizontal}>
-                  <Text style={styles.title}>{event.title}</Text>
-                  <Text style={[styles.subtitle, { flexWrap: "wrap" }]}>
-                    {event.subtitle}
-                  </Text>
-                </View>
+              <Image 
+                source={event.image} 
+                style={styles.imageCardHorizontal}
+                resizeMode="cover"
+              />
+              <View style={styles.textContainerHorizontal}>
+                <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
+                <Text style={styles.subtitle} numberOfLines={2}>
+                  {event.subtitle}
+                </Text>
               </View>
             </View>
           ))}
         </ScrollView>
 
         <Text style={styles.sectionTitle}>Upcoming events</Text>
-        <ScrollView
-          style={styles.verticalList}
-          showsVerticalScrollIndicator={false}
-        >
+        <View style={styles.verticalList}>
           {upcomingEvents.map((event) => (
             <View key={event.id} style={styles.imageCardContainerVertical}>
               <Image
                 source={event.image}
-                style={[
-                  styles.imageCardVertical,
-                  {
-                    borderTopLeftRadius: 10,
-                    borderTopRightRadius: 10,
-                  },
-                ]}
+                style={styles.imageCardVertical}
+                resizeMode="cover"
               />
               <View style={styles.textContainer}>
-                <Text style={styles.title}>{event.title}</Text>
-                <Text style={styles.subtitle}>{event.subtitle}</Text>
+                <Text style={styles.title} numberOfLines={1}>{event.title}</Text>
+                <Text style={styles.subtitle} numberOfLines={2}>{event.subtitle}</Text>
               </View>
             </View>
           ))}
-        </ScrollView>
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -128,77 +138,87 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: normalize(10),
+    paddingHorizontal: normalize(20),
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    minHeight: normalize(50),
+  },
+  backButton: {
+    padding: normalize(5),
   },
   backArrow: {
-    width: 18,
-    height: 18,
-    marginRight: 10,
+    width: normalize(18),
+    height: normalize(18),
+    marginRight: normalize(10),
   },
   eventTitle: {
-    fontSize: 17,
+    fontSize: normalize(17),
     fontWeight: "bold",
+    flex: 1,
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 0,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: normalize(16),
     fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 20,
+    marginHorizontal: normalize(20),
+    marginTop: normalize(20),
+    marginBottom: normalize(10),
   },
   horizontalList: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: normalize(20),
   },
   imageCardContainerHorizontal: {
-    marginRight: 20,
-    width: 320,
+    marginRight: normalize(20),
+    width: SCREEN_WIDTH * 0.75, // 75% of screen width
+    maxWidth: normalize(320),
+    marginBottom: normalize(10),
   },
   imageCardHorizontal: {
     width: "100%",
-    height: 198,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
+    height: SCREEN_WIDTH * 0.4, // 40% of screen width
+    borderTopLeftRadius: normalize(10),
+    borderTopRightRadius: normalize(10),
   },
   textContainerHorizontal: {
     backgroundColor: "#F5F5F5",
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    marginTop: -10,
+    paddingVertical: normalize(10),
+    paddingHorizontal: normalize(10),
+    borderBottomLeftRadius: normalize(10),
+    borderBottomRightRadius: normalize(10),
   },
   title: {
-    fontSize: 12,
-    fontWeight: 800,
+    fontSize: normalize(12),
+    fontWeight: "800",
+    marginBottom: normalize(4),
   },
   subtitle: {
-    fontSize: 10,
+    fontSize: normalize(10),
     color: "#666",
-    flexWrap: "wrap",
+    lineHeight: normalize(14),
+  },
+  verticalList: {
+    paddingHorizontal: normalize(20),
+    paddingBottom: normalize(20),
   },
   imageCardContainerVertical: {
-    marginBottom: 20,
+    marginBottom: normalize(20),
+    width: "100%",
   },
   imageCardVertical: {
     width: "100%",
-    height: 240,
+    height: SCREEN_WIDTH * 0.6, // 60% of screen width
+    borderTopLeftRadius: normalize(10),
+    borderTopRightRadius: normalize(10),
   },
   textContainer: {
     backgroundColor: "#F5F5F5",
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    marginTop: -10,
-  },
-  verticalList: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: normalize(10),
+    paddingHorizontal: normalize(10),
+    borderBottomLeftRadius: normalize(10),
+    borderBottomRightRadius: normalize(10),
   },
 });
 

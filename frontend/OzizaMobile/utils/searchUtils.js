@@ -12,7 +12,7 @@ export const search = (query) => {
       results.push({
         title: article.title,
         // Change the screen name to match your navigation setup
-        screen: ArticleScreen,
+        screen: "articles/index",
         params: {
           articleId: article.id
         },
