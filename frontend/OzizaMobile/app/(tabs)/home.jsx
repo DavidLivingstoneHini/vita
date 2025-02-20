@@ -49,8 +49,18 @@ const Home = () => {
   ];
 
   const lifestyleListItems = [
-    { id: 1, image: ItemImage4, title: "" },
-    { id: 2, image: ItemImage4, title: "" },
+    {
+      id: 1,
+      image: ItemImage4,
+      title: "Inspiration 1",
+      description: "Description for Inspiration 1",
+    },
+    {
+      id: 2,
+      image: ItemImage5,
+      title: "Inspiration 2",
+      description: "Description for Inspiration 2",
+    },
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -80,10 +90,10 @@ const Home = () => {
     <View style={styles.container}>
       {/* Header Section */}
       <Header 
-  isSearchVisible={isSearchVisible}
-  onSearchPress={() => setIsSearchVisible(true)}
-  onSearchClose={() => setIsSearchVisible(false)}
-/>
+        isSearchVisible={isSearchVisible}
+        onSearchPress={() => setIsSearchVisible(true)}
+        onSearchClose={() => setIsSearchVisible(false)}
+      />
 
       <ScrollView
         vertical
@@ -193,17 +203,39 @@ const Home = () => {
           <FlatList
             data={lifestyleListItems}
             renderItem={({ item }) => (
-              <View style={styles.listlifeItem}>
+              <TouchableOpacity
+                style={styles.inspirationCard}
+                onPress={() => navigation.navigate(`inspiration/${item.id}`)}
+              >
                 <Image
                   source={item.image}
-                  style={styles.listlifeItemImage}
+                  style={styles.inspirationImage}
+                  resizeMode="cover"
                 />
-              </View>
+                <View style={styles.inspirationCardContent}>
+                  <Text style={styles.inspirationCardTitle}>{item.title}</Text>
+                  <Text style={styles.inspirationCardDescription}>
+                    {item.description}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             )}
             keyExtractor={(item) => item.id.toString()}
             horizontal
             showsHorizontalScrollIndicator={false}
           />
+        </View>
+
+        {/* Emergency Section */}
+        <View style={styles.emergencyContainer}>
+          <Text style={styles.emergencyHeading}>Are you in an emergency?</Text>
+          <Text style={styles.emergencySubText}>Do you need help?</Text>
+          <TouchableOpacity
+            style={styles.emergencyButton}
+            onPress={() => navigation.navigate("EmergencyContact")}
+          >
+            <Text style={styles.emergencyButtonText}>Contact Emergency</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>
@@ -292,6 +324,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#0C1549",
   },
+  inspirationCard: {
+    width: Dimensions.get('window').width * 0.85,
+    marginRight: Dimensions.get('window').width * 0.015,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  inspirationImage: {
+    width: "100%",
+    height: Dimensions.get('window').width * 0.6,
+  },
+  inspirationCardContent: {
+    backgroundColor: "#F7F7F7",
+    padding: Dimensions.get('window').width * 0.025,
+    flex: 1,
+  },
+  inspirationCardTitle: {
+    fontSize: Dimensions.get('window').width * 0.04,
+    fontWeight: "700",
+    color: "#0C1549",
+    marginBottom: Dimensions.get('window').height * 0.005,
+  },
+  inspirationCardDescription: {
+    fontSize: Dimensions.get('window').width * 0.035,
+    color: "#666666",
+  },
   listlifeItem: {
     width: Dimensions.get('window').width * 0.85,
     marginRight: Dimensions.get('window').width * 0.015,
@@ -300,6 +357,17 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width * 0.82,
     height: Dimensions.get('window').width * 0.6,
     borderRadius: 8,
+  },
+  listlifeItemTitle: {
+    fontSize: Dimensions.get('window').width * 0.04,
+    fontWeight: "700",
+    color: "#0C1549",
+    marginTop: Dimensions.get('window').height * 0.01,
+  },
+  listlifeItemDescription: {
+    fontSize: Dimensions.get('window').width * 0.035,
+    color: "#0C1549",
+    marginTop: Dimensions.get('window').height * 0.005,
   },
   swiper: {
     height: Dimensions.get('window').height * 0.25,
@@ -317,8 +385,7 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width * 0.03,
     height: Dimensions.get('window').width * 0.03,
     borderRadius: Dimensions.get('window').width * 0.015,
-    borderWidth: 2,
-    borderColor: "#ccc",
+    borderWidth: 1,
     marginHorizontal: 3,
   },
   activeCircle: {
@@ -341,6 +408,35 @@ const styles = StyleSheet.create({
     right: Dimensions.get('window').width * 0.03,
     top: Dimensions.get('window').height * 0.03,
     fontSize: Dimensions.get('window').width * 0.03,
+  },
+  emergencyContainer: {
+    backgroundColor: "red",
+    padding: Dimensions.get('window').width * 0.05,
+    marginTop: Dimensions.get('window').height * 0.025,
+  },
+  emergencyHeading: {
+    fontSize: Dimensions.get('window').width * 0.05,
+    fontWeight: "700",
+    color: "white",
+    textAlign: "center",
+  },
+  emergencySubText: {
+    fontSize: Dimensions.get('window').width * 0.04,
+    color: "white",
+    textAlign: "center",
+    marginTop: Dimensions.get('window').height * 0.01,
+  },
+  emergencyButton: {
+    backgroundColor: "black",
+    padding: Dimensions.get('window').width * 0.04,
+    borderRadius: 8,
+    marginTop: Dimensions.get('window').height * 0.02,
+    alignItems: "center",
+  },
+  emergencyButtonText: {
+    color: "white",
+    fontSize: Dimensions.get('window').width * 0.04,
+    fontWeight: "700",
   },
 });
 
