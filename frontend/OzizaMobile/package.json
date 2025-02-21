@@ -48,10 +48,15 @@
     "react-native-svg-transformer": "^1.5.0",
     "react-native-swiper": "^1.6.0",
     "react-native-toast-message": "^2.2.1",
+<<<<<<< HEAD
     "react-native-video": "^6.10.1",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "react-native-youtube-iframe": "^2.3.0"
+=======
+    "react-native-web": "~0.19.13",
+    "react-native-webview": "13.12.5"
+>>>>>>> d8975b2ddf980c27c5db3c4fbeb7c07a7c1e46c1
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
