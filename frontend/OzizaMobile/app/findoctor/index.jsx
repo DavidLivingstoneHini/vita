@@ -9,7 +9,7 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -28,8 +28,9 @@ const getSafeAreaTop = () => {
   return 20; // Default for Android
 };
 
-const FindDoctorScreen = ({ navigation }) => {
+const FindDoctorScreen = () => {
   const [selectedSpecialization, setSelectedSpecialization] = useState(null);
+  const navigation = useNavigation();
 
   const specializations = [
     {
@@ -71,7 +72,8 @@ const FindDoctorScreen = ({ navigation }) => {
   const handleFindDoctorPress = () => {
     if (selectedSpecialization) {
       // Navigate to doctor list with selected specialization
-      navigation.navigate("DoctorList", {
+      // navigation.navigate("doctorlist/index");
+      navigation.navigate("doctorlist/index", {
         specializationId: selectedSpecialization,
       });
     } else {

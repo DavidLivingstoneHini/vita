@@ -6,8 +6,27 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Dimensions,
+  Platform,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+
+const { width, height } = Dimensions.get("window");
+
+// Responsive Font Size Function
+const responsiveFontSize = (size) => {
+  const scaleFactor = width / 375;
+  const newSize = size * scaleFactor;
+  return Math.ceil(newSize);
+};
+
+// Function to get safe area top padding
+const getSafeAreaTop = () => {
+  if (Platform.OS === "ios") {
+    return 40;
+  }
+  return 20;
+};
 
 const DoctorListScreen = ({ route, navigation }) => {
   const { specializationId, specializationText } = route?.params || {};
@@ -139,7 +158,6 @@ const DoctorListScreen = ({ route, navigation }) => {
     }
   };
 
-  // Initialize filtered doctors on mount
   React.useEffect(() => {
     if (specializationId) {
       filterDoctors(specializationId);
@@ -149,134 +167,109 @@ const DoctorListScreen = ({ route, navigation }) => {
     }
   }, [specializationId]);
 
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image
-            source={require("../../assets/images/back-arrow.png")}
-            style={styles.backArrow}
+  const renderDoctorCard = (doctor) => (
+    <TouchableOpacity
+      key={doctor.id}
+      style={styles.doctorCard}
+      onPress={() => console.log(`Doctor ${doctor.name} pressed`)}
+    >
+      <Image source={doctor.image} style={styles.doctorImage} />
+      <View style={styles.doctorInfo}>
+        <Text style={styles.doctorName}>{doctor.name}</Text>
+        <Text style={styles.doctorSpecialization}>
+          {doctor.specialization}
+        </Text>
+        <View style={styles.locationContainer}>
+          <AntDesign
+            name="enviromento"
+            size={Math.round(width * 0.04)}
+            color="#666"
           />
-        </TouchableOpacity>
-        <Text style={styles.title}>Find a Doctor</Text>
+          <Text style={styles.locationText}>{doctor.location}</Text>
+        </View>
       </View>
+    </TouchableOpacity>
+  );
 
-      <Text style={styles.filterTitle}>Filter by Specialization</Text>
-      <ScrollView horizontal style={styles.specializationList}>
-        {specializations.map((specialization) => (
+  return (
+    <View style={styles.container}>
+      <ScrollView>
+        <View style={styles.header}>
           <TouchableOpacity
-            key={specialization.id}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Image
+              source={require("../../assets/images/back-arrow.png")}
+              style={styles.backArrow}
+            />
+          </TouchableOpacity>
+          <Text style={styles.title}>Find a Doctor</Text>
+        </View>
+
+        <Text style={styles.filterTitle}>Filter by Specialization</Text>
+        <ScrollView
+          horizontal
+          style={styles.specializationList}
+          showsHorizontalScrollIndicator={false}
+        >
+          {specializations.map((specialization) => (
+            <TouchableOpacity
+              key={specialization.id}
+              style={[
+                styles.specializationButton,
+                {
+                  backgroundColor:
+                    selectedSpecializationId === specialization.id
+                      ? SELECTED_COLOR
+                      : NOT_SELECTED_COLOR,
+                },
+              ]}
+              onPress={() => handleSpecializationPress(specialization.id)}
+            >
+              <View style={styles.specializationIconTextContainer}>
+                <Image
+                  source={getSpecializationIcon(specialization.text)}
+                  style={styles.specializationIcon}
+                />
+                <Text style={styles.specializationText}>
+                  {specialization.text}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
             style={[
               styles.specializationButton,
               {
                 backgroundColor:
-                  selectedSpecializationId === specialization.id
+                  selectedSpecializationId === null
                     ? SELECTED_COLOR
                     : NOT_SELECTED_COLOR,
+                paddingHorizontal: width * 0.05,
               },
             ]}
-            onPress={() => handleSpecializationPress(specialization.id)}
+            onPress={() => handleSpecializationPress(null)}
           >
-            <View style={styles.specializationIconTextContainer}>
-              <Image
-                source={getSpecializationIcon(specialization.text)}
-                style={styles.specializationIcon}
-              />
-              <Text
-                style={[
-                  styles.specializationText,
-                  {
-                    color:
-                      selectedSpecializationId === specialization.id
-                        ? TEXT_COLOR
-                        : "#FFFFFF",
-                  },
-                ]}
-              >
-                {specialization.text}
-              </Text>
-            </View>
+            <Text style={styles.specializationText}>All</Text>
           </TouchableOpacity>
-        ))}
-        <TouchableOpacity
-          style={[
-            styles.specializationButton,
-            {
-              backgroundColor:
-                selectedSpecializationId === null
-                  ? SELECTED_COLOR
-                  : NOT_SELECTED_COLOR,
-            },
-          ]}
-          onPress={() => handleSpecializationPress(null)}
-        >
-          <Text
-            style={[
-              styles.specializationText,
-              {
-                color: selectedSpecializationId === null ? TEXT_COLOR : "#000",
-              },
-            ]}
-          >
-            All
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
 
-      <Text style={styles.recommendationsTitle}>Recommendations</Text>
-      <ScrollView style={styles.doctorList}>
-        {filteredRecommendedDoctors.map((doctor) => (
-          <TouchableOpacity
-            key={doctor.id}
-            style={[
-              styles.doctorButton,
-              styles.doctorButtonBackground,
-              styles.doctorListItemSpacing,
-            ]}
-            onPress={() => console.log(`Doctor ${doctor.name} pressed`)}
-          >
-            <Image source={doctor.image} style={styles.doctorImage} />
-            <View style={styles.doctorInfo}>
-              <Text style={styles.doctorName}>{doctor.name}</Text>
-              <Text style={styles.doctorSpecialization}>
-                {doctor.specialization}
-              </Text>
-              <View style={styles.locationContainer}>
-                <AntDesign name="enviromento" size={16} color="#666" />
-                <Text style={styles.locationText}>{doctor.location}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Recommendations</Text>
+          <View>
+            {filteredRecommendedDoctors.map(renderDoctorCard)}
+          </View>
+        </View>
 
-      <Text style={styles.nearYouTitle}>Doctors Near You</Text>
-      <ScrollView style={styles.doctorList}>
-        {filteredNearYouDoctors.map((doctor) => (
-          <TouchableOpacity
-            key={doctor.id}
-            style={[
-              styles.doctorButton,
-              styles.doctorButtonBackground,
-              styles.doctorListItemSpacing,
-            ]}
-            onPress={() => console.log(`Doctor ${doctor.name} pressed`)}
-          >
-            <Image source={doctor.image} style={styles.doctorImage} />
-            <View style={styles.doctorInfo}>
-              <Text style={styles.doctorName}>{doctor.name}</Text>
-              <Text style={styles.doctorSpecialization}>
-                {doctor.specialization}
-              </Text>
-              <View style={styles.locationContainer}>
-                <AntDesign name="enviromento" size={16} color="#666" />
-                <Text style={styles.locationText}>{doctor.location}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+        <View style={[styles.sectionContainer, { marginBottom: height * 0.03 }]}>
+          <Text style={styles.sectionTitle}>Doctors Near You</Text>
+          <View>
+            {filteredNearYouDoctors.map(renderDoctorCard)}
+          </View>
+        </View>
       </ScrollView>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -284,110 +277,106 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    paddingTop: getSafeAreaTop(),
   },
   header: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: height * 0.02,
+    paddingHorizontal: width * 0.05,
     flexDirection: "row",
     alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E4EA',
+  },
+  backButton: {
+    padding: width * 0.02,
+  },
+  backArrow: {
+    width: width * 0.05,
+    height: width * 0.05,
+    marginRight: width * 0.02,
   },
   title: {
-    fontSize: 17,
+    fontSize: responsiveFontSize(17),
     fontWeight: "bold",
+    marginLeft: width * 0.03,
   },
   filterTitle: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 15,
+    marginHorizontal: width * 0.05,
+    marginTop: height * 0.02,
   },
   specializationList: {
-    marginHorizontal: 20,
-    marginTop: 10,
+    marginTop: height * 0.01,
+    paddingHorizontal: width * 0.05,
   },
   specializationButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 15,
-    borderRadius: 5,
-    marginRight: 10,
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.04,
+    borderRadius: width * 0.02,
+    marginRight: width * 0.03,
+    height: height * 0.06,
+    justifyContent: "center",
   },
   specializationIconTextContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
+    justifyContent: "center",
   },
   specializationIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 8,
+    width: width * 0.06,
+    height: width * 0.06,
+    marginRight: width * 0.02,
   },
   specializationText: {
-    fontSize: 15,
-    fontWeight: 800,
+    fontSize: responsiveFontSize(15),
+    fontWeight: "800",
     color: "#FFFFFF",
   },
-  recommendationsTitle: {
-    fontSize: 16,
+  sectionContainer: {
+    paddingHorizontal: width * 0.05,
+    marginTop: height * 0.02,
+  },
+  sectionTitle: {
+    fontSize: responsiveFontSize(16),
     fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 20,
+    marginBottom: height * 0.02,
   },
-  doctorList: {
-    marginHorizontal: 20,
-    marginTop: 10,
-  },
-  doctorButton: {
+  doctorCard: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 15,
-  },
-  doctorButtonBackground: {
     backgroundColor: "#E2E4EA",
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  doctorListItemSpacing: {
-    marginBottom: 14,
+    padding: width * 0.04,
+    borderRadius: width * 0.02,
+    marginBottom: height * 0.015,
+    alignItems: "center",
   },
   doctorImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    marginRight: 15,
+    width: width * 0.15,
+    height: width * 0.15,
+    borderRadius: width * 0.02,
+    marginRight: width * 0.04,
   },
   doctorInfo: {
     flex: 1,
   },
   doctorName: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16),
     fontWeight: "bold",
+    marginBottom: height * 0.005,
   },
   doctorSpecialization: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "#666",
+    marginBottom: height * 0.005,
   },
   locationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 5,
   },
   locationText: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14),
     color: "#666",
-    marginLeft: 5,
-  },
-  nearYouTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 25,
-  },
-  backArrow: {
-    width: 18,
-    height: 18,
-    marginRight: 10,
+    marginLeft: width * 0.02,
   },
 });
 
