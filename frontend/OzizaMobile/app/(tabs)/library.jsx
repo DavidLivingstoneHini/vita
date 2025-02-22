@@ -309,10 +309,10 @@ const styles = StyleSheet.create({
   alphabetButton: {
     paddingVertical: scale(8),
     paddingHorizontal: scale(10),
-    borderRadius: scale(14),
+    borderRadius: scale(10),
     backgroundColor: "#DEE5DB",
-    minWidth: scale(28),
-    height: scale(28),
+    minWidth: scale(32),
+    height: scale(32),
     alignItems: "center",
     justifyContent: "center",
   },
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   alphabetSection: {
     marginBottom: scale(10),
-    paddingHorizontal: scale(16),
+    paddingHorizontal: scale(6),
   },
   alphabetTitle: {
     fontSize: scale(24),

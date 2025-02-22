@@ -322,7 +322,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: height * 0.01, // Responsive padding (1% of screen height)
+    paddingVertical: height * 0.018, // Responsive padding (1% of screen height)
+    paddingHorizontal: width * 0.04,
   },
   listItemText: {
     fontSize: responsiveFontSize(16), // Use responsive font size
@@ -336,7 +337,6 @@ const styles = StyleSheet.create({
   listItemSeparator: {
     height: 1,
     backgroundColor: "#ccc",
-    marginHorizontal: width * 0.04, // Responsive margin (4% of screen width)
   },
   logoutButton: {
     margin: width * 0.05, // Responsive margin (5% of screen width)

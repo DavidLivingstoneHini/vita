@@ -10,6 +10,7 @@ import Home from "./home";
 import News from "./news";
 import Library from "./library";
 import Settings from "./settings";
+import Discover from "./discover";
 
 import libraryIcon from "../../assets/images/library-icon-unfocused.png";
 import libraryIconFocused from "../../assets/images/library-icon-focused.png";
@@ -23,14 +24,6 @@ import moreIcon from "../../assets/images/more-icon-unfocused.png";
 import moreIconFocused from "../../assets/images/more-icon-focused.png";
 
 const Tab = createBottomTabNavigator();
-
-function DiscoverScreen() {
-  return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>Discover!</Text>
-    </View>
-  );
-}
 
 function TabLayout() {
   const navigation = useNavigation();
@@ -135,7 +128,7 @@ function TabLayout() {
       />
       <Tab.Screen
         name="Discover"
-        component={DiscoverScreen}
+        component={Discover}
         options={({ focused }) => ({
           tabBarIcon: ({ focused, color, size }) => (
             <Image

@@ -86,16 +86,16 @@ const Home = () => {
     {
       id: 1,
       image: ItemImage4,
-      title: "Inspiration 1",
-      description: "Description for Inspiration 1",
+      title: "Tomi recovers from Column Cancer",
+      description: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
       category: "Health & Wellness",
       readTime: "5 min read"
     },
     {
       id: 2,
       image: ItemImage5,
-      title: "Inspiration 2",
-      description: "Description for Inspiration 2",
+      title: "“I lost 30 pounds in 2 weeks, you can too” - AJ Koal",
+      description: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
       category: "Mental Health",
       readTime: "3 min read"
     },
