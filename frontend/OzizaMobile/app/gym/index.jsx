@@ -7,8 +7,27 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
-  MapView,
+  Dimensions,
+  Platform,
 } from "react-native";
+
+// Get screen dimensions
+const { width, height } = Dimensions.get("window");
+
+// Responsive Font Size Function
+const responsiveFontSize = (size) => {
+  const scaleFactor = width / 375; // Base width of 375 (iPhone SE)
+  const newSize = size * scaleFactor;
+  return Math.ceil(newSize); // Round to nearest whole number
+};
+
+// Function to get safe area top padding
+const getSafeAreaTop = () => {
+  if (Platform.OS === "ios") {
+    return 40; // Adjust for iOS
+  }
+  return 20; // Default for Android
+};
 
 const FindAGymScreen = ({ navigation }) => {
   const trainingTypes = [
@@ -104,27 +123,6 @@ const FindAGymScreen = ({ navigation }) => {
 
       {/* Gyms near you */}
       <Text style={styles.sectionTitle}>Gyms near you</Text>
-      {/* <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: 37.78825,
-          longitude: -122.4324,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
-      >
-        {gymsNearYou.map((gym) => (
-          <Marker
-            key={gym.id}
-            coordinate={{
-              latitude: 37.78825 + gym.id * 0.001,
-              longitude: -122.4324 + gym.id * 0.001,
-            }}
-            title={gym.name}
-            description={gym.location}
-          />
-        ))}
-      </MapView> */}
       <FlatList
         data={gymsNearYou}
         renderItem={({ item }) => (
@@ -146,74 +144,70 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+    paddingTop: getSafeAreaTop(), // Add safe area padding
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: height * 0.02, // 2% of screen height for vertical padding
+    paddingHorizontal: width * 0.04, // 4% of screen width for horizontal padding
   },
   backArrow: {
-    width: 18,
-    height: 18,
-    marginRight: 10,
+    width: width * 0.05, // Responsive width (5% of screen width)
+    height: width * 0.05, // Responsive height (5% of screen width)
+    marginRight: width * 0.02, // Responsive margin (2% of screen width)
   },
   title: {
-    fontSize: 17,
-    fontWeight: 800,
+    fontSize: responsiveFontSize(20), // Use responsive font size
+    fontWeight: "800",
   },
   readyToFitTitle: {
-    fontSize: 18,
-    fontWeight: 800,
-    marginHorizontal: 20,
-    marginTop: 20,
+    fontSize: responsiveFontSize(18), // Use responsive font size
+    fontWeight: "800",
+    marginHorizontal: width * 0.04, // Responsive margin
+    marginTop: height * 0.02, // Responsive margin
   },
   readyToFitSubtitle: {
-    fontSize: 16,
-    fontWeight: 200,
+    fontSize: responsiveFontSize(16), // Use responsive font size
+    fontWeight: "200",
     color: "#666",
-    marginHorizontal: 20,
-    marginBottom: 20,
+    marginHorizontal: width * 0.04, // Responsive margin
+    marginBottom: height * 0.02, // Responsive margin
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 700,
-    marginHorizontal: 20,
-    marginTop: 20,
+    fontSize: responsiveFontSize(18), // Use responsive font size
+    fontWeight: "700",
+    marginHorizontal: width * 0.04, // Responsive margin
+    marginTop: height * 0.02, // Responsive margin
   },
   trainingTypeList: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: height * 0.02, // Responsive padding
+    paddingHorizontal: width * 0.04, // Responsive padding
   },
   trainingTypeCard: {
-    width: 130,
-    height: 150,
-    marginRight: 10,
+    width: width * 0.35, // Responsive width (35% of screen width)
+    height: width * 0.4, // Responsive height (40% of screen width)
+    marginRight: width * 0.02, // Responsive margin
     borderRadius: 10,
-    padding: 10,
+    padding: width * 0.02, // Responsive padding
   },
   trainingTypeName: {
-    fontSize: 14,
-    fontWeight: 700,
-    marginBottom: 10,
+    fontSize: responsiveFontSize(14), // Use responsive font size
+    fontWeight: "700",
+    marginBottom: height * 0.01, // Responsive margin
   },
   trainingTypeImage: {
     width: "80%",
     height: "80%",
     borderRadius: 10,
-    marginLeft: 20,
-  },
-  map: {
-    width: "100%",
-    height: 200,
-    marginBottom: 20,
+    marginLeft: width * 0.02, // Responsive margin
   },
   gymListitem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 13,
-    paddingHorizontal: 20,
+    paddingVertical: height * 0.02, // Responsive padding
+    paddingHorizontal: width * 0.04, // Responsive padding
     borderBottomWidth: 1,
     borderBottomColor: "#F2F2F2",
   },
@@ -221,15 +215,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gymName: {
-    fontSize: 16,
+    fontSize: responsiveFontSize(16), // Use responsive font size
     fontWeight: "bold",
   },
   gymLocation: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14), // Use responsive font size
     color: "#666",
   },
   gymWorkingHours: {
-    fontSize: 14,
+    fontSize: responsiveFontSize(14), // Use responsive font size
     color: "#666",
   },
 });

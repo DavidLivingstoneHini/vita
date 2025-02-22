@@ -232,6 +232,78 @@ const SettingsPage = () => {
               style={styles.arrowIcon}
             />
           </TouchableOpacity>
+          <View style={styles.listItemSeparator} />
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => console.log("Email Notifications")}
+          >
+            <Text style={styles.listItemText}>Time Zone Selections</Text>
+            <Image
+              source={require("../../assets/images/arrow-right.png")}
+              style={styles.arrowIcon}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>SUPPORT & FEEDBACK</Text>
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => console.log("Privacy Preferences Pressed")}
+          >
+            <Text style={styles.listItemText}>FAQs</Text>
+            <Image
+              source={require("../../assets/images/arrow-right.png")}
+              style={styles.arrowIcon}
+            />
+          </TouchableOpacity>
+          <View style={styles.listItemSeparator} />
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => console.log("Email Notifications")}
+          >
+            <Text style={styles.listItemText}>Contact Support</Text>
+            <Image
+              source={require("../../assets/images/arrow-right.png")}
+              style={styles.arrowIcon}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>LEGAL</Text>
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => console.log("Privacy Preferences Pressed")}
+          >
+            <Text style={styles.listItemText}>Terms of Service</Text>
+            <Image
+              source={require("../../assets/images/arrow-right.png")}
+              style={styles.arrowIcon}
+            />
+          </TouchableOpacity>
+          <View style={styles.listItemSeparator} />
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => console.log("Email Notifications")}
+          >
+            <Text style={styles.listItemText}>Privacy Policy</Text>
+            <Image
+              source={require("../../assets/images/arrow-right.png")}
+              style={styles.arrowIcon}
+            />
+          </TouchableOpacity>
+          <View style={styles.listItemSeparator} />
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => console.log("Email Notifications")}
+          >
+            <Text style={styles.listItemText}>Data Retention Policy</Text>
+            <Image
+              source={require("../../assets/images/arrow-right.png")}
+              style={styles.arrowIcon}
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Logout Button */}
@@ -323,7 +395,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: height * 0.018, // Responsive padding (1% of screen height)
-    paddingHorizontal: width * 0.04,
+    paddingHorizontal: width * 0.01,
   },
   listItemText: {
     fontSize: responsiveFontSize(16), // Use responsive font size

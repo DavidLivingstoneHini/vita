@@ -30,12 +30,28 @@ const editorsPick = {
   text: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
 };
 
-// Dummy data for buttons
-const buttonsData = Array.from({ length: 21 }, (_, i) => ({
-  id: i,
-  text: i === 0 ? "For You" : `Button ${i}`,
-}));
-
+// Dummy data for buttons with health-related titles
+const buttonsData = [
+  { id: 0, text: "For You" },
+  { id: 1, text: "Nutrition" },
+  { id: 2, text: "Fitness" },
+  { id: 3, text: "Mental Health" },
+  { id: 4, text: "Chronic Diseases" },
+  { id: 5, text: "Preventive Care" },
+  { id: 6, text: "Women's Health" },
+  { id: 7, text: "Men's Health" },
+  { id: 8, text: "Children's Health" },
+  { id: 9, text: "Elderly Care" },
+  { id: 10, text: "Health Tech" },
+  { id: 12, text: "Public Health" },
+  { id: 13, text: "Health Policy" },
+  { id: 15, text: "Pandemics" },
+  { id: 16, text: "Vaccines" },
+  { id: 17, text: "Health Education" },
+  { id: 18, text: "Health Innovations" },
+  { id: 19, text: "Health Disparities" },
+  { id: 20, text: "Health Equity" },
+];
 
 // Normalize font size across different screen sizes
 const normalizeFont = (size) => {
@@ -75,7 +91,7 @@ const News = () => {
     } else {
       return (
         <View>
-          <Text>Content for Button {selectedButton.id}</Text>
+          <Text>Content for {selectedButton.text}</Text>
         </View>
       );
     }
@@ -118,48 +134,48 @@ const News = () => {
               }
             >
               <View style={styles.buttonRowsContainer}>
-            {Array.from({ length: 3 }, (_, rowIndex) => (
-              <View key={rowIndex} style={styles.buttonRow}>
-                {buttonsData
-                  .slice(rowIndex * 7, (rowIndex + 1) * 7)
-                  .map((button) => (
-                    <TouchableOpacity
-                      key={button.id}
-                      style={[
-                        styles.smallButton,
-                        selectedButton.id === button.id && styles.selectedSmallButton,
-                        { minWidth: vw * 20 }, // Ensure buttons aren't too small
-                      ]}
-                      onPress={() => setSelectedButton(button)}
-                    >
-                      <Text
-                        style={[
-                          styles.smallButtonText,
-                          selectedButton.id === button.id && { color: "#fff" },
-                          { fontSize: normalizeFont(12) },
-                        ]}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                      >
-                        {button.text}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                {Array.from({ length: 3 }, (_, rowIndex) => (
+                  <View key={rowIndex} style={styles.buttonRow}>
+                    {buttonsData
+                      .slice(rowIndex * 7, (rowIndex + 1) * 7)
+                      .map((button) => (
+                        <TouchableOpacity
+                          key={button.id}
+                          style={[
+                            styles.smallButton,
+                            selectedButton.id === button.id && styles.selectedSmallButton,
+                            { minWidth: vw * 20 }, // Ensure buttons aren't too small
+                          ]}
+                          onPress={() => setSelectedButton(button)}
+                        >
+                          <Text
+                            style={[
+                              styles.smallButtonText,
+                              selectedButton.id === button.id && { color: "#fff" },
+                              { fontSize: normalizeFont(12) },
+                            ]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
+                            {button.text}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                  </View>
+                ))}
               </View>
-            ))}
+            </ScrollView>
           </View>
-        </ScrollView>
+          <View style={styles.contentContainer}>{renderContent()}</View>
+        </View>
       </View>
-      <View style={styles.contentContainer}>{renderContent()}</View>
-      </View>
-    </View>
     </SafeAreaView>
- );
+  );
 };
 
 const ForYouContent = ({ selectedButton }) => {
   const navigation = useNavigation();
-  
+
   return (
     <ScrollView style={forYouStyles.forYouContainer}>
       <View style={forYouStyles.editorsPickContainer}>
@@ -289,7 +305,7 @@ const forYouStyles = StyleSheet.create({
   },
   editorsPickContainer: {
     marginBottom: vh * 2,
-    marginTop: vh * 1, 
+    marginTop: vh * 1,
   },
   editorsPickTitle: {
     fontWeight: "bold",

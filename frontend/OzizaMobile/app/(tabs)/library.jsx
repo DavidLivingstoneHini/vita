@@ -18,7 +18,10 @@ const scale = (size) => (width / 375) * size;
 
 // Function to get safe area top padding
 const getSafeAreaTop = () => {
-  return Platform.OS === "ios" ? 40 : 20;
+  if (Platform.OS === "ios") {
+    return 40; // Adjust for iOS
+  }
+  return 20; // Default for Android
 };
 
 export default function Library() {
