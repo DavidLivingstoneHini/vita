@@ -32,6 +32,23 @@ const ItemImage6 = require("../../assets/images/eclipse.png");
 const ItemImage7 = require("../../assets/images/bmicheck.png");
 const ItemImage8 = require("../../assets/images/periodtracker.png");
 const ItemImage9 = require("../../assets/images/symcheck.png");
+const ItemImage10 = require("../../assets/images/findoc.png");
+const ItemImage11 = require("../../assets/images/penis.png");
+const ItemImage12 = require("../../assets/images/spice1.png");
+const ItemImage13 = require("../../assets/images/spice2.png");
+const ItemImage14 = require("../../assets/images/spice3.png");
+const ItemImage15 = require("../../assets/images/contra.png");
+const ItemImage16 = require("../../assets/images/vaccines.png");
+const ItemImage17 = require("../../assets/images/event1.png");
+const ItemImage18 = require("../../assets/images/event2.png");
+const ItemImage19 = require("../../assets/images/event3.png");
+const ItemImage20 = require("../../assets/images/gym.png");
+const ItemImage21 = require("../../assets/images/fitness.png");
+const ItemImage22 = require("../../assets/images/sleep.png");
+const ItemImage23 = require("../../assets/images/exercise.png");
+const ItemImage24 = require("../../assets/images/eye.png");
+
+
 const LogoImage = require("../../assets/images/ozizawhite.png");
 
 const featuredImage1 = require("../../assets/images/bgblue.png");
@@ -50,8 +67,13 @@ const Home = () => {
     { id: 2, image: ItemImage2, title: "Hypertension" },
     { id: 3, image: ItemImage3, title: "Phobia" },
     { id: 4, image: ItemImage1, title: "Skin Bleaching" },
-    { id: 5, image: ItemImage2, title: "Skin Bleaching" },
-    { id: 6, image: ItemImage3, title: "Skin Bleaching" },
+  ];
+
+  const healthListItems1 = [
+    { id: 1, image: ItemImage21, title: "Weight Loss" },
+    { id: 2, image: ItemImage22, title: "Sleep" },
+    { id: 3, image: ItemImage23, title: "Physical Exercise" },
+    { id: 4, image: ItemImage24, title: "Eye Health" },
   ];
 
   const newSectionItems = [
@@ -95,10 +117,40 @@ const Home = () => {
     },
   ];
 
+  const lifestyleListItems2 = [
+    {
+      id: 1,
+      image: ItemImage17,
+      title: "NHIS Conference 2025",
+      description: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
+    },
+    {
+      id: 2,
+      image: ItemImage18,
+      title: "DigiHealth Global 2025",
+      description: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
+    },
+    {
+      id: 3,
+      image: ItemImage19,
+      title: "NHIS Conference 2025",
+      description: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
+    },
+    {
+      id: 4,
+      image: ItemImage17,
+      title: "DigiHealth Global 2025",
+      description: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
+    },
+  ];
+
   const exposingMythsListItems = [
-    { id: 1, image: ItemImage1, title: "Myth 1" },
-    { id: 2, image: ItemImage2, title: "Myth 2" },
-    { id: 3, image: ItemImage3, title: "Myth 3" },
+    { id: 1, image: ItemImage11, title: "Penis size doesn’t matter" },
+    { id: 2, image: ItemImage12, title: "Spicy foods don’t induce labour" },
+    { id: 3, image: ItemImage13, title: "Spicy foods don’t induce labour" },
+    { id: 4, image: ItemImage14, title: "Spicy foods don’t induce labour" },
+    { id: 5, image: ItemImage15, title: "Contraceptives don’t cause infertility" },
+    { id: 6, image: ItemImage16, title: "Vaccines do not cause autism" },
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -133,6 +185,25 @@ const Home = () => {
           <Text style={styles.inspirationCategory}>{item.category}</Text>
           <Text style={styles.inspirationReadTime}>{item.readTime}</Text>
         </View>
+        <Text style={styles.inspirationCardTitle}>{item.title}</Text>
+        <Text style={styles.inspirationCardDescription} numberOfLines={2}>
+          {item.description}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderInspirationItem2 = ({ item }) => (
+    <TouchableOpacity
+      style={styles.inspirationCard}
+      onPress={() => navigation.navigate(`evets/${item.id}`)}
+    >
+      <Image
+        source={item.image}
+        style={styles.inspirationImage}
+        resizeMode="cover"
+      />
+      <View style={styles.inspirationCardContent}>
         <Text style={styles.inspirationCardTitle}>{item.title}</Text>
         <Text style={styles.inspirationCardDescription} numberOfLines={2}>
           {item.description}
@@ -257,7 +328,7 @@ const Home = () => {
             </TouchableOpacity>
           </View>
           <FlatList
-            data={healthListItems}
+            data={healthListItems1}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => navigateToDetail(item.id)}>
                 <View style={styles.listItem}>
@@ -283,20 +354,20 @@ const Home = () => {
               </View>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={exposingMythsListItems}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigateToDetail(item.id)}>
-                <View style={styles.listItem}>
-                  <Image source={item.image} style={styles.listItemImage} />
-                  <Text style={styles.listItemTitle}>{item.title}</Text>
-                </View>
+          <View style={styles.mythsGrid}>
+            {exposingMythsListItems.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.mythsGridItem, { width: (screenWidth - 40) / 3 }]} // 40 = paddingHorizontal (20 + 20)
+                onPress={() => navigateToDetail(item.id)}
+              >
+                <Image source={item.image} style={styles.mythsGridImage} />
+                <Text style={styles.mythsGridTitle} numberOfLines={2}>
+                  {item.title}
+                </Text>
               </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
+            ))}
+          </View>
         </View>
 
         {/* Emergency Section */}
@@ -373,6 +444,115 @@ const Home = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.newSectionList}
+          />
+        </View>
+
+        {/* Find a doctor Section */}
+        <View style={styles.lifestyleSection}>
+          <View style={styles.lifestyleContent}>
+            <Text style={styles.lifestyleTitle}>Find a Doctor or a Hospital</Text>
+            <Text style={styles.lifestyleDescription}>
+              Are you in an emergency or just need to find a doctor or hospital for your health needs?
+            </Text>
+            <TouchableOpacity
+              style={styles.lifestyleButton}
+              onPress={() => navigation.navigate('findoctor/index')}
+            >
+              <Text style={styles.lifestyleButtonText}>Tap Here</Text>
+            </TouchableOpacity>
+          </View>
+          <Image
+            source={ItemImage10}
+            style={styles.lifestyleImage}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Events Section */}
+        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Events Lineup</Text>
+            <TouchableOpacity onPress={() => navigation.navigate("events/index")}>
+              <View style={styles.seeMoreContainer}>
+                <Text style={styles.seeMoreText}>SEE MORE</Text>
+                <Image source={chevronIcon} style={styles.chevronIcon} />
+              </View>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={lifestyleListItems2}
+            renderItem={renderInspirationItem2}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+            contentContainerStyle={styles.inspirationList}
+          />
+        </View>
+
+        {/* Gym Section */}
+        <View style={styles.lifestyleSection1}>
+          <Image
+            source={ItemImage20}
+            style={styles.lifestyleImage1}
+            resizeMode="cover"
+          />
+          <View style={styles.lifestyleContent1}>
+            <Text style={styles.lifestyleTitle1}>Map out a Gym</Text>
+            <Text style={styles.lifestyleDescription1}>
+              Trying to get fit?
+              Use this feature to locate a gym nearby.
+            </Text>
+            <TouchableOpacity
+              style={styles.lifestyleButton1}
+              onPress={() => navigation.navigate('gym/index')}
+            >
+              <Text style={styles.lifestyleButtonText1}>Let's go!</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Agencies Section */}
+        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Agencies & Organizations</Text>
+            <TouchableOpacity onPress={() => navigation.navigate("inspiration/index")}>
+              <View style={styles.seeMoreContainer}>
+                <Text style={styles.seeMoreText}>SEE MORE</Text>
+                <Image source={chevronIcon} style={styles.chevronIcon} />
+              </View>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={lifestyleListItems}
+            renderItem={renderInspirationItem}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+            contentContainerStyle={styles.inspirationList}
+          />
+        </View>
+
+        {/* Policies Section */}
+        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>Policies & Insurances</Text>
+            <TouchableOpacity onPress={() => navigation.navigate("inspiration/index")}>
+              <View style={styles.seeMoreContainer}>
+                <Text style={styles.seeMoreText}>SEE MORE</Text>
+                <Image source={chevronIcon} style={styles.chevronIcon} />
+              </View>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={lifestyleListItems}
+            renderItem={renderInspirationItem}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+            contentContainerStyle={styles.inspirationList}
           />
         </View>
       </ScrollView>
@@ -477,8 +657,8 @@ const styles = StyleSheet.create({
   inspirationCard: {
     width: Dimensions.get('window').width * 0.8,
     backgroundColor: 'white',
-    borderRadius: 12,
-    shadowColor: "#000",
+    borderRadius: 8,
+    shadowColor: "#adadad",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -491,8 +671,8 @@ const styles = StyleSheet.create({
   inspirationImage: {
     width: '100%',
     height: Dimensions.get('window').width * 0.4,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
   },
   inspirationCardContent: {
     padding: Dimensions.get('window').width * 0.03,
@@ -515,13 +695,13 @@ const styles = StyleSheet.create({
   inspirationCardTitle: {
     fontSize: Dimensions.get('window').width * 0.04,
     fontWeight: '700',
-    color: '#0C1549',
+    color: '#000000',
     marginBottom: 4,
   },
   inspirationCardDescription: {
     fontSize: Dimensions.get('window').width * 0.032,
     color: '#666',
-    lineHeight: 20,
+    lineHeight: 14,
   },
   emergencyContainer: {
     backgroundColor: "#C92035",
@@ -593,6 +773,7 @@ const styles = StyleSheet.create({
   featuredImageFront: {
     width: Dimensions.get('window').width * 0.4,
     height: Dimensions.get('window').width * 0.47,
+    borderRadius: 2,
     position: 'absolute',
     top: -8,
     right: -28,
@@ -615,7 +796,8 @@ const styles = StyleSheet.create({
   },
   learnMoreButton: {
     backgroundColor: 'black',
-    padding: Dimensions.get('window').width * 0.030,
+    paddingVertical: Dimensions.get('window').width * 0.030,
+    paddingHorizontal: Dimensions.get('window').width * 0.060,
     borderRadius: 6,
     alignSelf: 'flex-start',
   },
@@ -643,6 +825,114 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0C1549',
     textAlign: 'center',
+  },
+  lifestyleSection: {
+    flexDirection: 'row',
+    padding: Dimensions.get('window').width * 0.04,
+    marginHorizontal: Dimensions.get('window').width * 0.025,
+    marginVertical: Dimensions.get('window').height * 0.02,
+    backgroundColor: '#F5F7FF',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  lifestyleContent: {
+    flex: 1,
+    paddingRight: Dimensions.get('window').width * 0.04,
+  },
+  lifestyleTitle: {
+    fontSize: Dimensions.get('window').width * 0.041,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: Dimensions.get('window').height * 0.01,
+  },
+  lifestyleDescription: {
+    fontSize: Dimensions.get('window').width * 0.034,
+    color: '#666',
+    lineHeight: 16,
+    marginBottom: Dimensions.get('window').height * 0.02,
+  },
+  lifestyleButton: {
+    backgroundColor: '#000000',
+    paddingVertical: Dimensions.get('window').width * 0.033,
+    paddingHorizontal: Dimensions.get('window').width * 0.10,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  lifestyleButtonText: {
+    color: 'white',
+    fontSize: Dimensions.get('window').width * 0.035,
+    fontWeight: '600',
+  },
+  lifestyleImage: {
+    width: Dimensions.get('window').width * 0.43,
+    height: Dimensions.get('window').width * 0.59,
+    borderRadius: 4,
+  },
+  lifestyleSection1: {
+    flexDirection: 'row',
+    padding: Dimensions.get('window').width * 0.04,
+    marginHorizontal: Dimensions.get('window').width * 0.025,
+    marginVertical: Dimensions.get('window').height * 0.02,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  lifestyleContent1: {
+    flex: 1,
+    paddingLeft: Dimensions.get('window').width * 0.06,
+  },
+  lifestyleTitle1: {
+    fontSize: Dimensions.get('window').width * 0.042,
+    fontWeight: '700',
+    color: '#000000',
+    marginBottom: Dimensions.get('window').height * 0.01,
+  },
+  lifestyleDescription1: {
+    fontSize: Dimensions.get('window').width * 0.034,
+    color: '#666',
+    lineHeight: 18,
+    marginBottom: Dimensions.get('window').height * 0.02,
+  },
+  lifestyleButton1: {
+    backgroundColor: '#000000',
+    paddingVertical: Dimensions.get('window').width * 0.033,
+    paddingHorizontal: Dimensions.get('window').width * 0.10,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  lifestyleButtonText1: {
+    color: 'white',
+    fontSize: Dimensions.get('window').width * 0.035,
+    fontWeight: '600',
+  },
+  lifestyleImage1: {
+    width: Dimensions.get('window').width * 0.43,
+    height: Dimensions.get('window').width * 0.59,
+    borderRadius: 4,
+  },
+  mythsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: Dimensions.get('window').width * 0.025, // 2.5% padding
+  },
+  mythsGridItem: {
+    marginBottom: Dimensions.get('window').height * 0.02, // Space between rows
+    alignItems: 'center',
+  },
+  mythsGridImage: {
+    width: '100%',
+    height: Dimensions.get('window').width * 0.25, // Adjust height based on screen width
+    borderRadius: 6,
+    marginBottom: 8,
+  },
+  mythsGridTitle: {
+    fontSize: Dimensions.get('window').width * 0.032,
+    fontWeight: "600",
+    textAlign: "center",
+    color: "#0C1549",
+    paddingHorizontal: 4,
   },
 });
 

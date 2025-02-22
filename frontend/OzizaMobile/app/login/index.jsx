@@ -18,6 +18,13 @@ import { Link, useRouter } from "expo-router";
 import Toast from 'react-native-toast-message';
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
+// import { GoogleSignin } from "@react-native-google-signin/google-signin";
+
+// GoogleSignin.configure({
+//   webClientId:
+//     "<YOUR_GOOGLE_CLIENT_ID>",
+//   scopes: ["profile", "email"],
+// });
 
 const { width, height } = Dimensions.get('window');
 
@@ -74,6 +81,44 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
+  // function onAuthStateChanged(user) {
+  //   setUser(user);
+  //   if (user) setLoggedIn(true);
+  //   else setLoggedIn(false);
+  //   if (initializing) setInitializing(false);
+  // }
+
+  // async function onGoogleButtonPress() {
+  //   // Check if your device supports Google Play
+  //   await GoogleSignin.signOut();
+  //   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  //   // Get the users ID token
+  //   const googleSignInResult = await GoogleSignin.signIn();
+
+  //   // Create a Google credential with the token
+  //   const googleCredential = auth.GoogleAuthProvider.credential(
+  //     googleSignInResult.data?.idToken
+  //   );
+
+  //   // Sign-in the user with the credential
+  //   return await auth().signInWithCredential(googleCredential);
+  // }
+
+  // useEffect(() => {
+  //   const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
+  //   return subscriber; // unsubscribe on unmount
+  // }, []);
+
+  // Handles sign-out
+  // const handleSignOut = () => {
+  //   auth()
+  //     .signOut()
+  //     .then(() => console.log("User signed out!"));
+  //   setLoggedIn(false);
+  //   setEmail("");
+  //   setPassword("");
+  // };
 
   const getErrorMessage = (error) => {
     if (error.response && error.response.data) {
