@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>539163820187-iii7qa9tjovh08kmh7m0caieqesjagim.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.539163820187-iii7qa9tjovh08kmh7m0caieqesjagim</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>539163820187-a82rpc159qoo4fuv50fv4l78b0l8f03f.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCzsdoAKHdycMCTfgV7jVXA-4UreieMqfA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>539163820187</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.anonymous.OzizaMobile</string>
+	<key>PROJECT_ID</key>
+	<string>oziza-5927b</string>
+	<key>STORAGE_BUCKET</key>
+	<string>oziza-5927b.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:539163820187:ios:7a8c296cff6d94b045863e</string>
+</dict>
+</plist>
