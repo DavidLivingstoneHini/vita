@@ -18,6 +18,7 @@ import { Link, useRouter } from "expo-router";
 import Toast from 'react-native-toast-message';
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
+import { useNavigation } from "@react-navigation/native";
 // import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 // GoogleSignin.configure({
@@ -34,6 +35,7 @@ export default function LoginScreen() {
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
+  const navigation = useNavigation();
 
   const handleLogin = async () => {
     setLoading(true);
@@ -211,7 +213,8 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity style={styles.socialButton} onPress={() => router.push("/(tabs)/home")}
+              >
                 <Image
                   source={require("../../assets/images/devicon_google.png")}
                   style={styles.socialIcon}

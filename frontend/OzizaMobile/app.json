@@ -37,6 +37,12 @@
           "backgroundColor": "#ffffff"
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow OzizaMobile to use your location."
+        }
+      ],
       "expo-secure-store"
     ],
     "experiments": {
