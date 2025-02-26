@@ -221,7 +221,7 @@ export default function LoginScreen() {
                   resizeMode="contain"
                 />
                 <Text style={styles.socialButtonText}>Continue with Google</Text>
-              </TouchableOpacity>
+              </TouchableOpacity>-
 
               <TouchableOpacity style={styles.socialButton}>
                 <Image
