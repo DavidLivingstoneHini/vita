@@ -10,6 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Link, useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -31,6 +32,7 @@ const getSafeAreaTop = () => {
 const FindDoctorScreen = () => {
   const [selectedSpecialization, setSelectedSpecialization] = useState(null);
   const navigation = useNavigation();
+  const router = useRouter();
 
   const specializations = [
     {
@@ -85,7 +87,7 @@ const FindDoctorScreen = () => {
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => router.push("/home")}>
           <Image
             source={require("../../assets/images/back-arrow.png")}
             style={styles.backArrow}

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { Link, useRouter } from "expo-router";
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
@@ -25,6 +26,7 @@ const getResponsiveFontSize = (size) => {
 };
 
 const InspirationScreen = ({ navigation }) => {
+  const router = useRouter();
   const dummyData = [
     {
       id: 1,
@@ -59,8 +61,8 @@ const InspirationScreen = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => navigation1.navigate("Home")}
+          <TouchableOpacity
+            onPress={() => router.push("/home")}
             style={styles.backButton}
           >
             <Image
@@ -71,7 +73,7 @@ const InspirationScreen = ({ navigation }) => {
           <Text style={styles.title}>Inspiration</Text>
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContent}
         >
@@ -81,8 +83,8 @@ const InspirationScreen = ({ navigation }) => {
               onPress={() => handleCardPress(card.id)}
               style={styles.cardContainer}
             >
-              <Image 
-                source={card.image} 
+              <Image
+                source={card.image}
                 style={styles.cardImage}
                 resizeMode="cover"
               />

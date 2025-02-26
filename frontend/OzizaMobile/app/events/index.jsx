@@ -10,6 +10,7 @@ import {
   Platform,
   SafeAreaView,
 } from "react-native";
+import { Link, useRouter } from "expo-router";
 
 // Get device dimensions
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -19,6 +20,7 @@ const scale = SCREEN_WIDTH / 375; // Using 375 as base width (iPhone X)
 const normalize = (size) => Math.round(scale * size);
 
 const EventScreen = ({ navigation }) => {
+  const router = useRouter();
   const eventsYouMightLike = [
     {
       id: 1,
@@ -70,8 +72,8 @@ const EventScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
+        <TouchableOpacity
+          onPress={() => router.push("/home")}
           style={styles.backButton}
         >
           <Image
@@ -82,7 +84,7 @@ const EventScreen = ({ navigation }) => {
         <Text style={styles.eventTitle}>Event</Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
       >
@@ -94,8 +96,8 @@ const EventScreen = ({ navigation }) => {
         >
           {eventsYouMightLike.map((event) => (
             <View key={event.id} style={styles.imageCardContainerHorizontal}>
-              <Image 
-                source={event.image} 
+              <Image
+                source={event.image}
                 style={styles.imageCardHorizontal}
                 resizeMode="cover"
               />

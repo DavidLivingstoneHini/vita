@@ -10,6 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { Link, useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,6 +30,7 @@ const getSafeAreaTop = () => {
 };
 
 const DoctorListScreen = ({ route, navigation }) => {
+  const router = useRouter();
   const { specializationId, specializationText } = route?.params || {};
   const [selectedSpecializationId, setSelectedSpecializationId] = useState(
     specializationId || null
@@ -197,7 +199,7 @@ const DoctorListScreen = ({ route, navigation }) => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => router.push("/findoctor")}
           >
             <Image
               source={require("../../assets/images/back-arrow.png")}
@@ -213,6 +215,22 @@ const DoctorListScreen = ({ route, navigation }) => {
           style={styles.specializationList}
           showsHorizontalScrollIndicator={false}
         >
+          <TouchableOpacity
+            style={[
+              styles.specializationButton,
+              {
+                backgroundColor:
+                  selectedSpecializationId === null
+                    ? SELECTED_COLOR
+                    : NOT_SELECTED_COLOR,
+                paddingHorizontal: width * 0.05,
+              },
+            ]}
+            onPress={() => handleSpecializationPress(null)}
+          >
+            <Text style={styles.specializationText}>All</Text>
+          </TouchableOpacity>
+
           {specializations.map((specialization) => (
             <TouchableOpacity
               key={specialization.id}
@@ -238,21 +256,6 @@ const DoctorListScreen = ({ route, navigation }) => {
               </View>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity
-            style={[
-              styles.specializationButton,
-              {
-                backgroundColor:
-                  selectedSpecializationId === null
-                    ? SELECTED_COLOR
-                    : NOT_SELECTED_COLOR,
-                paddingHorizontal: width * 0.05,
-              },
-            ]}
-            onPress={() => handleSpecializationPress(null)}
-          >
-            <Text style={styles.specializationText}>All</Text>
-          </TouchableOpacity>
         </ScrollView>
 
         <View style={styles.sectionContainer}>

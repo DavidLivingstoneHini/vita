@@ -8,6 +8,7 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
+import { Link, useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,13 +27,14 @@ const getSafeAreaTop = () => {
   return 20; // Default for Android
 };
 
-export default function EmergencyServicesScreen({ navigation }) {
+export default function EmergencyServicesScreen({ }) {
+  const router = useRouter();
   return (
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => router.push("/home")}>
             <Image
               source={require("../../assets/images/back-arrow-white.png")}
               style={styles.backArrow}

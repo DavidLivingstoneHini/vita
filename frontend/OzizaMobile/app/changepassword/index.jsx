@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { Link, useRouter } from "expo-router";
 
 // Get screen dimensions
 const { width, height } = Dimensions.get("window");
@@ -33,6 +34,7 @@ const getSafeAreaTop = () => {
 };
 
 const ChangePasswordScreen = () => {
+  const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -72,7 +74,7 @@ const ChangePasswordScreen = () => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate("(tabs)/settings")}>
+        <TouchableOpacity onPress={() => router.push("/settings")}>
           <AntDesign
             name="arrowleft"
             size={responsiveFontSize(24)}
