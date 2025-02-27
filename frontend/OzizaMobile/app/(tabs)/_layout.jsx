@@ -29,24 +29,24 @@ function TabLayout() {
   const navigation = useNavigation();
   const route = useRoute();
 
-  useFocusEffect(
-    useCallback(() => {
-      if (route.params?.reset) {
-        navigation.reset({
-          index: 2,
-          routes: [{ 
-            name: "TabLayout",
-            state: {
-              routes: [
-                { name: Home }
-              ],
-              index: 0,
-            }
-          }],
-        });
-      }
-    }, [navigation, route])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (route.params?.reset) {
+  //       navigation.reset({
+  //         index: 2,
+  //         routes: [{ 
+  //           name: "TabLayout",
+  //           state: {
+  //             routes: [
+  //               { name: Home }
+  //             ],
+  //             index: 2,
+  //           }
+  //         }],
+  //       });
+  //     }
+  //   }, [navigation, route])
+  // );
 
   return (
     <Tab.Navigator
