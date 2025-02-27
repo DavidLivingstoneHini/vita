@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
-import { dataStore } from "../../utils/dataStore";
+import { dataStore } from "../../utils/dataStore";  // Import dataStore for article info
 
 const ArticleScreen = ({ route }) => {
   // Add default params to avoid undefined errors

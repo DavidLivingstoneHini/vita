@@ -42,7 +42,7 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const response = await api.apiRequest(
-        "http://192.168.169.90:8000/api/v1/users/signup/",
+        "http:13.60.86.56:8000/api/v1/users/signup/",
         {
           method: "POST",
           body: JSON.stringify({

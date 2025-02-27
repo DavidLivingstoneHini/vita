@@ -49,7 +49,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow OzizaMobile to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow Oziza to access your location."
         }
       ],
       "expo-secure-store"

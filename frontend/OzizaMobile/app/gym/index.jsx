@@ -4,14 +4,14 @@ import {
   Text,
   Image,
   StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  FlatList,
   Dimensions,
   Platform,
+  TouchableOpacity,
+  ScrollView,
 } from "react-native";
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
+import MapView, { Marker } from "react-native-maps";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 
 // Get screen dimensions
 const { width, height } = Dimensions.get("window");
@@ -31,15 +31,16 @@ const getSafeAreaTop = () => {
   return 20; // Default for Android
 };
 
-const FindAGymScreen = ({ navigation }) => {
+const FindAGymScreen = () => {
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
+      if (status !== "granted") {
+        setErrorMsg("Permission to access location was denied");
         return;
       }
 
@@ -84,7 +85,7 @@ const FindAGymScreen = ({ navigation }) => {
       coordinate: {
         latitude: 37.78825,
         longitude: -122.4324,
-      }
+      },
     },
     {
       id: 2,
@@ -94,7 +95,7 @@ const FindAGymScreen = ({ navigation }) => {
       coordinate: {
         latitude: 37.78925,
         longitude: -122.4344,
-      }
+      },
     },
     {
       id: 3,
@@ -104,7 +105,7 @@ const FindAGymScreen = ({ navigation }) => {
       coordinate: {
         latitude: 37.79025,
         longitude: -122.4364,
-      }
+      },
     },
   ];
 
@@ -115,11 +116,22 @@ const FindAGymScreen = ({ navigation }) => {
     longitudeDelta: 0.0421,
   };
 
+  // Combine header, training types, and gyms into one scrollable content
+  const renderItem = (gym) => (
+    <View style={styles.gymListitem} key={gym.id}>
+      <View style={styles.gymInfo}>
+        <Text style={styles.gymName}>{gym.name}</Text>
+        <Text style={styles.gymLocation}>{gym.location}</Text>
+      </View>
+      <Text style={styles.gymWorkingHours}>{gym.workingHours}</Text>
+    </View>
+  );
+
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => router.push("/home")}>
           <Image
             source={require("../../assets/images/back-arrow.png")}
             style={styles.backArrow}
@@ -128,71 +140,56 @@ const FindAGymScreen = ({ navigation }) => {
         <Text style={styles.title}>Find a Gym</Text>
       </View>
 
-      {/* Ready to get fit */}
-      <Text style={styles.readyToFitTitle}>Ready to get fit</Text>
-      <Text style={styles.readyToFitSubtitle}>
-        Let's find you a place to workout{" "}
-      </Text>
+      {/* ScrollView for content */}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Ready to get fit */}
+        <Text style={styles.readyToFitTitle}>Ready to get fit</Text>
+        <Text style={styles.readyToFitSubtitle}>Let's find you a place to workout</Text>
 
-      {/* Explore by Training Type */}
-      <Text style={styles.sectionTitle}>Explore by Training Type</Text>
-      <ScrollView
-        horizontal
-        style={styles.trainingTypeList}
-        showsHorizontalScrollIndicator={false}
-      >
-        {trainingTypes.map((trainingType) => (
-          <View
-            key={trainingType.id}
-            style={[
-              styles.trainingTypeCard,
-              { backgroundColor: trainingType.backgroundColor },
-            ]}
-          >
-            <Text style={styles.trainingTypeName}>{trainingType.name}</Text>
-            <Image
-              source={trainingType.image}
-              style={styles.trainingTypeImage}
-            />
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Gyms near you */}
-      <Text style={styles.sectionTitle}>Gyms near you</Text>
-
-      {/* Map View */}
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          initialRegion={initialRegion}
+        {/* Explore by Training Type */}
+        <Text style={styles.sectionTitle}>Explore by Training Type</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.trainingTypeList}
         >
-          {gymsWithCoordinates.map((gym) => (
-            <Marker
-              key={gym.id}
-              coordinate={gym.coordinate}
-              title={gym.name}
-              description={gym.location}
-            />
-          ))}
-        </MapView>
-      </View>
-
-      {/* Gyms List */}
-      <FlatList
-        data={gymsWithCoordinates}
-        renderItem={({ item }) => (
-          <View style={styles.gymListitem}>
-            <View style={styles.gymInfo}>
-              <Text style={styles.gymName}>{item.name}</Text>
-              <Text style={styles.gymLocation}>{item.location}</Text>
+          {trainingTypes.map((trainingType) => (
+            <View
+              key={trainingType.id}
+              style={[styles.trainingTypeCard, { backgroundColor: trainingType.backgroundColor }]}
+            >
+              <Text style={styles.trainingTypeName}>{trainingType.name}</Text>
+              <Image
+                source={trainingType.image}
+                style={styles.trainingTypeImage}
+              />
             </View>
-            <Text style={styles.gymWorkingHours}>{item.workingHours}</Text>
-          </View>
-        )}
-        keyExtractor={(item) => item.id.toString()}
-      />
-    </ScrollView>
+          ))}
+        </ScrollView>
+
+        {/* Gyms near you */}
+        <Text style={styles.sectionTitle}>Gyms near you</Text>
+
+        {/* Map View */}
+        <View style={styles.mapContainer}>
+          <MapView style={styles.map} initialRegion={initialRegion}>
+            {gymsWithCoordinates.map((gym) => (
+              <Marker
+                key={gym.id}
+                coordinate={gym.coordinate}
+                title={gym.name}
+                description={gym.location}
+              />
+            ))}
+          </MapView>
+        </View>
+
+        {/* ScrollView for Gym list */}
+        <ScrollView style={styles.gymList}>
+          {gymsWithCoordinates.map(renderItem)}
+        </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -237,8 +234,10 @@ const styles = StyleSheet.create({
     marginTop: height * 0.02,
   },
   trainingTypeList: {
+    flexDirection: "row",
     paddingVertical: height * 0.02,
     paddingHorizontal: width * 0.04,
+    justifyContent: "space-between",
   },
   trainingTypeCard: {
     width: width * 0.35,
@@ -256,25 +255,27 @@ const styles = StyleSheet.create({
     width: "80%",
     height: "80%",
     borderRadius: 10,
-    marginLeft: width * 0.02,
   },
   mapContainer: {
     height: height * 0.3,
     marginHorizontal: width * 0.04,
     marginVertical: height * 0.02,
     borderRadius: 10,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   map: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
+  },
+  gymList: {
+    flex: 1,
+    paddingHorizontal: width * 0.04,
   },
   gymListitem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: height * 0.02,
-    paddingHorizontal: width * 0.04,
     borderBottomWidth: 1,
     borderBottomColor: "#F2F2F2",
   },
@@ -292,6 +293,9 @@ const styles = StyleSheet.create({
   gymWorkingHours: {
     fontSize: responsiveFontSize(14),
     color: "#666",
+  },
+  scrollContent: {
+    paddingBottom: 50, // To ensure content doesn't get clipped
   },
 });
 

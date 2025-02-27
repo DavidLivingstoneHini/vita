@@ -41,7 +41,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const response = await api.apiRequest(
-        "http://192.168.169.90:8000/api/v1/users/login/",
+        "http:13.60.86.56:8000/api/v1/users/login/",
         {
           method: "POST",
           body: JSON.stringify({
