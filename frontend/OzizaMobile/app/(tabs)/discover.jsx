@@ -92,7 +92,7 @@ export default function Discover() {
           <TextInput
             style={styles.searchBox}
             placeholder="Search..."
-            placeholderTextColor="#666"
+            placeholderTextColor="#808080"
           />
         </View>
         <TouchableOpacity style={styles.settingsButton}>

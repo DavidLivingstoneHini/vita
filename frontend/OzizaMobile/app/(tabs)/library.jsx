@@ -30,11 +30,18 @@ export default function Library() {
   const alphabetRefs = useRef({});
 
   // Dummy data for categories
-  const categories = Array.from({ length: 10 }, (_, i) => ({
-    id: i,
-    image: `https://picsum.photos/200/300?random=${i}`,
-    title: `Category ${i}`,
-  }));
+  const categories = [
+    { id: 0, image: require("../../assets/images/ailments.png"), title: "Men's Health" },
+    { id: 1, image: require("../../assets/images/reprohealth.png"), title: "Women's Health" },
+    { id: 2, image: require("../../assets/images/mentalhealth.png"), title: "Mental Health" },
+    { id: 3, image: require("../../assets/images/ailments.png"), title: "General Ailments" },
+    { id: 4, image: require("../../assets/images/reprohealth.png"), title: "Reproductive Health" },
+    { id: 5, image: require("../../assets/images/ailments.png"), title: "Myths" },
+    { id: 6, image: require("../../assets/images/mentalhealth.png"), title: "Contraception" },
+    { id: 7, image: require("../../assets/images/reprohealth.png"), title: "Healthy Living" },
+    { id: 8, image: require("../../assets/images/ailments.png"), title: "Child Care" },
+    { id: 9, image: require("../../assets/images/mentalhealth.png"), title: "STIs" },
+  ];
 
   // Dummy data for glossary
   const glossary = {
@@ -195,7 +202,7 @@ export default function Library() {
                 onPress={() => handleItemPress(category.title)}
               >
                 <Image
-                  source={{ uri: category.image }}
+                  source={category.image}
                   style={styles.categoryImage}
                   resizeMode="cover"
                 />

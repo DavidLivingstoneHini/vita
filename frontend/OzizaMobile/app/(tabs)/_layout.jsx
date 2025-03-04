@@ -1,11 +1,7 @@
-import React, { useCallback } from "react";
-import { View, Text, Image } from "react-native";
+import React, { useEffect } from "react";
+import { Image } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import {
-  useFocusEffect,
-  useNavigation,
-  useRoute,
-} from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import Home from "./home";
 import News from "./news";
 import Library from "./library";
@@ -27,30 +23,16 @@ const Tab = createBottomTabNavigator();
 
 function TabLayout() {
   const navigation = useNavigation();
-  const route = useRoute();
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     if (route.params?.reset) {
-  //       navigation.reset({
-  //         index: 2,
-  //         routes: [{ 
-  //           name: "TabLayout",
-  //           state: {
-  //             routes: [
-  //               { name: Home }
-  //             ],
-  //             index: 2,
-  //           }
-  //         }],
-  //       });
-  //     }
-  //   }, [navigation, route])
-  // );
+  useEffect(() => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Home" }], // Reset to Home screen
+    });
+  }, [navigation]);
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#000000",
@@ -63,112 +45,92 @@ function TabLayout() {
       <Tab.Screen
         name="Library"
         component={Library}
-        options={({ focused }) => ({
+        options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Image
               source={focused ? libraryIconFocused : libraryIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: size,
+                height: size,
                 resizeMode: "contain",
                 tintColor: color,
               }}
             />
           ),
           tabBarLabel: "Library",
-          tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
-          },
-        })}
+        }}
       />
       <Tab.Screen
         name="News"
         component={News}
-        options={({ focused }) => ({
+        options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Image
               source={focused ? newsIconFocused : newsIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: size,
+                height: size,
                 resizeMode: "contain",
                 tintColor: color,
               }}
             />
           ),
           tabBarLabel: "News",
-          tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
-          },
-        })}
+        }}
       />
       <Tab.Screen
         name="Home"
         component={Home}
-        options={({ focused }) => ({
+        options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Image
               source={focused ? homeIconFocused : homeIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: size,
+                height: size,
                 resizeMode: "contain",
                 tintColor: color,
               }}
             />
           ),
           tabBarLabel: "Home",
-          tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
-          },
-        })}
+        }}
       />
       <Tab.Screen
         name="Discover"
         component={Discover}
-        options={({ focused }) => ({
+        options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Image
               source={focused ? discoverIconFocused : discoverIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: size,
+                height: size,
                 resizeMode: "contain",
                 tintColor: color,
               }}
             />
           ),
           tabBarLabel: "Discover",
-          tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
-          },
-        })}
+        }}
       />
       <Tab.Screen
         name="Settings"
         component={Settings}
-        options={({ focused }) => ({
+        options={{
           tabBarIcon: ({ focused, color, size }) => (
             <Image
               source={focused ? moreIconFocused : moreIcon}
               style={{
-                width: size * 1,
-                height: size * 1,
+                width: size,
+                height: size,
                 resizeMode: "contain",
                 tintColor: color,
               }}
             />
           ),
           tabBarLabel: "Settings",
-          tabBarLabelStyle: {
-            fontSize: 11.5,
-            fontWeight: 500,
-          },
-        })}
+        }}
       />
     </Tab.Navigator>
   );

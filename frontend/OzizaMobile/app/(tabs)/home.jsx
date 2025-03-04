@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: Dimensions.get('window').width * 0.025, // 2.5% padding
+    paddingHorizontal: Dimensions.get('window').width * 0.003, // 2.5% padding
   },
   mythsGridItem: {
     marginBottom: Dimensions.get('window').height * 0.02, // Space between rows

@@ -79,39 +79,39 @@ const FindAGymScreen = () => {
   const gymsWithCoordinates = [
     {
       id: 1,
-      name: "Gym 1",
-      location: "Accra Ghana",
+      name: "Lareg Fitness & Wellness",
+      location: "Accra, Ghana",
       workingHours: "7:00am - 10:00pm",
       coordinate: {
-        latitude: 37.78825,
-        longitude: -122.4324,
+        latitude: 5.652823135814312,
+        longitude: -0.14671263901447268,
       },
     },
     {
       id: 2,
-      name: "Gym 2",
-      location: "Accra Ghana",
+      name: "Flayme Fitness Studio",
+      location: "Accra, Ghana",
       workingHours: "8:00am - 9:00pm",
       coordinate: {
-        latitude: 37.78925,
-        longitude: -122.4344,
+        latitude: 5.644838188539504,
+        longitude: -0.1393349477319611,
       },
     },
     {
       id: 3,
-      name: "Gym 3",
-      location: "Accra Ghana",
+      name: " Fitla Gh",
+      location: "Accra, Ghana",
       workingHours: "6:00am - 11:00pm",
       coordinate: {
-        latitude: 37.79025,
-        longitude: -122.4364,
+        latitude: 5.644733330314451,
+        longitude: -0.15150580326782948,
       },
     },
   ];
 
   const initialRegion = {
-    latitude: location?.coords?.latitude || 37.78825,
-    longitude: location?.coords?.longitude || -122.4324,
+    latitude: location?.coords?.latitude || 5.644838188539504,
+    longitude: location?.coords?.longitude || -0.15150580326782948,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   };

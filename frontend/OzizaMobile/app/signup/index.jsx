@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Text,
   View,
@@ -11,6 +11,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet, // Import StyleSheet
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -22,27 +23,75 @@ import Toast from 'react-native-toast-message';
 const { width, height } = Dimensions.get('window');
 
 export default function SignUpScreen() {
-  const [passwordVisibility, setPasswordVisibility] = React.useState(true);
-  const [passwordVisibility2, setPasswordVisibility2] = React.useState(true);
-  const [fullName, setFullName] = React.useState("");
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [phoneNumber, setPhoneNumber] = React.useState("");
-  const [repeatPassword, setRepeatPassword] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [passwordMatch, setPasswordMatch] = React.useState(true);
+  const [passwordVisibility, setPasswordVisibility] = useState(true);
+  const [passwordVisibility2, setPasswordVisibility2] = useState(true);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(true);
+
+  // Error state variables
+  const [fullNameError, setFullNameError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [phoneNumberError, setPhoneNumberError] = useState("");
+  const [repeatPasswordError, setRepeatPasswordError] = useState("");
+
   const router = useRouter();
 
-  const handleSignUp = async () => {
+  const validateFields = () => {
+    let isValid = true;
+
+    if (!fullName) {
+      setFullNameError("Full Name is required");
+      isValid = false;
+    } else {
+      setFullNameError("");
+    }
+
+    if (!email) {
+      setEmailError("Email is required");
+      isValid = false;
+    } else {
+      setEmailError("");
+    }
+
+    if (!phoneNumber) {
+      setPhoneNumberError("Phone Number is required");
+      isValid = false;
+    } else {
+      setPhoneNumberError("");
+    }
+
+    if (!password) {
+      setPasswordError("Password is required");
+      isValid = false;
+    } else {
+      setPasswordError("");
+    }
+
     if (password !== repeatPassword) {
-      setPasswordMatch(false);
+      setRepeatPasswordError("Passwords do not match");
+      isValid = false;
+    } else {
+      setRepeatPasswordError("");
+    }
+
+    return isValid;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateFields()) {
       return;
     }
 
     setLoading(true);
     try {
       const response = await api.apiRequest(
-        "http:13.60.86.56:8000/api/v1/users/signup/",
+        "http://13.60.86.56/api/v1/users/signup/",
         {
           method: "POST",
           body: JSON.stringify({
@@ -76,7 +125,7 @@ export default function SignUpScreen() {
         position: 'bottom',
         visibilityTime: 4000,
       });
-      
+
       router.push("/login");
     } catch (error) {
       console.error("Sign-up error:", error?.message || "Unknown error");
@@ -114,7 +163,7 @@ export default function SignUpScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
@@ -130,38 +179,73 @@ export default function SignUpScreen() {
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, fullNameError ? styles.inputError : null]}
                 placeholder="Name"
+                placeholderTextColor="#808080"
                 value={fullName}
                 onChangeText={setFullName}
+                onBlur={() => {
+                  if (!fullName) {
+                    setFullNameError("Full Name is required");
+                  } else {
+                    setFullNameError("");
+                  }
+                }}
               />
+              {fullNameError ? <Text style={styles.errorText}>{fullNameError}</Text> : null}
             </View>
 
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, emailError ? styles.inputError : null]}
                 placeholder="Email"
+                placeholderTextColor="#808080"
                 value={email}
                 onChangeText={setEmail}
+                onBlur={() => {
+                  if (!email) {
+                    setEmailError("Email is required");
+                  } else {
+                    setEmailError("");
+                  }
+                }}
               />
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
             </View>
 
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, phoneNumberError ? styles.inputError : null]}
                 placeholder="Phone number"
+                placeholderTextColor="#808080"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
+                onBlur={() => {
+                  if (!phoneNumber) {
+                    setPhoneNumberError("Phone Number is required");
+                  } else {
+                    setPhoneNumberError("");
+                  }
+                }}
               />
+              {phoneNumberError ? <Text style={styles.errorText}>{phoneNumberError}</Text> : null}
             </View>
 
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, passwordError ? styles.inputError : null]}
                 placeholder="Password"
+                placeholderTextColor="#808080"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={passwordVisibility}
+                onBlur={() => {
+                  if (!password) {
+                    setPasswordError("Password is required");
+                  } else {
+                    setPasswordError("");
+                  }
+                }}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -173,18 +257,27 @@ export default function SignUpScreen() {
                   color="#808080"
                 />
               </TouchableOpacity>
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
             </View>
 
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, repeatPasswordError ? styles.inputError : null]}
                 placeholder="Repeat Password"
+                placeholderTextColor="#808080"
                 value={repeatPassword}
                 onChangeText={(text) => {
                   setRepeatPassword(text);
                   setPasswordMatch(text === password);
                 }}
                 secureTextEntry={passwordVisibility2}
+                onBlur={() => {
+                  if (password !== repeatPassword) {
+                    setRepeatPasswordError("Passwords do not match");
+                  } else {
+                    setRepeatPasswordError("");
+                  }
+                }}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -196,9 +289,7 @@ export default function SignUpScreen() {
                   color="#808080"
                 />
               </TouchableOpacity>
-              {!passwordMatch && repeatPassword.length > 0 && (
-                <Text style={styles.errorText}>Passwords do not match.</Text>
-              )}
+              {repeatPasswordError ? <Text style={styles.errorText}>{repeatPasswordError}</Text> : null}
             </View>
           </View>
 
@@ -258,7 +349,7 @@ export default function SignUpScreen() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -311,6 +402,9 @@ const styles = {
     paddingHorizontal: 10,
     marginVertical: 2,
     borderRadius: 5,
+  },
+  inputError: {
+    borderColor: "red",
   },
   eyeIcon: {
     position: "absolute",
@@ -392,4 +486,5 @@ const styles = {
     fontWeight: "700",
     fontSize: 14,
   },
-};
+});
+

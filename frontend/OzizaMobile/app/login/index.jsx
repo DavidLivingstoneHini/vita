@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Text,
   View,
@@ -11,6 +11,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet, // Import StyleSheet
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -19,29 +20,47 @@ import Toast from 'react-native-toast-message';
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
-// import { GoogleSignin } from "@react-native-google-signin/google-signin";
-
-// GoogleSignin.configure({
-//   webClientId:
-//     "<YOUR_GOOGLE_CLIENT_ID>",
-//   scopes: ["profile", "email"],
-// });
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
-  const [passwordVisibility, setPasswordVisibility] = React.useState(true);
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
+  const [passwordVisibility, setPasswordVisibility] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const router = useRouter();
   const navigation = useNavigation();
 
+  const validateFields = () => {
+    let isValid = true;
+    if (!email) {
+      setEmailError("Email is required");
+      isValid = false;
+    } else {
+      setEmailError("");
+    }
+
+    // if (!password) {
+    //   setPasswordError("Password is required");
+    //   isValid = false;
+    // } else {
+    //   setPasswordError("");
+    // }
+
+    return isValid;
+  };
+
   const handleLogin = async () => {
+    if (!validateFields()) {
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await api.apiRequest(
-        "http:13.60.86.56:8000/api/v1/users/login/",
+        "http://13.60.86.56/api/v1/users/login/",
         {
           method: "POST",
           body: JSON.stringify({
@@ -66,9 +85,7 @@ export default function LoginScreen() {
         expirationTime.toString()
       );
 
-      router.push("/(tabs)", {
-        screen: "home"
-      });
+      router.push("/(tabs)/home");
     } catch (error) {
       console.error("Sign-in error:", error?.message || "Unknown error");
       const errorMessage = getErrorMessage(error);
@@ -83,44 +100,6 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
-
-  // function onAuthStateChanged(user) {
-  //   setUser(user);
-  //   if (user) setLoggedIn(true);
-  //   else setLoggedIn(false);
-  //   if (initializing) setInitializing(false);
-  // }
-
-  // async function onGoogleButtonPress() {
-  //   // Check if your device supports Google Play
-  //   await GoogleSignin.signOut();
-  //   await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-  //   // Get the users ID token
-  //   const googleSignInResult = await GoogleSignin.signIn();
-
-  //   // Create a Google credential with the token
-  //   const googleCredential = auth.GoogleAuthProvider.credential(
-  //     googleSignInResult.data?.idToken
-  //   );
-
-  //   // Sign-in the user with the credential
-  //   return await auth().signInWithCredential(googleCredential);
-  // }
-
-  // useEffect(() => {
-  //   const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-  //   return subscriber; // unsubscribe on unmount
-  // }, []);
-
-  // Handles sign-out
-  // const handleSignOut = () => {
-  //   auth()
-  //     .signOut()
-  //     .then(() => console.log("User signed out!"));
-  //   setLoggedIn(false);
-  //   setEmail("");
-  //   setPassword("");
-  // };
 
   const getErrorMessage = (error) => {
     if (error.response && error.response.data) {
@@ -159,20 +138,37 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, emailError ? styles.inputError : null]}
                 placeholder="Email"
+                placeholderTextColor="#808080"
                 value={email}
                 onChangeText={setEmail}
+                onBlur={() => {
+                  if (!email) {
+                    setEmailError("Email is required");
+                  } else {
+                    setEmailError("");
+                  }
+                }}
               />
+              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
             </View>
 
             <View style={styles.inputWrapper}>
               <TextInput
-                style={styles.input}
+                style={[styles.input, passwordError ? styles.inputError : null]}
                 placeholder="Password"
+                placeholderTextColor="#808080"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={passwordVisibility}
+                onBlur={() => {
+                  if (!password) {
+                    setPasswordError("Password is required");
+                  } else {
+                    setPasswordError("");
+                  }
+                }}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -184,6 +180,7 @@ export default function LoginScreen() {
                   color="#808080"
                 />
               </TouchableOpacity>
+              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
             </View>
 
             <TouchableOpacity style={styles.forgotPasswordContainer}>
@@ -248,7 +245,7 @@ export default function LoginScreen() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -302,6 +299,9 @@ const styles = {
     paddingHorizontal: 10,
     marginVertical: 5,
     borderRadius: 5,
+  },
+  inputError: {
+    borderColor: "red",
   },
   eyeIcon: {
     position: "absolute",
@@ -387,4 +387,9 @@ const styles = {
     fontWeight: "700",
     fontSize: 14,
   },
-};
+  errorText: {
+    color: "red",
+    fontSize: 12,
+  },
+});
+

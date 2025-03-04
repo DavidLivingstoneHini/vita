@@ -5,7 +5,7 @@ const refreshTokens = async () => {
   try {
     const refreshToken = await SecureStore.getItemAsync("refresh_token");
     const response = await fetch(
-      "http://192.168.251.90:8000/api/v1/users/token/refresh/",
+      "http://13.60.86.56/api/v1/users/token/refresh/",
       {
         method: "POST",
         headers: {
