@@ -78,6 +78,12 @@ export default function LoginScreen() {
       await SecureStore.setItemAsync("access_token", response.access);
       await SecureStore.setItemAsync("refresh_token", response.refresh);
 
+      // Access user data from the nested 'user' object
+      await SecureStore.setItemAsync("full_name", String(response.user.full_name)); // Store full name
+      await SecureStore.setItemAsync("email", String(response.user.email)); // Store email
+      // Store profile picture if it exists, otherwise store a default or null
+      await SecureStore.setItemAsync("userProfilePicture", String(response.user.profile_picture || ""));
+
       const expiresIn = response.expires_in;
       const expirationTime = new Date(expiresIn).getTime();
       await SecureStore.setItemAsync(

@@ -1,7 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Image } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
 import Home from "./home";
 import News from "./news";
 import Library from "./library";
@@ -22,17 +21,10 @@ import moreIconFocused from "../../assets/images/more-icon-focused.png";
 const Tab = createBottomTabNavigator();
 
 function TabLayout() {
-  const navigation = useNavigation();
-
-  useEffect(() => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "/home" }], // Reset to Home screen
-    });
-  }, [navigation]);
-
   return (
     <Tab.Navigator
+      initialRouteName="Home"
+      backBehavior="initialRoute"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#000000",

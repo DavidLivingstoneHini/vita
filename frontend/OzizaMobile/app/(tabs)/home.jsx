@@ -167,13 +167,13 @@ const Home = () => {
   };
 
   const navigateToDetail = (id) => {
-    navigation.navigate("DetailScreen", { itemId: id });
+    navigation.navigate("articles/index");
   };
 
   const renderInspirationItem = ({ item }) => (
     <TouchableOpacity
       style={styles.inspirationCard}
-      onPress={() => navigation.navigate(`inspiration/${item.id}`)}
+      onPress={() => navigation.navigate("inspiration/index")}
     >
       <Image
         source={item.image}
@@ -196,7 +196,7 @@ const Home = () => {
   const renderInspirationItem2 = ({ item }) => (
     <TouchableOpacity
       style={styles.inspirationCard}
-      onPress={() => navigation.navigate(`evets/${item.id}`)}
+      onPress={() => navigation.navigate("events/index")}
     >
       <Image
         source={item.image}
@@ -418,7 +418,7 @@ const Home = () => {
             </Text>
             <TouchableOpacity
               style={styles.learnMoreButton}
-              onPress={() => navigation.navigate("ArticleDetail")}
+              onPress={() => navigation.navigate("articles/index")}
             >
               <Text style={styles.learnMoreText}>Learn More</Text>
             </TouchableOpacity>
