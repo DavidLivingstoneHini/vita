@@ -29,6 +29,13 @@ export default function RootLayout() {
             <Stack.Screen name="gym/index" />
             <Stack.Screen name="changepassword/index" />
             <Stack.Screen name="articles/index" />
+            <Stack.Screen name="bmi/index" />
+            <Stack.Screen name="period/index" />
+            <Stack.Screen name="symptom1/index" />
+            <Stack.Screen name="symptom2/index" />
+            <Stack.Screen name="symptom3/index" />
+            <Stack.Screen name="symptom4/index" />
+            <Stack.Screen name="symptom5/index" />
           </>
         ) : (
           <>

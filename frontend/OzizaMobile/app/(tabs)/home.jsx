@@ -77,9 +77,9 @@ const Home = () => {
   ];
 
   const newSectionItems = [
-    { id: 1, image: ItemImage7, title: "BMI Checker" },
-    { id: 2, image: ItemImage8, title: "Period Tracker" },
-    { id: 3, image: ItemImage9, title: "Symptom Checker" },
+    { id: 1, image: ItemImage7, title: "BMI Checker", screen: "bmi/index" },
+    { id: 2, image: ItemImage8, title: "Period Tracker", screen: "period/index" },
+    { id: 3, image: ItemImage9, title: "Symptom Checker", screen: "symptom1/index" },
   ];
 
   const lifestyleListItems = [
@@ -433,7 +433,7 @@ const Home = () => {
           <FlatList
             data={newSectionItems}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigation.navigate(`tool/${item.id}`)}>
+              <TouchableOpacity onPress={() => navigation.navigate(item.screen)}>
                 <View style={styles.newSectionItem}>
                   <Image source={item.image} style={styles.newSectionImage} />
                   <Text style={styles.newSectionText}>{item.title}</Text>

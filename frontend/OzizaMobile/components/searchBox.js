@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { View, TextInput, Dimensions, TouchableOpacity, Image, FlatList, Text } from "react-native";
+import { View, TextInput, TouchableOpacity, FlatList, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { search } from "../utils/searchUtils";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router"; // Import useRouter instead of useNavigation
 
 const SearchBox = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState([]);
-  const [noResults, setNoResults] = useState(false); // New state for no results found
-  const navigation = useNavigation();
+  const [noResults, setNoResults] = useState(false);
+  const router = useRouter(); // Use router instead of navigation
 
   const handleQueryChange = (text) => {
     setSearchQuery(text);
@@ -16,14 +16,14 @@ const SearchBox = ({ onClose }) => {
       const searchResults = search(text);
       if (searchResults.length > 0) {
         setResults(searchResults);
-        setNoResults(false); 
+        setNoResults(false);
       } else {
         setResults([]);
-        setNoResults(true); 
+        setNoResults(true);
       }
     } else {
       setResults([]);
-      setNoResults(false); 
+      setNoResults(false);
     }
   };
 
@@ -32,10 +32,10 @@ const SearchBox = ({ onClose }) => {
       const searchResults = search(searchQuery);
       if (searchResults.length > 0) {
         setResults(searchResults);
-        setNoResults(false); 
+        setNoResults(false);
       } else {
         setResults([]);
-        setNoResults(true); 
+        setNoResults(true);
       }
     } else {
       setResults([]);
@@ -47,10 +47,17 @@ const SearchBox = ({ onClose }) => {
     console.log("Selected result:", result);
     if (result.screen && result.params) {
       console.log("Navigating to:", result.screen, "with params:", result.params);
-      navigation.navigate(result.screen, result.params);
+
+      // Use router.push instead of navigation.navigate for Expo Router
+      router.push({
+        pathname: `/${result.screen}`,
+        params: result.params
+      });
+
       setResults([]);
       setSearchQuery("");
       setNoResults(false);
+      if (onClose) onClose(); // Close search when navigating
     } else {
       console.log("Invalid result selected:", result);
     }
@@ -59,7 +66,7 @@ const SearchBox = ({ onClose }) => {
   return (
     <View>
       <View style={styles.container}>
-      <TouchableOpacity
+        <TouchableOpacity
           style={styles.searchIconContainer}
           onPress={handleSearch}
         >
@@ -70,8 +77,8 @@ const SearchBox = ({ onClose }) => {
           placeholder="Search..."
           value={searchQuery}
           onChangeText={handleQueryChange}
+          onSubmitEditing={handleSearch}
         />
-        
       </View>
       {noResults ? (
         <Text style={styles.noResultsText}>
@@ -89,7 +96,7 @@ const SearchBox = ({ onClose }) => {
               <Text style={styles.resultTitle}>{item.title}</Text>
             </TouchableOpacity>
           )}
-          keyExtractor={(item) => item.title}
+          keyExtractor={(item, index) => `${item.title}-${index}`}
         />
       ) : null}
     </View>
@@ -126,6 +133,8 @@ const styles = {
     marginTop: 10,
     paddingHorizontal: 10,
     width: '80%',
+    backgroundColor: "#fff",
+    maxHeight: 300,
   },
   resultItem: {
     paddingVertical: 10,
@@ -141,6 +150,9 @@ const styles = {
     color: "#666",
     textAlign: "center",
     marginTop: 10,
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 5,
   },
 };
 

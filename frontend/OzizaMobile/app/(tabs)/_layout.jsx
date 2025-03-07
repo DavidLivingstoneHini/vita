@@ -27,7 +27,7 @@ function TabLayout() {
   useEffect(() => {
     navigation.reset({
       index: 0,
-      routes: [{ name: "Home" }], // Reset to Home screen
+      routes: [{ name: "/home" }], // Reset to Home screen
     });
   }, [navigation]);
 
