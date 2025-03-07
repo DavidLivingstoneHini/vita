@@ -216,7 +216,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton} onPress={() => router.push("/(tabs)/home")}
+              <TouchableOpacity style={styles.socialButton}
               >
                 <Image
                   source={require("../../assets/images/devicon_google.png")}
