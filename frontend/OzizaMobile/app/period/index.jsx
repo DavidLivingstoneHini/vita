@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform, ScrollView } from 'react-native';
 import { useRouter } from "expo-router";
 import DateTimePicker from '@react-native-community/datetimepicker';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Importing the icon library
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get('window');
@@ -36,7 +36,15 @@ const PeriodTracker = () => {
     };
 
     const calculate = () => {
-        // Calculation logic goes here
+        const cycle = parseInt(cycleLength);
+        const period = parseInt(periodLength);
+        if (!isNaN(cycle) && !isNaN(period)) {
+            const nextPeriodDate = new Date(lastPeriodDate);
+            nextPeriodDate.setDate(nextPeriodDate.getDate() + cycle);
+            alert(`Next expected period date: ${nextPeriodDate.toLocaleDateString()}`);
+        } else {
+            alert('Please enter valid numbers for cycle length and period length.');
+        }
     };
 
     const showDatePickerModal = () => {
@@ -167,4 +175,3 @@ const styles = StyleSheet.create({
 });
 
 export default PeriodTracker;
-

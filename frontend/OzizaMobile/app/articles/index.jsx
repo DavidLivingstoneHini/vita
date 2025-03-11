@@ -1,9 +1,10 @@
 import React from "react";
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Platform, Share } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { Feather } from "@expo/vector-icons";
 import { dataStore } from "../../utils/dataStore";
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,11 +25,8 @@ const getSafeAreaTop = () => {
 
 const ArticleScreen = () => {
   const router = useRouter();
-  // Get params using useLocalSearchParams
   const { articleId } = useLocalSearchParams();
   const parsedArticleId = articleId ? parseInt(articleId, 10) : null;
-
-  // Find the article by ID
   const article = dataStore.articles.find((a) => a.id === parsedArticleId);
 
   if (!article) {
@@ -46,9 +44,46 @@ const ArticleScreen = () => {
     );
   }
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this article: ${article.title}\n\n${article.content}`,
+        url: article.image,
+      });
+    } catch (error) {
+      console.log("Error sharing:", error.message);
+    }
+  };
+
+  const handleDownload = async () => {
+    const htmlContent = `
+      <h1>${article.title}</h1>
+      <img src="${article.image}" style="width:100%; height:auto;"/>
+      <p>${article.content}</p>
+      ${article.sections.map(section => `
+        <h2>${section.title}</h2>
+        <p>${section.content}</p>
+      `).join('')}
+    `;
+
+    const options = {
+      html: htmlContent,
+      fileName: article.title.replace(/\s+/g, '_'), // Replace spaces with underscores
+      directory: 'Documents',
+    };
+
+    try {
+      const file = await RNHTMLtoPDF.convert(options);
+      console.log("PDF file created at:", file.filePath);
+      alert(`PDF saved to: ${file.filePath}`);
+    } catch (error) {
+      console.error("Error creating PDF:", error);
+      alert("Failed to download PDF.");
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Header with back button and action icons */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
@@ -57,42 +92,26 @@ const ArticleScreen = () => {
           {article.title}
         </Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.actionIcon}>
+          <TouchableOpacity style={styles.actionIcon} onPress={handleDownload}>
             <Feather name="download" size={responsiveFontSize(20)} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionIcon}>
-            <Feather name="bookmark" size={responsiveFontSize(20)} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionIcon}>
+          <TouchableOpacity style={styles.actionIcon} onPress={handleShare}>
             <Feather name="share-2" size={responsiveFontSize(20)} color="#000" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Scrollable content */}
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Article image */}
-        <Image
-          source={article.image} // Local image reference
-          style={styles.image}
-        />
-
-        {/* Article content */}
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <Image source={article.image} style={styles.image} />
         <Text style={styles.titleQuestion}>What is {article.title}?</Text>
         <Text style={styles.content}>{article.content}</Text>
 
-        {/* Render all sections from the article data */}
         {article.sections && article.sections.map((section, index) => (
           <View key={index}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
             <Text style={styles.sectionText}>{section.content}</Text>
           </View>
         ))}
-
-        {/* Add some padding at the bottom for better scrolling */}
         <View style={{ height: height * 0.05 }} />
       </ScrollView>
     </View>

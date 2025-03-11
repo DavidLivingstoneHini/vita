@@ -91,7 +91,7 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const response = await api.apiRequest(
-        "http://13.60.86.56/api/v1/users/signup/",
+        "https://djbackend-9d8q.onrender.com/api/v1/users/signup/",
         {
           method: "POST",
           body: JSON.stringify({

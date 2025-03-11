@@ -45,8 +45,11 @@ const ChangePasswordScreen = () => {
   const handleUpdatePassword = async () => {
     setLoading(true);
     try {
+      // Retrieve the access token from SecureStore
+      const accessToken = await SecureStore.getItemAsync("access_token");
+
       const response = await api.apiRequest(
-        "http://192.168.169.90:8000/api/v1/users/password/change/",
+        "https://djbackend-9d8q.onrender.com/api/v1/users/password/change/",
         {
           method: "POST",
           body: JSON.stringify({
@@ -55,11 +58,13 @@ const ChangePasswordScreen = () => {
           }),
           headers: {
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
           },
         }
       );
 
       console.log("Response from server:", response);
+      Alert.alert("Success", "Password updated successfully.");
     } catch (error) {
       console.error("Update error:", error?.message || "Unknown error");
       Alert.alert("Error", "Update password failed. Please try again.");
