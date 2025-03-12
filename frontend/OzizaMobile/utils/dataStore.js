@@ -5,7 +5,7 @@ export const dataStore = {
       title: "Diabetes 101",
       summary: "Learn about diabetes, its symptoms, and management.",
       content: "Diabetes is a chronic health condition that affects how your body turns food into energy. Most of the food you eat is broken down into sugar (glucose) and released into your bloodstream. When your blood sugar goes up, it signals your pancreas to release insulin. Insulin acts like a key to let the blood sugar into your body's cells for use as energy.",
-      image: require("../assets/images/acne.png"), // Replace with actual image URL
+      image: require("../assets/images/diabetes.jpg"), // Replace with actual image URL
       sections: [
         {
           title: "Symptoms",
@@ -34,7 +34,7 @@ export const dataStore = {
       title: "Healthy Eating",
       summary: "Discover the principles of healthy eating.",
       content: "Healthy eating involves consuming a variety of foods that give you the nutrients you need to maintain your health, feel good, and have energy. These nutrients include protein, carbohydrates, fat, water, vitamins, and minerals.",
-      image: require("../assets/images/acne.png"), // Replace with actual image URL
+      image: require("../assets/images/healthliving.jpg"), // Replace with actual image URL
       sections: [
         {
           title: "Key Principles",

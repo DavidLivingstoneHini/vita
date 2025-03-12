@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import Swiper from "react-native-swiper";
 import { useNavigation } from "@react-navigation/native";
 import YoutubePlayer from "react-native-youtube-iframe";
 import Header from "../../components/Header";
+import * as Notifications from "expo-notifications";
 
 // Image Sources
 const images = [
@@ -24,8 +25,8 @@ const images = [
   require("../../assets/images/background2.png"),
 ];
 const ItemImage1 = require("../../assets/images/bleach.png");
-const ItemImage2 = require("../../assets/images/hypertension.png");
-const ItemImage3 = require("../../assets/images/phobia.png");
+const ItemImage2 = require("../../assets/images/hypertension.jpg");
+const ItemImage3 = require("../../assets/images/Phobia.jpg");
 const ItemImage4 = require("../../assets/images/female-doc.png");
 const ItemImage5 = require("../../assets/images/female-doc2.png");
 const ItemImage6 = require("../../assets/images/eclipse.png");
@@ -47,6 +48,9 @@ const ItemImage21 = require("../../assets/images/fitness.png");
 const ItemImage22 = require("../../assets/images/sleep.png");
 const ItemImage23 = require("../../assets/images/exercise.png");
 const ItemImage24 = require("../../assets/images/eye.png");
+const ItemImage25 = require("../../assets/images/headache.jpg");
+const ItemImage26 = require("../../assets/images/anxiety.jpg");
+const ItemImage27 = require("../../assets/images/eczema.jpg");
 
 
 const LogoImage = require("../../assets/images/ozizawhite.png");
@@ -62,11 +66,24 @@ const Home = () => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const navigation = useNavigation();
 
+  useEffect(() => {
+    // Listen for incoming notifications
+    const subscription = Notifications.addNotificationReceivedListener((notification) => {
+      console.log("Notification received:", notification);
+      // You can update your state or UI here
+    });
+
+    // Clean up the listener when the component unmounts
+    return () => subscription.remove();
+  }, []);
+
   const healthListItems = [
-    { id: 1, image: ItemImage1, title: "Skin Bleaching" },
-    { id: 2, image: ItemImage2, title: "Hypertension" },
-    { id: 3, image: ItemImage3, title: "Phobia" },
+    { id: 1, image: ItemImage25, title: "Headache" },
+    { id: 2, image: ItemImage27, title: "Eczema" },
+    { id: 3, image: ItemImage2, title: "Hypertension" },
     { id: 4, image: ItemImage1, title: "Skin Bleaching" },
+    { id: 5, image: ItemImage3, title: "Phobia" },
+    { id: 6, image: ItemImage26, title: "Anxiety" },
   ];
 
   const healthListItems1 = [
@@ -268,7 +285,7 @@ const Home = () => {
         <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Health Conditions</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Library")}>
               <View style={styles.seeMoreContainer}>
                 <Text style={styles.seeMoreText}>SEE MORE</Text>
                 <Image

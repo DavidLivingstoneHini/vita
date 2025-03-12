@@ -9,11 +9,14 @@ import {
   Dimensions,
   PixelRatio,
   Platform,
-  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { Link, useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import api from "../../services/api";
+import Toast from 'react-native-toast-message';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get("window");
@@ -48,6 +51,11 @@ const ChangePasswordScreen = () => {
       // Retrieve the access token from SecureStore
       const accessToken = await SecureStore.getItemAsync("access_token");
 
+      // Ensure the access token is a string
+      if (!accessToken || typeof accessToken !== "string") {
+        throw new Error("Invalid access token");
+      }
+
       const response = await api.apiRequest(
         "https://djbackend-9d8q.onrender.com/api/v1/users/password/change/",
         {
@@ -64,10 +72,39 @@ const ChangePasswordScreen = () => {
       );
 
       console.log("Response from server:", response);
-      Alert.alert("Success", "Password updated successfully.");
+
+      // Show success message using Toast
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Password updated successfully.',
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
     } catch (error) {
       console.error("Update error:", error?.message || "Unknown error");
-      Alert.alert("Error", "Update password failed. Please try again.");
+
+      // Extract the error message from the API response
+      let errorMessage = "An unknown error occurred. Please try again.";
+      if (error.response && error.response.data) {
+        // Check if the error is in the "old_password" field
+        if (error.response.data.old_password && error.response.data.old_password.length > 0) {
+          errorMessage = error.response.data.old_password[0]; // Get the first error message
+        } else if (error.response.data.new_password && error.response.data.new_password.length > 0) {
+          errorMessage = error.response.data.new_password[0]; // Get the first error message
+        } else if (error.response.data.detail) {
+          errorMessage = error.response.data.detail; // Get the detail error message
+        }
+      }
+
+      // Show the error message using Toast
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: errorMessage,
+        position: 'top',
+        visibilityTime: 4000,
+      });
     } finally {
       setLoading(false);
     }
@@ -142,12 +179,17 @@ const ChangePasswordScreen = () => {
         <TouchableOpacity
           style={[styles.updateButton, { paddingVertical: height * 0.02 }]}
           onPress={handleUpdatePassword}
+          disabled={loading}
         >
-          <Text
-            style={[styles.updateButtonText, { fontSize: responsiveFontSize(16) }]}
-          >
-            Update Password
-          </Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text
+              style={[styles.updateButtonText, { fontSize: responsiveFontSize(16) }]}
+            >
+              Update Password
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>

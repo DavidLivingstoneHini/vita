@@ -44,44 +44,57 @@ const spacing = {
 export default function Discover() {
   const [newsBackgroundUrl, setNewsBackgroundUrl] = useState('');
   const [newsImageUrl, setNewsImageUrl] = useState('');
-  const [visibleArticles, setVisibleArticles] = useState(4); // Show initial 4 articles
-  const articlesPerPage = 4; // Number of articles to load per "Show More" click
+  const [visibleArticles, setVisibleArticles] = useState(4);
+  const articlesPerPage = 4;
 
-  const topics = ['Technology', 'Health', 'Science', 'Business', 'Entertainment', 'Sports', 'Education', 'Politics', 'World News', 'Local News'];
+  const topics = [
+    'Nutrition',
+    'Fitness',
+    'Mental Health',
+    'Sleep',
+    'Healthy Recipes',
+    'Exercise',
+    'Wellness',
+    'Preventative Care',
+    'Cardio',
+    'Strength Training',
+  ];
 
   const allArticles = [
-    { id: '1', category: 'Healthy Food', readTime: '5 min', title: 'The Benefits of Eating Healthy' },
-    { id: '2', category: 'Fitness', readTime: '4 min', title: 'Top 10 Fitness Trends of 2023' },
-    { id: '3', category: 'Technology', readTime: '6 min', title: 'The Future of AI in 2024' },
-    { id: '4', category: 'Education', readTime: '3 min', title: 'How Online Learning is Changing the World' },
-    { id: '5', category: 'Travel', readTime: '7 min', title: 'Exploring Hidden Gems in Europe' },
-    { id: '6', category: 'Finance', readTime: '5 min', title: 'Investing in Cryptocurrency: A Beginner\'s Guide' },
-    { id: '7', category: 'Fashion', readTime: '4 min', title: 'Sustainable Fashion Trends for 2024' },
-    { id: '8', category: 'Music', readTime: '6 min', title: 'The Evolution of Pop Music' },
-    { id: '9', category: 'Books', readTime: '3 min', title: 'Must-Read Novels of the Year' },
-    { id: '10', category: 'Movies', readTime: '7 min', title: 'Top 10 Movies to Watch This Weekend' },
+    { id: '1', category: 'Nutrition', readTime: '5 min', title: 'Top 10 Superfoods for a Healthy Heart' },
+    { id: '2', category: 'Fitness', readTime: '4 min', title: 'Effective Home Workouts for Beginners' },
+    { id: '3', category: 'Mental Health', readTime: '6 min', title: 'Managing Stress and Anxiety in Daily Life' },
+    { id: '4', category: 'Sleep', readTime: '3 min', title: 'Improving Your Sleep Quality: A Guide' },
+    { id: '5', category: 'Nutrition', readTime: '7 min', title: 'The Role of Vitamins and Minerals in Overall Health' },
+    { id: '6', category: 'Exercise', readTime: '5 min', title: 'The Benefits of Regular Physical Activity' },
+    { id: '7', category: 'Wellness', readTime: '4 min', title: 'Creating a Balanced and Healthy Lifestyle' },
+    { id: '8', category: 'Preventative Care', readTime: '6 min', title: 'Regular Check-ups and Screenings: Why They Matter' },
+    { id: '9', category: 'Cardio', readTime: '3 min', title: 'Best Cardio Exercises for Weight Loss' },
+    { id: '10', category: 'Strength Training', readTime: '7 min', title: 'Building Muscle and Strength: A Comprehensive Guide' },
+    { id: '11', category: 'Nutrition', readTime: '5 min', title: 'Understanding Macronutrients: Proteins, Fats, and Carbs' },
+    { id: '12', category: 'Fitness', readTime: '4 min', title: 'Yoga and Pilates: Benefits for Body and Mind' },
+    { id: '13', category: 'Mental Health', readTime: '6 min', title: 'Mindfulness Techniques for a Calmer Life' },
   ];
 
   const [trendingArticles, setTrendingArticles] = useState(allArticles.slice(0, visibleArticles));
 
   const getRandomImageUrl = (width, height, seed) => {
-    return `https://picsum.photos/seed/${seed}/${Math.floor(width)}/${Math.floor(height)}`;
+    const imageUrl = `https://picsum.photos/seed/${seed}/${Math.floor(width)}/${Math.floor(height)}`;
+    return imageUrl;
   };
 
   useEffect(() => {
-    setNewsBackgroundUrl(getRandomImageUrl(SCREEN_WIDTH, SCREEN_HEIGHT * 0.3, 'news-bg-red'));
-    setNewsImageUrl(getRandomImageUrl(normalize(200), normalize(200), 'news-room'));
+    setNewsBackgroundUrl(getRandomImageUrl(SCREEN_WIDTH, SCREEN_HEIGHT * 0.3, 'health-news-bg'));
+    setNewsImageUrl(getRandomImageUrl(normalize(200), normalize(200), 'health-news'));
   }, []);
 
   const handleShowMore = () => {
     setVisibleArticles((prevVisibleArticles) => {
       const newVisibleArticles = prevVisibleArticles + articlesPerPage;
-      setTrendingArticles(allArticles.slice(0, newVisibleArticles)); // Update trendingArticles
+      setTrendingArticles(allArticles.slice(0, newVisibleArticles));
       return newVisibleArticles;
     });
   };
-
-  const limitedTopics = topics.slice(0, 8);
 
   const renderHeader = () => (
     <>
@@ -91,13 +104,10 @@ export default function Discover() {
           <Ionicons name="search" size={normalize(20)} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchBox}
-            placeholder="Search..."
+            placeholder="Search health topics..."
             placeholderTextColor="#808080"
           />
         </View>
-        <TouchableOpacity style={styles.settingsButton}>
-          <Ionicons name="settings-outline" size={normalize(24)} color="#000" />
-        </TouchableOpacity>
       </View>
 
       {/* News Section */}
@@ -109,17 +119,19 @@ export default function Discover() {
         >
           <View style={styles.overlay} />
           <View style={styles.newsContent}>
-            <View style={styles.newsTextContent}>
-              <Text style={styles.newsHeading}>Latest News Heading</Text>
-              <TouchableOpacity style={styles.readMoreButton}>
-                <Text style={styles.readMoreText}>Read More</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Image on the left */}
             <Image
               source={{ uri: newsImageUrl }}
               style={styles.newsImage}
               resizeMode="cover"
             />
+            {/* Text and button on the right */}
+            <View style={styles.newsTextContent}>
+              <Text style={styles.newsHeading}>Stay Informed on Health and Wellness</Text>
+              <TouchableOpacity style={styles.readMoreButton}>
+                <Text style={styles.readMoreText}>Learn More</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ImageBackground>
       </View>
@@ -129,26 +141,18 @@ export default function Discover() {
         horizontal={true}
         showsHorizontalScrollIndicator={false}
         style={styles.topicsContainer}
+        contentContainerStyle={styles.topicsContentContainer}
       >
-        <View style={styles.topicsRow}>
-          {limitedTopics.slice(0, 4).map((topic, index) => (
-            <TouchableOpacity key={index} style={styles.topicButton}>
-              <Text style={styles.topicText}>{topic}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View style={styles.topicsRow}>
-          {limitedTopics.slice(4).map((topic, index) => (
-            <TouchableOpacity key={index + 4} style={styles.topicButton}>
-              <Text style={styles.topicText}>{topic}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {topics.map((topic, index) => (
+          <TouchableOpacity key={index} style={styles.topicButton}>
+            <Text style={styles.topicText}>{topic}</Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
 
       {/* Trending Articles Header */}
       <View style={styles.trendingHeader}>
-        <Text style={styles.sectionTitle}>Trending Articles</Text>
+        <Text style={styles.sectionTitle}>Trending Health Articles</Text>
       </View>
     </>
   );
@@ -176,7 +180,7 @@ export default function Discover() {
               <Text style={styles.articleTitle}>{item.title}</Text>
             </View>
             <Image
-              source={{ uri: getRandomImageUrl(normalize(160), normalize(160), `article-${item.id}`) }}
+              source={{ uri: getRandomImageUrl(normalize(160), normalize(160), `health-article-${item.id}`) }}
               style={styles.articleImage}
               resizeMode="cover"
             />
@@ -248,7 +252,7 @@ const styles = StyleSheet.create({
   },
   newsTextContent: {
     flex: 1,
-    marginRight: spacing.m,
+    marginLeft: spacing.m, // Add margin to separate text from image
   },
   newsHeading: {
     color: '#fff',
@@ -276,11 +280,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   topicsContainer: {
-    flexDirection: 'column',
     marginBottom: spacing.m,
   },
-  topicsRow: {
+  topicsContentContainer: {
     flexDirection: 'row',
+    paddingRight: spacing.m,
   },
   topicButton: {
     paddingVertical: spacing.s,

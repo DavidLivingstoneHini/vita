@@ -42,6 +42,10 @@ export default function LoginScreen() {
       setEmailError("");
     }
 
+    const goToHomeTab = () => {
+      navigation.navigate("tabs", { screen: "Home" }); // Navigate to the Home tab
+    };
+
     // if (!password) {
     //   setPasswordError("Password is required");
     //   isValid = false;
@@ -94,12 +98,22 @@ export default function LoginScreen() {
       router.push("/(tabs)/home");
     } catch (error) {
       console.error("Sign-in error:", error?.message || "Unknown error");
-      const errorMessage = getErrorMessage(error);
+
+      // Extract the error message from the API response
+      let errorMessage = "An unknown error occurred. Please try again.";
+      if (error.response && error.response.data) {
+        // Check if the error is in the "email" field
+        if (error.response.data.email && error.response.data.email.length > 0) {
+          errorMessage = error.response.data.email[0]; // Get the first error message
+        }
+      }
+
+      // Show the error message using Toast
       Toast.show({
         type: 'error',
         text1: 'Login Error',
         text2: errorMessage,
-        position: 'bottom',
+        position: 'top',
         visibilityTime: 4000,
       });
     } finally {
@@ -138,7 +152,6 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.logoText}>...health, for all</Text>
           </View>
 
           <View style={styles.inputContainer}>
@@ -279,8 +292,8 @@ const styles = StyleSheet.create({
     paddingTop: height * 0.02,
   },
   logo: {
-    width: width * 0.4,
-    height: height * 0.06,
+    width: width * 0.8,
+    height: height * 0.09,
   },
   logoText: {
     fontSize: 14,

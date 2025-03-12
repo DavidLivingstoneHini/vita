@@ -129,12 +129,26 @@ export default function SignUpScreen() {
       router.push("/login");
     } catch (error) {
       console.error("Sign-up error:", error?.message || "Unknown error");
-      const errorMessage = getErrorMessage(error);
+
+      // Extract the error message from the API response
+      let errorMessage = "An unknown error occurred. Please try again.";
+      if (error.response && error.response.data) {
+        // Check if the error is in the "email" field
+        if (error.response.data.email && error.response.data.email.length > 0) {
+          errorMessage = error.response.data.email[0]; // Get the first error message
+        } else if (error.response.data.non_field_errors && error.response.data.non_field_errors.length > 0) {
+          errorMessage = error.response.data.non_field_errors[0]; // Get the first non-field error message
+        } else if (error.response.data.detail) {
+          errorMessage = error.response.data.detail; // Get the detail error message
+        }
+      }
+
+      // Show the error message using Toast
       Toast.show({
         type: 'error',
         text1: 'Sign-up Error',
         text2: errorMessage,
-        position: 'bottom',
+        position: 'top',
         visibilityTime: 4000,
       });
     } finally {
@@ -173,7 +187,6 @@ export default function SignUpScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.logoText}>...health, for all</Text>
           </View>
 
           <View style={styles.inputContainer}>
@@ -373,12 +386,12 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: "center",
-    marginVertical: height * 0.02,
-    paddingTop: height * 0.01,
+    marginVertical: height * 0.03,
+    paddingTop: height * 0.02,
   },
   logo: {
-    width: width * 0.4,
-    height: height * 0.06,
+    width: width * 0.8,
+    height: height * 0.09,
   },
   logoText: {
     fontSize: 14,

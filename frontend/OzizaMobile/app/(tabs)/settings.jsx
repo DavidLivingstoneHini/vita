@@ -176,7 +176,7 @@ const SettingsPage = () => {
           <Text style={styles.sectionTitle}>NOTIFICATIONS</Text>
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Privacy Preferences Pressed")}
+            onPress={() => navigation.navigate("pushnotif/index")}
           >
             <Text style={styles.listItemText}>Push Notifications</Text>
             <Image
@@ -187,7 +187,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Email Notifications")}
+            onPress={() => navigation.navigate("emailnotif/index")}
           >
             <Text style={styles.listItemText}>Email Notifications</Text>
             <Image
@@ -198,7 +198,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Manage Permissions Pressed")}
+            onPress={() => navigation.navigate("smsnotif/index")}
           >
             <Text style={styles.listItemText}>SMS Notifications</Text>
             <Image
@@ -213,7 +213,7 @@ const SettingsPage = () => {
           <Text style={styles.sectionTitle}>LANGUAGE & REGIONAL SETTINGS</Text>
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Privacy Preferences Pressed")}
+            onPress={() => navigation.navigate("language/index")}
           >
             <Text style={styles.listItemText}>Language Preferences</Text>
             <Image
@@ -235,7 +235,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Email Notifications")}
+            onPress={() => navigation.navigate("timezone/index")}
           >
             <Text style={styles.listItemText}>Time Zone Selections</Text>
             <Image

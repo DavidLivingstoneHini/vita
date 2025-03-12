@@ -67,14 +67,17 @@ const apiRequest = async (url, options = {}) => {
     // Send the request
     const response = await fetch(url, options);
 
+    // Check if the response is not OK (e.g., 400, 401, etc.)
     if (!response.ok) {
-      throw new Error(`Request failed: ${response.statusText}`);
+      // Parse the error response
+      const errorResponse = await response.json();
+      throw { response: { data: errorResponse } }; // Throw the error response
     }
 
     return response.json();
   } catch (error) {
-    console.error("Request error:", error.message);
-    throw error;
+    console.error("Request error:", error.message || error);
+    throw error; // Propagate the error
   }
 };
 

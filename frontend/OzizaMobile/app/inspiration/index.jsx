@@ -80,7 +80,7 @@ const InspirationScreen = ({ navigation }) => {
           {dummyData.map((card) => (
             <TouchableOpacity
               key={card.id}
-              onPress={() => handleCardPress(card.id)}
+              // onPress={() => handleCardPress(card.id)}
               style={styles.cardContainer}
             >
               <Image

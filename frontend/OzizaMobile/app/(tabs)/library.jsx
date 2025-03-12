@@ -9,6 +9,8 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
+import { useRouter } from "expo-router";
+import { dataStore } from "../../utils/dataStore"; // Adjust path as needed
 
 // Screen Dimensions
 const { width } = Dimensions.get("window");
@@ -25,22 +27,23 @@ const getSafeAreaTop = () => {
 };
 
 export default function Library() {
+  const router = useRouter();
   const [selectedAlphabet, setSelectedAlphabet] = useState(null);
   const glossaryListRef = useRef(null);
   const alphabetRefs = useRef({});
 
   // Dummy data for categories
   const categories = [
-    { id: 0, image: require("../../assets/images/ailments.png"), title: "Men's Health" },
-    { id: 1, image: require("../../assets/images/reprohealth.png"), title: "Women's Health" },
+    { id: 0, image: require("../../assets/images/menshealth.jpg"), title: "Men's Health" },
+    { id: 1, image: require("../../assets/images/womenshealth.jpg"), title: "Women's Health" },
     { id: 2, image: require("../../assets/images/mentalhealth.png"), title: "Mental Health" },
     { id: 3, image: require("../../assets/images/ailments.png"), title: "General Ailments" },
     { id: 4, image: require("../../assets/images/reprohealth.png"), title: "Reproductive Health" },
-    { id: 5, image: require("../../assets/images/ailments.png"), title: "Myths" },
-    { id: 6, image: require("../../assets/images/mentalhealth.png"), title: "Contraception" },
-    { id: 7, image: require("../../assets/images/reprohealth.png"), title: "Healthy Living" },
-    { id: 8, image: require("../../assets/images/ailments.png"), title: "Child Care" },
-    { id: 9, image: require("../../assets/images/mentalhealth.png"), title: "STIs" },
+    { id: 5, image: require("../../assets/images/myth.jpg"), title: "Myths" },
+    { id: 6, image: require("../../assets/images/contraception.jpg"), title: "Contraception" },
+    { id: 7, image: require("../../assets/images/healthy.jpg"), title: "Healthy Living" },
+    { id: 8, image: require("../../assets/images/childcare.jpg"), title: "Child Care" },
+    { id: 9, image: require("../../assets/images/sti.jpg"), title: "STIs" },
   ];
 
   // Dummy data for glossary
@@ -243,9 +246,59 @@ export default function Library() {
   };
 
   const handleItemPress = (item) => {
-    console.log(`Selected item: ${item}`);
-    // You can add navigation here:
-    // navigation.navigate('ItemDetails', { item });
+    let articleId;
+
+    // Determine articleId based on the item
+    switch (item) {
+      case "Men's Health":
+      case "Women's Health":
+        articleId = 2; // Healthy Eating article
+        break;
+      case "Mental Health":
+        articleId = 2; // Healthy Eating
+        break;
+      case "General Ailments":
+      case "Common Cold":
+        articleId = 4; // Using Common Cold from health conditions
+        break;
+      case "Reproductive Health":
+        articleId = 1; // Diabetes 101
+        break;
+      case "Healthy Living":
+        articleId = 2; // Healthy Eating
+        break;
+      case "Hypertension":
+        articleId = 3; // Hypertension Management
+        break;
+      case "Diabetes (Type 1)":
+      case "Diabetes (Type 2)":
+        articleId = 1; // Diabetes 101
+        break;
+      default:
+        // For any other item or glossary term, try to find a matching article
+        const matchingArticle = dataStore.articles.find(article =>
+          article.title.toLowerCase().includes(item.toLowerCase()) ||
+          article.content.toLowerCase().includes(item.toLowerCase())
+        );
+
+        const matchingCondition = dataStore.healthConditions.find(condition =>
+          condition.title.toLowerCase().includes(item.toLowerCase())
+        );
+
+        if (matchingArticle) {
+          articleId = matchingArticle.id;
+        } else if (matchingCondition) {
+          articleId = matchingCondition.id;
+        } else {
+          articleId = 1; // Default to the first article if no match is found
+        }
+    }
+
+    // Navigate to the articles screen with the selected article ID
+    router.push({
+      pathname: "/articles",
+      params: { articleId }, // Pass articleId as a query parameter
+    });
   };
 
   const scrollToAlphabet = (alphabet) => {
@@ -266,6 +319,21 @@ export default function Library() {
         }
       );
     }
+  };
+
+  // Render list item with dot
+  const renderListItem = (item, index, array) => {
+    return (
+      <TouchableOpacity
+        key={item}
+        onPress={() => handleItemPress(item)}
+        activeOpacity={0.6}
+        style={styles.listItemContainer}
+      >
+        <Text style={styles.listItemText}>{item}</Text>
+        {index < array.length - 1 && <Text style={styles.listItemDot}>•</Text>}
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -334,15 +402,9 @@ export default function Library() {
             >
               <Text style={styles.alphabetTitle}>{alphabet}</Text>
               <View style={styles.listContainer}>
-                {glossary.lists[alphabet]?.map((item) => (
-                  <TouchableOpacity
-                    key={item}
-                    onPress={() => handleItemPress(item)}
-                    activeOpacity={0.6}
-                  >
-                    <Text style={styles.listItemText}>{item}</Text>
-                  </TouchableOpacity>
-                ))}
+                {glossary.lists[alphabet]?.map((item, index, array) =>
+                  renderListItem(item, index, array)
+                )}
               </View>
             </View>
           ))}
@@ -367,7 +429,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   categoriesContainer: {
-    marginBottom: scale(24),
+    marginBottom: scale(16),
   },
   categoriesTitle: {
     fontSize: scale(14),
@@ -379,7 +441,8 @@ const styles = StyleSheet.create({
     width: scale(120),
   },
   categoryImage: {
-    height: scale(120),
+    width: scale(100),
+    height: scale(100),
     borderRadius: scale(8),
   },
   categoryTitle: {
@@ -397,7 +460,7 @@ const styles = StyleSheet.create({
     marginBottom: scale(16),
   },
   alphabetButtonsContainer: {
-    marginBottom: scale(16),
+    marginBottom: scale(22),
     flexDirection: "row",
     flexWrap: "wrap",
     gap: scale(8),
@@ -425,21 +488,31 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   alphabetSection: {
-    marginBottom: scale(10),
+    marginBottom: scale(18),
     paddingHorizontal: scale(6),
   },
   alphabetTitle: {
     fontSize: scale(24),
     fontWeight: "700",
-    marginBottom: scale(8),
+    marginBottom: scale(18),
   },
   listContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: scale(11),
+    gap: scale(8), // Adjusted gap between items
+    justifyContent: "flex-start", // Align items to the start of the row
+  },
+  listItemContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "30%", // Adjusted width to fit three items per row
+  },
+  listItemDot: {
+    fontSize: scale(14),
+    marginHorizontal: scale(8),
+    color: "#848587",
   },
   listItemText: {
     fontSize: scale(13),
-    marginBottom: scale(8),
   },
 });

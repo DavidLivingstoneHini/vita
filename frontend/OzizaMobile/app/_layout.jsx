@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState, useEffect } from "react";
 import Toast from 'react-native-toast-message';
+import TabLayout from "../app/(tabs)/_layout";
 
 export default function RootLayout() {
   const [accessToken, setAccessToken] = useState(null);
@@ -21,6 +22,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         {authenticated ? (
           <>
+            <Stack.Screen name="tabs" component={TabLayout} />
             <Stack.Screen name="inspiration/index" />
             <Stack.Screen name="findoctor/index" />
             <Stack.Screen name="events/index" />
@@ -36,6 +38,13 @@ export default function RootLayout() {
             <Stack.Screen name="symptom3/index" />
             <Stack.Screen name="symptom4/index" />
             <Stack.Screen name="symptom5/index" />
+            <Stack.Screen name="notification/index" />
+            <Stack.Screen name="notificationdetail/index" />
+            <Stack.Screen name="emailnotif/index" />
+            <Stack.Screen name="smsnotif/index" />
+            <Stack.Screen name="pushnotif/index" />
+            <Stack.Screen name="timezone/index" />
+            <Stack.Screen name="language/index" />
           </>
         ) : (
           <>

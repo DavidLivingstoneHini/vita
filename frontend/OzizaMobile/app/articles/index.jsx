@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { Feather } from "@expo/vector-icons";
 import { dataStore } from "../../utils/dataStore";
-import RNHTMLtoPDF from 'react-native-html-to-pdf';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,9 +24,9 @@ const getSafeAreaTop = () => {
 
 const ArticleScreen = () => {
   const router = useRouter();
-  const { articleId } = useLocalSearchParams();
-  const parsedArticleId = articleId ? parseInt(articleId, 10) : null;
-  const article = dataStore.articles.find((a) => a.id === parsedArticleId);
+  const { articleId } = useLocalSearchParams(); // Extract articleId from query params
+  const parsedArticleId = articleId ? parseInt(articleId, 10) : null; // Parse articleId to a number
+  const article = dataStore.articles.find((a) => a.id === parsedArticleId); // Find the article
 
   if (!article) {
     return (
@@ -55,33 +54,6 @@ const ArticleScreen = () => {
     }
   };
 
-  const handleDownload = async () => {
-    const htmlContent = `
-      <h1>${article.title}</h1>
-      <img src="${article.image}" style="width:100%; height:auto;"/>
-      <p>${article.content}</p>
-      ${article.sections.map(section => `
-        <h2>${section.title}</h2>
-        <p>${section.content}</p>
-      `).join('')}
-    `;
-
-    const options = {
-      html: htmlContent,
-      fileName: article.title.replace(/\s+/g, '_'), // Replace spaces with underscores
-      directory: 'Documents',
-    };
-
-    try {
-      const file = await RNHTMLtoPDF.convert(options);
-      console.log("PDF file created at:", file.filePath);
-      alert(`PDF saved to: ${file.filePath}`);
-    } catch (error) {
-      console.error("Error creating PDF:", error);
-      alert("Failed to download PDF.");
-    }
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -92,7 +64,7 @@ const ArticleScreen = () => {
           {article.title}
         </Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.actionIcon} onPress={handleDownload}>
+          <TouchableOpacity style={styles.actionIcon}>
             <Feather name="download" size={responsiveFontSize(20)} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionIcon} onPress={handleShare}>

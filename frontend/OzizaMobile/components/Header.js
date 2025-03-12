@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import SearchBox from "../components/searchBox";
+import { useRouter } from 'expo-router';
 
 const LogoImage = require("../assets/images/ozizawhite.png");
 
@@ -20,6 +21,7 @@ const notificationsIcon = require("../assets/images/notification.png");
 const Header = ({ onSearchPress, isSearchVisible, onSearchClose }) => {
   // Get status bar height for proper padding
   const statusBarHeight = Platform.OS === 'ios' ? 20 : StatusBar.currentHeight;
+  const router = useRouter();
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: '#000000' }]}>
@@ -30,7 +32,7 @@ const Header = ({ onSearchPress, isSearchVisible, onSearchClose }) => {
         {isSearchVisible ? (
           <View style={styles.searchBoxContainer}>
             <SearchBox onClose={onSearchClose} style={styles.searchBox} />
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={onSearchClose}
               style={styles.closeButton}
             >
@@ -39,7 +41,7 @@ const Header = ({ onSearchPress, isSearchVisible, onSearchClose }) => {
           </View>
         ) : (
           <>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={onSearchPress}
               style={styles.iconButton}
             >
@@ -55,7 +57,7 @@ const Header = ({ onSearchPress, isSearchVisible, onSearchClose }) => {
               resizeMode="contain"
             />
 
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => router.push("notification")}>
               <Image
                 source={notificationsIcon}
                 style={styles.icon}
