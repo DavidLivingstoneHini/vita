@@ -11,18 +11,33 @@ import {
   ScrollView,
   RefreshControl,
   useWindowDimensions,
+  Platform,
 } from "react-native";
-import Swiper from "react-native-swiper";
 import { useNavigation } from "@react-navigation/native";
 import YoutubePlayer from "react-native-youtube-iframe";
 import Header from "../../components/Header";
 import * as Notifications from "expo-notifications";
+import { dataStore } from "../../utils/dataStore";
+import { mythsItems } from "../../utils/mythsData";
+import Carousel from "react-native-reanimated-carousel";
 
 // Image Sources
 const images = [
-  require("../../assets/images/background3.jpg"),
-  require("../../assets/images/background.png"),
-  require("../../assets/images/background2.png"),
+  {
+    image: require("../../assets/images/background3.jpg"),
+    title: "Ghana launches 'PharmaDrones'...",
+    description: "Ghana has launched a drone system that seeks to facilitate the delivery of prescriptions, nationwide.",
+  },
+  {
+    image: require("../../assets/images/background.png"),
+    title: "New Health Initiative",
+    description: "A new health initiative aims to improve access to healthcare in rural areas.",
+  },
+  {
+    image: require("../../assets/images/background2.png"),
+    title: "Digital Health Transformation",
+    description: "Digital health technologies are transforming the way healthcare is delivered.",
+  },
 ];
 const ItemImage1 = require("../../assets/images/bleach.png");
 const ItemImage2 = require("../../assets/images/hypertension.jpg");
@@ -34,12 +49,12 @@ const ItemImage7 = require("../../assets/images/bmicheck.png");
 const ItemImage8 = require("../../assets/images/periodtracker.png");
 const ItemImage9 = require("../../assets/images/symcheck.png");
 const ItemImage10 = require("../../assets/images/findoc.png");
-const ItemImage11 = require("../../assets/images/penis.png");
+const ItemImage11 = require("../../assets/images/penis.jpg");
 const ItemImage12 = require("../../assets/images/spice1.png");
 const ItemImage13 = require("../../assets/images/spice2.png");
 const ItemImage14 = require("../../assets/images/spice3.png");
-const ItemImage15 = require("../../assets/images/contra.png");
-const ItemImage16 = require("../../assets/images/vaccines.png");
+const ItemImage15 = require("../../assets/images/contra.jpg");
+const ItemImage16 = require("../../assets/images/vax.jpg");
 const ItemImage17 = require("../../assets/images/event1.png");
 const ItemImage18 = require("../../assets/images/event2.png");
 const ItemImage19 = require("../../assets/images/event3.png");
@@ -176,6 +191,19 @@ const Home = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
+  const renderItem = ({ item, index }) => {
+    return (
+      <View style={styles.slide}>
+        <ImageBackground source={item.image} style={styles.backgroundImage}>
+          <View style={styles.overlay}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.description}>{item.description}</Text>
+          </View>
+        </ImageBackground>
+      </View>
+    );
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     setTimeout(() => {
@@ -183,8 +211,80 @@ const Home = () => {
     }, 2000);
   };
 
-  const navigateToDetail = (id) => {
-    navigation.navigate("articles/index");
+  const navigateToDetail = (item) => {
+    let articleId;
+
+    // Determine articleId based on the item
+    switch (item) {
+      case "Men's Health":
+      case "Women's Health":
+        articleId = 2; // Healthy Eating article
+        break;
+      case "Mental Health":
+        articleId = 2; // Healthy Eating
+        break;
+      case "General Ailments":
+      case "Common Cold":
+        articleId = 4; // Using Common Cold from health conditions
+        break;
+      case "Reproductive Health":
+        articleId = 1; // Diabetes 101
+        break;
+      case "Healthy Living":
+        articleId = 2; // Healthy Eating
+        break;
+      case "Hypertension":
+        articleId = 3; // Hypertension Management
+        break;
+      case "Diabetes (Type 1)":
+      case "Diabetes (Type 2)":
+        articleId = 1; // Diabetes 101
+        break;
+      default:
+        // For any other item or glossary term, try to find a matching article
+        const matchingArticle = dataStore.articles.find((article) =>
+          article.title.toLowerCase().includes(item.toLowerCase()) ||
+          article.content.toLowerCase().includes(item.toLowerCase())
+        );
+
+        const matchingCondition = dataStore.healthConditions.find((condition) =>
+          condition.title.toLowerCase().includes(item.toLowerCase())
+        );
+
+        if (matchingArticle) {
+          articleId = matchingArticle.id;
+        } else if (matchingCondition) {
+          articleId = matchingCondition.id;
+        } else {
+          articleId = 1; // Default to the first article if no match is found
+        }
+    }
+
+    // Navigate to the articles screen with the selected article ID
+    navigation.navigate("articles/index", { articleId }); // Pass articleId as a parameter
+  };
+
+  const navigateToMythDetail = (item) => {
+    let id;
+
+    // If item is a string (title), find the corresponding myth
+    if (typeof item === 'string') {
+      const matchingMyth = mythsItems.find((myth) =>
+        myth.title.toLowerCase().includes(item.toLowerCase())
+      );
+
+      if (matchingMyth) {
+        id = matchingMyth.id;
+      } else {
+        id = 1; // Default to first myth if no match found
+      }
+    } else {
+      // If item is already a myth object, use its id
+      id = item.id;
+    }
+
+    // Navigate to the myth detail screen with the mythId parameter
+    navigation.navigate("mythdetail/index", { id });
   };
 
   const renderInspirationItem = ({ item }) => (
@@ -246,29 +346,16 @@ const Home = () => {
         }
       >
         {/* Swiper Section */}
-        <Swiper
+        <Carousel
+          data={images}
+          renderItem={renderItem}
+          width={screenWidth}
           style={styles.swiper}
-          showsPagination={false}
-          onIndexChanged={setActiveIndex}
-          autoplay={true}
-          autoplayTimeout={3}
-        >
-          {images.map((image, index) => (
-            <View key={`slide-${index}`} style={styles.slide}>
-              <ImageBackground source={image} style={styles.backgroundImage}>
-                <View style={styles.overlay}>
-                  <Text style={styles.title}>Ghana launches "PharmaDrones"...</Text>
-                  <Text style={styles.description}>
-                    Ghana has launched a drone system that seeks to facilitate
-                    the delivery of prescriptions, nationwide.
-                  </Text>
-                </View>
-              </ImageBackground>
-            </View>
-          ))}
-        </Swiper>
-
-        {/* Pagination */}
+          autoPlay={true}
+          autoPlayInterval={3000}
+          loop={true}
+          onSnapToItem={(index) => setActiveIndex(index)}
+        />
         <View style={styles.pagination}>
           {images.map((_, index) => (
             <View
@@ -298,7 +385,7 @@ const Home = () => {
           <FlatList
             data={healthListItems}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigateToDetail(item.id)}>
+              <TouchableOpacity onPress={() => navigateToDetail(item.title)}>
                 <View style={styles.listItem}>
                   <Image source={item.image} style={styles.listItemImage} />
                   <Text style={styles.listItemTitle}>{item.title}</Text>
@@ -337,7 +424,7 @@ const Home = () => {
         <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Health Tips</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Library")}>
               <View style={styles.seeMoreContainer}>
                 <Text style={styles.seeMoreText}>SEE MORE</Text>
                 <Image source={chevronIcon} style={styles.chevronIcon} />
@@ -347,7 +434,7 @@ const Home = () => {
           <FlatList
             data={healthListItems1}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigateToDetail(item.id)}>
+              <TouchableOpacity onPress={() => navigateToDetail(item.title)}>
                 <View style={styles.listItem}>
                   <Image source={item.image} style={styles.listItemImage} />
                   <Text style={styles.listItemTitle}>{item.title}</Text>
@@ -364,7 +451,7 @@ const Home = () => {
         <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Exposing Myths</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("myths/index")}>
               <View style={styles.seeMoreContainer}>
                 <Text style={styles.seeMoreText}>SEE MORE</Text>
                 <Image source={chevronIcon} style={styles.chevronIcon} />
@@ -375,8 +462,8 @@ const Home = () => {
             {exposingMythsListItems.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={[styles.mythsGridItem, { width: (screenWidth - 40) / 3 }]} // 40 = paddingHorizontal (20 + 20)
-                onPress={() => navigateToDetail(item.id)}
+                style={[styles.mythsGridItem, { width: (screenWidth - 40) / 3 }]}
+                onPress={() => navigateToMythDetail(item.title)}
               >
                 <Image source={item.image} style={styles.mythsGridImage} />
                 <Text style={styles.mythsGridTitle} numberOfLines={2}>
@@ -435,7 +522,7 @@ const Home = () => {
             </Text>
             <TouchableOpacity
               style={styles.learnMoreButton}
-              onPress={() => navigation.navigate("articles/index")}
+              onPress={() => navigateToDetail("Talk to an Expert")}
             >
               <Text style={styles.learnMoreText}>Learn More</Text>
             </TouchableOpacity>
@@ -533,7 +620,7 @@ const Home = () => {
         <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Agencies & Organizations</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("inspiration/index")}>
+            <TouchableOpacity onPress={() => navigation.navigate("organizations/index")}>
               <View style={styles.seeMoreContainer}>
                 <Text style={styles.seeMoreText}>SEE MORE</Text>
                 <Image source={chevronIcon} style={styles.chevronIcon} />
@@ -555,7 +642,7 @@ const Home = () => {
         <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>Policies & Insurances</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("inspiration/index")}>
+            <TouchableOpacity onPress={() => navigation.navigate("policies/index")}>
               <View style={styles.seeMoreContainer}>
                 <Text style={styles.seeMoreText}>SEE MORE</Text>
                 <Image source={chevronIcon} style={styles.chevronIcon} />
@@ -573,7 +660,7 @@ const Home = () => {
           />
         </View>
       </ScrollView>
-    </View>
+    </View >
   );
 };
 
@@ -581,6 +668,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+    // paddingTop: Platform.OS === 'ios' ? 2 : StatusBar.currentHeight, // Add paddingTop to shift content down
   },
   swiper: {
     height: Dimensions.get('window').height * 0.25,

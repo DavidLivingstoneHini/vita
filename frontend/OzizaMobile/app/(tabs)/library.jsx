@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
   listContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: scale(8), // Adjusted gap between items
+    gap: scale(10), // Adjusted gap between items
     justifyContent: "flex-start", // Align items to the start of the row
   },
   listItemContainer: {

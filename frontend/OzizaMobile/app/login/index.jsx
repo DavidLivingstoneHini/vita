@@ -11,7 +11,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet, // Import StyleSheet
+  StyleSheet,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -45,13 +45,6 @@ export default function LoginScreen() {
     const goToHomeTab = () => {
       navigation.navigate("tabs", { screen: "Home" }); // Navigate to the Home tab
     };
-
-    // if (!password) {
-    //   setPasswordError("Password is required");
-    //   isValid = false;
-    // } else {
-    //   setPasswordError("");
-    // }
 
     return isValid;
   };

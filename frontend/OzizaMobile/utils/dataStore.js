@@ -63,7 +63,7 @@ export const dataStore = {
       title: "Hypertension Management",
       summary: "Understanding high blood pressure and how to control it.",
       content: "Hypertension, or high blood pressure, is a common condition in which the long-term force of the blood against your artery walls is high enough that it may eventually cause health problems, such as heart disease.",
-      image: require("../assets/images/acne.png"), // Replace with actual image URL
+      image: require("../assets/images/hypertension.jpg"), // Replace with actual image URL
       sections: [
         {
           title: "Understanding Blood Pressure Readings",
