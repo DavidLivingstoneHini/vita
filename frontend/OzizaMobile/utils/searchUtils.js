@@ -1,35 +1,34 @@
-import { dataStore } from "./dataStore";
+import api from "../services/api";
 
-export const search = (query) => {
-  const results = [];
-  const lowerCaseQuery = query.toLowerCase();
+export const search = async (query) => {
+  try {
+    const lowerCaseQuery = query.toLowerCase().trim();
+    if (!lowerCaseQuery) return [];
 
-  // Search articles
-  dataStore.articles.forEach((article) => {
-    if (article.title.toLowerCase().includes(lowerCaseQuery) ||
-      article.content.toLowerCase().includes(lowerCaseQuery)) {
-      results.push({
-        title: article.title,
-        // Fixed screen name format for Expo Router navigation
-        screen: "articles",
-        params: {
-          articleId: article.id
-        },
-      });
+    const response = await api.apiRequest(`articles/search/?search=${encodeURIComponent(lowerCaseQuery)}`);
+
+    // Handle different response structures
+    if (!response) {
+      throw new Error('Empty response from server');
     }
-  });
 
-  // Search health conditions
-  dataStore.healthConditions.forEach((condition) => {
-    if (condition.title.toLowerCase().includes(lowerCaseQuery) ||
-      condition.description.toLowerCase().includes(lowerCaseQuery)) {
-      results.push({
-        title: condition.title,
-        screen: condition.screen || "articles", // Provide fallback if screen is not defined
-        params: condition.params || { articleId: condition.id },
-      });
+    // Check for success status or direct data array
+    const data = response.status === 'success' ? response.data : response;
+
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid response format - expected array');
     }
-  });
 
-  return results;
+    return data.map(article => ({
+      id: article.id,
+      title: article.title,
+      type: 'article',
+      screen: "articles",
+      params: { articleId: article.id }
+    }));
+
+  } catch (error) {
+    console.error("Search error:", error.message, error.response?.data);
+    return [];
+  }
 };

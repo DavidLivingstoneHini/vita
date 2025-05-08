@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { getDiseaseDetails } from '../../services/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,11 +23,30 @@ const SypmtomChecker5 = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { condition, symptomsList, age, sex } = params;
-
-    const parsedCondition = condition ? JSON.parse(condition) : null;
-
-    // State to track the selected response
+    const [diseaseDetails, setDiseaseDetails] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [selectedResponse, setSelectedResponse] = useState(null);
+
+    useEffect(() => {
+        const fetchDetails = async () => {
+            try {
+                const parsedCondition = JSON.parse(condition);
+                const details = await getDiseaseDetails(parsedCondition.id);
+                setDiseaseDetails({
+                    ...details,
+                    name: parsedCondition.name,
+                });
+            } catch (err) {
+                setError('Failed to load disease details. Please try again.');
+                console.error('Error fetching disease details:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDetails();
+    }, [condition]);
 
     const handlePrevious = () => {
         router.back();
@@ -36,44 +56,80 @@ const SypmtomChecker5 = () => {
         router.push("/findoctor");
     };
 
-    // Function to handle button selection
     const handleResponseSelection = (response) => {
         setSelectedResponse(response);
     };
 
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#032825" />
+                <Text style={styles.loadingText}>Loading condition details...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>Symptom Checker</Text>
+                </View>
+
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={() => router.back()}
+                    >
+                        <Text style={styles.retryButtonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
+                <TouchableOpacity onPress={handlePrevious}>
                     <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Symptom Checker</Text>
             </View>
 
-            <Text style={styles.conditionTitle}>{parsedCondition.name}</Text>
+            <Text style={styles.conditionTitle}>{diseaseDetails?.name}</Text>
+
             <Text style={styles.sectionTitle}>Symptoms</Text>
-            <Text style={styles.sectionText}>Cough, Fever, Headache</Text>
+            <Text style={styles.sectionText}>
+                {diseaseDetails?.common_symptoms || 'Not specified'}
+            </Text>
 
             <Text style={styles.sectionTitle}>How Common</Text>
-            <Text style={styles.sectionText}>Very common</Text>
+            <Text style={styles.sectionText}>
+                {diseaseDetails?.prevalence || 'Not specified'}
+            </Text>
 
             <Text style={styles.sectionTitle}>Overview</Text>
             <Text style={styles.sectionText}>
-                The common cold is a viral infection of your nose and throat (upper respiratory tract). It's usually harmless, although it might not feel that way.
+                {diseaseDetails?.description || 'No description available'}
             </Text>
 
-            <TouchableOpacity style={styles.readMoreButton}>
-                <Text style={styles.readMoreText}>Read More</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Treatment</Text>
+            <Text style={styles.sectionText}>
+                {diseaseDetails?.treatment || 'No treatment information available'}
+            </Text>
 
             <Text style={styles.sectionTitle}>Risk Factors</Text>
             <Text style={styles.sectionText}>
-                Risk factors for the common cold include close contact with someone who has a cold, weakened immune system, and time of year (more common in winter).
+                {diseaseDetails?.risk_factors || 'No risk factors specified'}
             </Text>
 
             <Text style={styles.sectionTitle}>Do you think you have this condition?</Text>
             <View style={styles.responseButtons}>
-                {/* Yes Button */}
                 <TouchableOpacity
                     style={[styles.responseButton, selectedResponse === 'Yes' && styles.selectedResponseButton]}
                     onPress={() => handleResponseSelection('Yes')}
@@ -81,7 +137,6 @@ const SypmtomChecker5 = () => {
                     <Text style={[styles.responseButtonText, selectedResponse === 'Yes' && styles.selectedResponseText]}>Yes</Text>
                 </TouchableOpacity>
 
-                {/* No Button */}
                 <TouchableOpacity
                     style={[styles.responseButton, selectedResponse === 'No' && styles.selectedResponseButton]}
                     onPress={() => handleResponseSelection('No')}
@@ -89,7 +144,6 @@ const SypmtomChecker5 = () => {
                     <Text style={[styles.responseButtonText, selectedResponse === 'No' && styles.selectedResponseText]}>No</Text>
                 </TouchableOpacity>
 
-                {/* Maybe Button */}
                 <TouchableOpacity
                     style={[styles.responseButton, selectedResponse === 'Maybe' && styles.selectedResponseButton]}
                     onPress={() => handleResponseSelection('Maybe')}
@@ -98,11 +152,17 @@ const SypmtomChecker5 = () => {
                 </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.contactDoctorButton} onPress={handleContactDoctor}>
+            <TouchableOpacity
+                style={styles.contactDoctorButton}
+                onPress={handleContactDoctor}
+            >
                 <Text style={styles.contactDoctorText}>Contact a Doctor</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
+            <TouchableOpacity
+                style={styles.previousButton}
+                onPress={handlePrevious}
+            >
                 <Text style={styles.previousButtonText}>Previous</Text>
             </TouchableOpacity>
         </ScrollView>
@@ -116,6 +176,16 @@ const styles = StyleSheet.create({
         paddingTop: getSafeAreaTop(),
         paddingHorizontal: width * 0.04,
         paddingBottom: height * 0.02,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    loadingText: {
+        marginTop: height * 0.02,
+        fontSize: responsiveFontSize(16),
     },
     header: {
         flexDirection: 'row',
@@ -143,18 +213,7 @@ const styles = StyleSheet.create({
     sectionText: {
         fontSize: responsiveFontSize(15),
         marginBottom: height * 0.03,
-    },
-    readMoreButton: {
-        backgroundColor: '#032825',
-        borderRadius: 8,
-        width: '40%',
-        paddingVertical: height * 0.02,
-        alignItems: 'center',
-        marginBottom: height * 0.03,
-    },
-    readMoreText: {
-        color: 'white',
-        fontSize: responsiveFontSize(16),
+        lineHeight: responsiveFontSize(20),
     },
     responseButtons: {
         flexDirection: 'row',
@@ -197,10 +256,33 @@ const styles = StyleSheet.create({
         width: '50%',
         paddingVertical: height * 0.02,
         alignItems: 'center',
+        alignSelf: 'center',
     },
     previousButtonText: {
         fontSize: responsiveFontSize(16),
         color: 'white',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: width * 0.05,
+    },
+    errorText: {
+        fontSize: responsiveFontSize(16),
+        color: '#D32F2F',
+        textAlign: 'center',
+        marginBottom: height * 0.03,
+    },
+    retryButton: {
+        backgroundColor: '#032825',
+        borderRadius: 8,
+        paddingVertical: height * 0.02,
+        paddingHorizontal: width * 0.05,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontSize: responsiveFontSize(16),
     },
 });
 

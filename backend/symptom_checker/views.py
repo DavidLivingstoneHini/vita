@@ -1,115 +1,298 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from .models import Symptom, Disease, Diagnosis, DO_Term, DiagnosisDisease
-from .serializers import SymptomSerializer, DiseaseSerializer, DiagnosisSerializer, DO_TermSerializer, ConditionDetailSerializer
-from django.db.models import Sum, Q
-import spacy
+from django.db.models import Q
+from .models import (Symptom, Disease, Diagnosis, DO_Term,
+                     DiagnosisDisease, DiagnosisSymptom, SymptomDOTermMapping, DO_Relationship)
+from .serializers import (SymptomSerializer, DiseaseSerializer,
+                          DiagnosisSerializer, DO_TermSerializer,
+                          DiseaseDetailSerializer)
+import logging
 from sklearn.metrics.pairwise import cosine_similarity
+import spacy
 
-# Load pre-trained Spacy English Medical Model
-# nlp = spacy.load("en_core_medlg")
-nlp = spacy.load("en_core_web_lg")
+logger = logging.getLogger(__name__)
+nlp = spacy.load("en_core_web_sm")
+
 
 class SymptomListView(generics.ListAPIView):
     queryset = Symptom.objects.all()
     serializer_class = SymptomSerializer
 
+    def get_queryset(self):
+        try:
+            return super().get_queryset()
+        except Exception as e:
+            logger.error(f"Error fetching symptoms: {str(e)}")
+            return Symptom.objects.none()
+
+
 class DiseaseListView(generics.ListAPIView):
     queryset = Disease.objects.all()
     serializer_class = DiseaseSerializer
 
+    def get_queryset(self):
+        try:
+            return super().get_queryset()
+        except Exception as e:
+            logger.error(f"Error fetching diseases: {str(e)}")
+            return Disease.objects.none()
+
+
 class DiseaseDetailView(generics.RetrieveAPIView):
     queryset = Disease.objects.all()
-    serializer_class = DiseaseSerializer
+    serializer_class = DiseaseDetailSerializer
 
-class SymptomDetailView(generics.RetrieveAPIView):
-    queryset = Symptom.objects.all()
-    serializer_class = SymptomSerializer
+    def get_object(self):
+        try:
+            return super().get_object()
+        except Exception as e:
+            logger.error(f"Error fetching disease details: {str(e)}")
+            raise
+
+
+class DO_TermListView(generics.ListAPIView):
+    serializer_class = DO_TermSerializer
+
+    def get_queryset(self):
+        try:
+            return DO_Term.objects.filter(is_obsolete=False)
+        except Exception as e:
+            logger.error(f"Error fetching DO terms: {str(e)}")
+            return DO_Term.objects.none()
+
 
 class SymptomCheckerView(generics.CreateAPIView):
     serializer_class = DiagnosisSerializer
 
-    def perform_create(self, serializer):
+    def post(self, request, *args, **kwargs):
         try:
-            diagnosis_obj = serializer.save()  # Create a Diagnosis instance
-            symptoms = serializer.validated_data['symptoms']
-            potential_diseases = self.get_potential_diseases(symptoms)
-            for disease, confidence_score in potential_diseases:
-                DiagnosisDisease.objects.create(diagnosis=diagnosis_obj, disease=disease, confidence_score=confidence_score)
+            symptom_ids = request.data.get('symptoms', [])
+            logger.info(f"Received symptom IDs: {symptom_ids}")
+
+            if not symptom_ids:
+                return Response(
+                    {"error": "At least one symptom is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Convert all IDs to integers
+            try:
+                symptom_ids = [int(id) for id in symptom_ids]
+            except (ValueError, TypeError):
+                return Response(
+                    {"error": "All symptom IDs must be integers"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Verify all symptoms exist
+            symptoms = Symptom.objects.filter(id__in=symptom_ids)
+            found_ids = set(symptoms.values_list('id', flat=True))
+            missing_ids = set(symptom_ids) - found_ids
+
+            if missing_ids:
+                logger.warning(f"Missing symptom IDs: {missing_ids}")
+                # Only proceed with found symptoms
+                symptom_ids = list(found_ids)
+                if not symptom_ids:
+                    return Response(
+                        {"error": "None of the provided symptoms exist"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            diagnosis = Diagnosis.objects.create(user=request.user)
+            logger.info(f"Created diagnosis with ID: {diagnosis.id}")
+
+            # Add symptoms to diagnosis
+            for symptom in symptoms:
+                DiagnosisSymptom.objects.create(
+                    diagnosis=diagnosis,
+                    symptom=symptom
+                )
+
+            # Find potential diseases
+            potential_diseases = self.find_potential_diseases(diagnosis)
+            logger.info(f"Found {len(potential_diseases)} potential diseases")
+
+            # Format the response properly
+            formatted_diseases = []
+            for disease_info in potential_diseases:
+                try:
+                    disease = disease_info.get('disease')
+                    confidence = disease_info.get('confidence', 0)
+
+                    if not disease:
+                        continue
+
+                    serializer = DiseaseSerializer(disease)
+                    formatted_diseases.append({
+                        "disease": serializer.data,
+                        "confidence_score": confidence,
+                        "matches": disease_info.get('matches', [])
+                    })
+                except Exception as e:
+                    logger.error(f"Error serializing disease {disease.id if disease else 'unknown'}: {str(e)}")
+                    continue
+
+            return Response(
+                {
+                    "data": {
+                        "diagnosis_id": diagnosis.id,
+                        "potential_diseases": formatted_diseases,
+                        "count": len(formatted_diseases)
+                    }
+                },
+                status=status.HTTP_200_OK
+            )
+
         except Exception as e:
-            # Log the error and return a response
-            print(e)  # Replace with logging
-            return Response({"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error in symptom check: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while processing your request"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-    def get_potential_diseases(self, symptoms):
-        symptom_to_do_id_mapping = self.symptom_to_do_id(symptoms)
+    def find_potential_diseases(self, diagnosis):
+        try:
+            symptoms = DiagnosisSymptom.objects.filter(diagnosis=diagnosis)
+            logger.debug(f"Found {len(symptoms)} diagnosis symptoms")
 
-        do_terms = DO_Term.objects.filter(do_id__in=symptom_to_do_id_mapping.values())
+            # Get symptom weights and mappings
+            symptom_data = []
+            for ds in symptoms:
+                try:
+                    mappings = SymptomDOTermMapping.objects.filter(symptom=ds.symptom)
+                    symptom_data.append({
+                        'symptom': ds.symptom,
+                        'intensity': ds.intensity,
+                        'do_terms': [m.do_term for m in mappings]
+                    })
+                except Exception as e:
+                    logger.error(f"Error processing symptom {ds.symptom.id}: {str(e)}")
+                    continue
 
-        diseases = Disease.objects.filter(do_term__in=do_terms)
+            # Score diseases
+            disease_scores = {}
+            for data in symptom_data:
+                for do_term in data['do_terms']:
+                    try:
+                        # Direct disease matches
+                        diseases = Disease.objects.filter(do_term=do_term)
+                        for disease in diseases:
+                            if disease.id not in disease_scores:
+                                disease_scores[disease.id] = {
+                                    'disease': disease,
+                                    'score': 0,
+                                    'matches': []
+                                }
+                            # Weight by symptom intensity and mapping confidence
+                            mapping = SymptomDOTermMapping.objects.get(
+                                symptom=data['symptom'],
+                                do_term=do_term
+                            )
+                            score = data['intensity'] * mapping.confidence
+                            disease_scores[disease.id]['score'] += score
+                            disease_scores[disease.id]['matches'].append({
+                                'symptom': data['symptom'].name,
+                                'do_term': do_term.name,
+                                'contribution': score
+                            })
 
-        potential_diseases = []
-        for disease in diseases:
-            confidence_score = self.calculate_confidence_score(disease, symptom_to_do_id_mapping)
-            potential_diseases.append((disease, confidence_score))
+                        # Related disease matches
+                        relationships = DO_Relationship.objects.filter(
+                            Q(do_term=do_term) | Q(related_do_term=do_term)
+                        )
+                        for rel in relationships:
+                            related_do = rel.related_do_term if rel.do_term == do_term else rel.do_term
+                            diseases = Disease.objects.filter(do_term=related_do)
 
-        return sorted(potential_diseases, key=lambda x: x[1], reverse=True)
+                            for disease in diseases:
+                                if disease.id not in disease_scores:
+                                    disease_scores[disease.id] = {
+                                        'disease': disease,
+                                        'score': 0,
+                                        'matches': []
+                                    }
 
-    def symptom_to_do_id(self, symptoms):
-        symptom_to_do_id_mapping = {}
+                                # Apply relationship weight
+                                rel_weight = {
+                                    'is_a': 0.7,
+                                    'part_of': 0.6,
+                                    'subclass_of': 0.5,
+                                    'related_to': 0.4
+                                }.get(rel.relationship_type, 0.3)
 
-        for symptom in symptoms:
-            symptom_text = nlp(symptom)
-            symptom_embedding = symptom_text.vector
+                                score = data['intensity'] * mapping.confidence * rel_weight
+                                disease_scores[disease.id]['score'] += score
+                                disease_scores[disease.id]['matches'].append({
+                                    'symptom': data['symptom'].name,
+                                    'do_term': do_term.name,
+                                    'relationship': rel.get_relationship_type_display(),
+                                    'related_do_term': related_do.name,
+                                    'contribution': score
+                                })
+                    except Exception as e:
+                        logger.error(f"Error processing DO term {do_term.id}: {str(e)}")
+                        continue
 
-            similarities = []
-            for do_term in DO_Term.objects.all():
-                do_term_text = nlp(do_term.name)
-                do_term_embedding = do_term_text.vector
-                similarity = cosine_similarity([symptom_embedding], [do_term_embedding])
-                similarities.append((do_term.do_id, similarity))
+            # Normalize and sort results
+            max_score = max([d['score'] for d in disease_scores.values()]) if disease_scores else 1
+            potential_diseases = []
 
-            top_matches = sorted(similarities, key=lambda x: x[1], reverse=True)[:3]
-            symptom_to_do_id_mapping[symptom] = [match[0] for match in top_matches]
+            for disease_info in disease_scores.values():
+                confidence = (disease_info['score'] / max_score) * 100
+                potential_diseases.append({
+                    'disease': disease_info['disease'],
+                    'confidence': min(confidence, 100),
+                    'matches': disease_info['matches']
+                })
 
-        return symptom_to_do_id_mapping
+            return sorted(potential_diseases, key=lambda x: -x['confidence'])[:10]
 
-    def calculate_confidence_score(self, disease, symptom_to_do_id_mapping):
-        matching_symptoms = 0
-        total_weight = 0
+        except Exception as e:
+            logger.error(f"Error in find_potential_diseases: {str(e)}", exc_info=True)
+            return []
 
-        for symptom, do_ids in symptom_to_do_id_mapping.items():
-            if disease.do_term.do_id in do_ids:
-                matching_symptoms += 1
-                total_weight += disease.do_term.weight
-
-        confidence_score = (matching_symptoms / len(symptom_to_do_id_mapping)) * (total_weight / disease.do_term.related_do_term.aggregate(Sum('weight'))['weight__sum'])
-        return confidence_score
-
-class DO_TermListView(generics.ListAPIView):
-    queryset = DO_Term.objects.all()
-    serializer_class = DO_TermSerializer
-
-class DO_TermDetailView(generics.RetrieveAPIView):
-    queryset = DO_Term.objects.all()
-    serializer_class = DO_TermSerializer
-
-class SymptomCheckerDisclaimerView(generics.GenericAPIView):
-    def get(self, request):
-        disclaimer = "This symptom checker is for informational purposes only. Consult a doctor for accurate diagnosis and treatment."
-        return Response({'disclaimer': disclaimer})
-
-class ConditionDetailView(generics.RetrieveAPIView):
-    queryset = Disease.objects.all()
-    serializer_class = ConditionDetailSerializer
-    lookup_field = 'pk'
-    lookup_url_kwarg = 'condition_id'
 
 class SymptomSearchView(generics.ListAPIView):
     serializer_class = SymptomSerializer
 
     def get_queryset(self):
-        query = self.request.query_params.get('q')
-        if query:
-            return Symptom.objects.filter(name__icontains=query)
-        return Symptom.objects.none()
+        try:
+            query = self.request.query_params.get('q', '').strip().lower()
+            if not query:
+                return Symptom.objects.none()
+
+            logger.info(f"Searching symptoms for query: {query}")
+
+            # First try exact match (case insensitive)
+            exact_match = Symptom.objects.filter(name__iexact=query).first()
+            if exact_match:
+                return Symptom.objects.filter(id=exact_match.id)
+
+            # If no exact match, try contains search with higher weight for beginning matches
+            starts_with = Symptom.objects.filter(name__istartswith=query)
+            contains = Symptom.objects.filter(name__icontains=query).exclude(id__in=starts_with.values('id'))
+
+            # Combine results with starts_with first
+            results = list(starts_with) + list(contains)
+
+            # If still no results, try fuzzy matching with simple similarity
+            if not results and len(query) > 3:
+                all_symptoms = Symptom.objects.all()
+                for symptom in all_symptoms:
+                    if self.simple_similarity(query, symptom.name.lower()) > 0.8:
+                        results.append(symptom)
+                        break  # Just get the first fuzzy match
+
+            return results[:20]  # Limit to 20 results
+
+        except Exception as e:
+            logger.error(f"Error in symptom search: {str(e)}")
+            return Symptom.objects.none()
+
+    def simple_similarity(self, query, symptom_name):
+        """Basic similarity check without NLP"""
+        query_words = set(query.split())
+        symptom_words = set(symptom_name.split())
+        intersection = query_words & symptom_words
+        return len(intersection) / max(len(query_words), 1)

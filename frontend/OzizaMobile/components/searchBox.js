@@ -1,90 +1,98 @@
 import React, { useState } from "react";
-import { View, TextInput, TouchableOpacity, FlatList, Text } from "react-native";
+import { View, TextInput, TouchableOpacity, FlatList, Text, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { search } from "../utils/searchUtils";
-import { useRouter } from "expo-router"; // Import useRouter instead of useNavigation
+import { useRouter } from "expo-router";
 
 const SearchBox = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState([]);
   const [noResults, setNoResults] = useState(false);
-  const router = useRouter(); // Use router instead of navigation
+  const [isSearching, setIsSearching] = useState(false);
+  const router = useRouter();
 
-  const handleQueryChange = (text) => {
-    setSearchQuery(text);
-    if (text.trim() !== "") {
-      const searchResults = search(text);
-      if (searchResults.length > 0) {
-        setResults(searchResults);
-        setNoResults(false);
-      } else {
-        setResults([]);
-        setNoResults(true);
-      }
-    } else {
+  const handleSearch = async () => {
+    if (searchQuery.trim() === "") {
       setResults([]);
       setNoResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setNoResults(false);
+
+    try {
+      const searchResults = await search(searchQuery);
+      setResults(searchResults);
+      setNoResults(searchResults.length === 0);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setResults([]);
+      setNoResults(true);
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  const handleSearch = () => {
-    if (searchQuery.trim() !== "") {
-      const searchResults = search(searchQuery);
-      if (searchResults.length > 0) {
-        setResults(searchResults);
-        setNoResults(false);
-      } else {
-        setResults([]);
-        setNoResults(true);
-      }
-    } else {
+  const handleQueryChange = (text) => {
+    setSearchQuery(text);
+    if (text.trim() === "") {
       setResults([]);
       setNoResults(false);
     }
   };
 
   const handleResultSelect = (result) => {
-    console.log("Selected result:", result);
     if (result.screen && result.params) {
-      console.log("Navigating to:", result.screen, "with params:", result.params);
-
-      // Use router.push instead of navigation.navigate for Expo Router
       router.push({
         pathname: `/${result.screen}`,
         params: result.params
       });
-
       setResults([]);
       setSearchQuery("");
       setNoResults(false);
-      if (onClose) onClose(); // Close search when navigating
-    } else {
-      console.log("Invalid result selected:", result);
+      if (onClose) onClose();
     }
   };
 
   return (
-    <View>
+    <View style={styles.wrapper}>
       <View style={styles.container}>
-        <TouchableOpacity
-          style={styles.searchIconContainer}
-          onPress={handleSearch}
-        >
-          <Feather name="search" size={20} color="#666" />
-        </TouchableOpacity>
+        {isSearching ? (
+          <ActivityIndicator size="small" color="#666" style={styles.loadingIndicator} />
+        ) : (
+          <TouchableOpacity
+            style={styles.searchIconContainer}
+            onPress={handleSearch}
+          >
+            <Feather name="search" size={20} color="#666" />
+          </TouchableOpacity>
+        )}
         <TextInput
           style={styles.searchInput}
-          placeholder="Search..."
+          placeholder="Search articles..."
+          placeholderTextColor="#808080"
           value={searchQuery}
           onChangeText={handleQueryChange}
           onSubmitEditing={handleSearch}
+          returnKeyType="search"
         />
       </View>
-      {noResults ? (
+
+      {isSearching && results.length === 0 && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#666" />
+          <Text style={styles.loadingText}>Searching...</Text>
+        </View>
+      )}
+
+      {noResults && !isSearching && (
         <Text style={styles.noResultsText}>
-          No results found for your search "{searchQuery}"
+          No results found for "{searchQuery}"
         </Text>
-      ) : results.length > 0 ? (
+      )}
+
+      {results.length > 0 && !isSearching && (
         <FlatList
           style={styles.resultsContainer}
           data={results}
@@ -94,65 +102,93 @@ const SearchBox = ({ onClose }) => {
               onPress={() => handleResultSelect(item)}
             >
               <Text style={styles.resultTitle}>{item.title}</Text>
+              <Text style={styles.resultType}>{item.type}</Text>
             </TouchableOpacity>
           )}
-          keyExtractor={(item, index) => `${item.title}-${index}`}
+          keyExtractor={(item) => `${item.type}-${item.id}`}
         />
-      ) : null}
+      )}
     </View>
   );
 };
 
 const styles = {
+  wrapper: {
+    width: '100%', // Full width container
+    paddingHorizontal: 16, // Add some horizontal padding
+  },
   container: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
+    paddingVertical: 8,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#ddd",
-    width: '90%',
+    width: '100%', // Make the search box full width of its container
   },
   searchInput: {
+    flex: 1,
     height: 40,
     fontSize: 16,
     paddingHorizontal: 10,
-    width: '100%',
   },
   searchIconContainer: {
-    paddingHorizontal: 5,
+    paddingRight: 10,
   },
-  closeIconContainer: {
-    position: "absolute",
-    right: 10,
-    top: 10,
+  loadingIndicator: {
+    paddingRight: 10,
   },
   resultsContainer: {
-    marginTop: 10,
-    paddingHorizontal: 10,
-    width: '80%',
+    width: '100%', // Match search box width
+    marginTop: 8,
     backgroundColor: "#fff",
     maxHeight: 300,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   resultItem: {
-    paddingVertical: 10,
+    padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "#eee",
   },
   resultTitle: {
     fontSize: 16,
     color: "#333",
   },
+  resultType: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
   noResultsText: {
+    width: '100%', // Match search box width
+    padding: 12,
     fontSize: 16,
     color: "#666",
     textAlign: "center",
-    marginTop: 10,
     backgroundColor: "#fff",
-    padding: 10,
-    borderRadius: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginTop: 8,
+  },
+  loadingContainer: {
+    width: '100%', // Match search box width
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginTop: 8,
+  },
+  loadingText: {
+    marginLeft: 10,
+    color: "#666",
   },
 };
 

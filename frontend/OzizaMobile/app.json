@@ -47,12 +47,21 @@
         }
       ],
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesGoogleServices": true
+          }
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Oziza to access your location."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-facebook"
     ],
     "experiments": {
       "typedRoutes": true

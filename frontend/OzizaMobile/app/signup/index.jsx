@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -11,16 +11,22 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet, // Import StyleSheet
+  StyleSheet,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
 import Toast from 'react-native-toast-message';
+import { GoogleAuthProvider, FacebookAuthProvider, signInWithCredential } from 'firebase/auth';
+import { auth } from '../../firebaseConfig';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
 
 const { width, height } = Dimensions.get('window');
+const API_BASE_URL = "http://192.168.100.34:8000/api/";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen() {
   const [passwordVisibility, setPasswordVisibility] = useState(true);
@@ -33,7 +39,7 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [passwordMatch, setPasswordMatch] = useState(true);
 
-  // Error state variables
+  // Error states
   const [fullNameError, setFullNameError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -42,132 +48,205 @@ export default function SignUpScreen() {
 
   const router = useRouter();
 
-  const validateFields = () => {
-    let isValid = true;
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: '454261196558-pqg607nr354prbj3526uabnohka4lpk1.apps.googleusercontent.com',
+    androidClientId: '454261196558-jngnv4vq2rfp79o8h2ju5mu2amrcn614.apps.googleusercontent.com',
+    webClientId: '539163820187-og6r7smr5uuo48kvcap399urnfid7blv.apps.googleusercontent.com',
+  });
 
-    if (!fullName) {
-      setFullNameError("Full Name is required");
-      isValid = false;
-    } else {
-      setFullNameError("");
+  // Handle Google Auth Response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      handleGoogleSignIn(response);
     }
+  }, [response]);
 
-    if (!email) {
-      setEmailError("Email is required");
-      isValid = false;
-    } else {
-      setEmailError("");
-    }
-
-    if (!phoneNumber) {
-      setPhoneNumberError("Phone Number is required");
-      isValid = false;
-    } else {
-      setPhoneNumberError("");
-    }
-
-    if (!password) {
-      setPasswordError("Password is required");
-      isValid = false;
-    } else {
-      setPasswordError("");
-    }
-
-    if (password !== repeatPassword) {
-      setRepeatPasswordError("Passwords do not match");
-      isValid = false;
-    } else {
-      setRepeatPasswordError("");
-    }
-
-    return isValid;
-  };
-
-  const handleSignUp = async () => {
-    if (!validateFields()) {
-      return;
-    }
-
-    setLoading(true);
+  const handleGoogleSignIn = async (authResponse) => {
     try {
-      const response = await api.apiRequest(
-        "https://djbackend-9d8q.onrender.com/api/v1/users/signup/",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            full_name: fullName,
-            email,
-            password,
-            phone_number: phoneNumber,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      setLoading(true);
+      const { id_token } = authResponse.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      const userCredential = await signInWithCredential(auth, credential);
 
-      console.log("Response from server:", response);
-
-      await SecureStore.setItemAsync("access_token", response.access);
-      await SecureStore.setItemAsync("refresh_token", response.refresh);
-
-      const expiresIn = response.expires_in;
-      const expirationTime = new Date(expiresIn).getTime();
-      await SecureStore.setItemAsync(
-        "expiration_time",
-        expirationTime.toString()
-      );
+      // Store user data
+      await SecureStore.setItemAsync("email", userCredential.user.email);
+      await SecureStore.setItemAsync("full_name", userCredential.user.displayName || "");
 
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Sign-up successful! Please log in with your credentials.',
-        position: 'bottom',
-        visibilityTime: 4000,
+        text2: 'Google sign-in successful!',
       });
 
-      router.push("/login");
+      router.push("/(tabs)/home");
     } catch (error) {
-      console.error("Sign-up error:", error?.message || "Unknown error");
-
-      // Extract the error message from the API response
-      let errorMessage = "An unknown error occurred. Please try again.";
-      if (error.response && error.response.data) {
-        // Check if the error is in the "email" field
-        if (error.response.data.email && error.response.data.email.length > 0) {
-          errorMessage = error.response.data.email[0]; // Get the first error message
-        } else if (error.response.data.non_field_errors && error.response.data.non_field_errors.length > 0) {
-          errorMessage = error.response.data.non_field_errors[0]; // Get the first non-field error message
-        } else if (error.response.data.detail) {
-          errorMessage = error.response.data.detail; // Get the detail error message
-        }
-      }
-
-      // Show the error message using Toast
       Toast.show({
         type: 'error',
-        text1: 'Sign-up Error',
-        text2: errorMessage,
-        position: 'top',
-        visibilityTime: 4000,
+        text1: 'Error',
+        text2: error.message,
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const getErrorMessage = (error) => {
-    if (error.response && error.response.data) {
-      return error?.message || "Invalid email or password";
-    } else {
-      return "An unknown error occurred. Please try again.";
+  const handleFacebookSignIn = async () => {
+    try {
+      setLoading(true);
+
+      // Initialize Facebook SDK
+      await Facebook.initializeAsync({
+        appId: 'YOUR_FACEBOOK_APP_ID',
+      });
+
+      // Log in with permissions
+      const { type, token } = await Facebook.logInWithReadPermissionsAsync({
+        permissions: ['public_profile', 'email'],
+      });
+
+      if (type === 'success') {
+        // Create a Firebase credential with the Facebook access token
+        const facebookCredential = FacebookAuthProvider.credential(token);
+
+        // Sign in with the credential
+        const userCredential = await signInWithCredential(auth, facebookCredential);
+
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Facebook sign-in successful!',
+          position: 'bottom',
+        });
+
+        router.push("/home");
+      } else {
+        throw new Error('Facebook login was cancelled');
+      }
+    } catch (error) {
+      console.error('Facebook sign-in error:', error);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Facebook Sign-In Error',
+        text2: error.message,
+        position: 'top',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateFields = () => {
+    let isValid = true;
+
+    // Reset errors
+    setFullNameError("");
+    setEmailError("");
+    setPhoneNumberError("");
+    setPasswordError("");
+    setRepeatPasswordError("");
+
+    if (!fullName.trim()) {
+      setFullNameError("Full name is required");
+      isValid = false;
+    }
+
+    if (!email.trim()) {
+      setEmailError("Email is required");
+      isValid = false;
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setEmailError("Please enter a valid email");
+      isValid = false;
+    }
+
+    if (!phoneNumber.trim()) {
+      setPhoneNumberError("Phone number is required");
+      isValid = false;
+    }
+
+    if (!password) {
+      setPasswordError("Password is required");
+      isValid = false;
+    } else if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters");
+      isValid = false;
+    }
+
+    if (password !== repeatPassword) {
+      setRepeatPasswordError("Passwords don't match");
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
+  const handleSignUp = async () => {
+    if (!validateFields()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}v1/users/signup/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: fullName,
+          email,
+          password,
+          phone_number: phoneNumber,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail ||
+          data.email?.[0] ||
+          data.non_field_errors?.[0] ||
+          'Sign-up failed. Please try again.'
+        );
+      }
+
+      // Store tokens if they exist in response
+      if (data.access) {
+        await SecureStore.setItemAsync("access_token", data.access);
+      }
+      if (data.refresh) {
+        await SecureStore.setItemAsync("refresh_token", data.refresh);
+      }
+
+      // Store user data
+      if (data.user) {
+        await SecureStore.setItemAsync("full_name", data.user.full_name || "");
+        await SecureStore.setItemAsync("email", data.user.email || "");
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Account created successfully!',
+      });
+
+      router.push("/(tabs)/home");
+    } catch (error) {
+      console.error("Sign-up error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Sign-up Error',
+        text2: error.message,
+        position: 'top',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
           <AntDesign name="arrowleft" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Sign up</Text>
@@ -328,7 +407,11 @@ export default function SignUpScreen() {
             </View>
 
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => promptAsync()}
+                disabled={loading || !request}
+              >
                 <Image
                   source={require("../../assets/images/devicon_google.png")}
                   style={styles.socialIcon}
@@ -337,7 +420,11 @@ export default function SignUpScreen() {
                 <Text style={styles.socialButtonText}>Continue with Google</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={handleFacebookSignIn}
+                disabled={loading}
+              >
                 <Image
                   source={require("../../assets/images/logos_facebook.png")}
                   style={styles.socialIcon}

@@ -28,11 +28,11 @@ const NotificationsScreen = () => {
     const getIconForNotificationType = (type) => {
         switch (type) {
             case 'message':
-                return 'email'; // Example: MaterialIcons 'email'
+                return 'email';
             case 'reminder':
-                return 'alarm'; // Example: MaterialIcons 'alarm'
+                return 'alarm';
             case 'health':
-                return 'healing'; // Example: MaterialIcons 'healing'
+                return 'healing';
             default:
                 return 'notifications';
         }

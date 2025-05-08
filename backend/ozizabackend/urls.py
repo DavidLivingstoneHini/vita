@@ -19,6 +19,8 @@ from django.urls import include, path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from django.conf import settings
+from django.conf.urls.static import static
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -42,7 +44,7 @@ urlpatterns = [
 
     #App Urls
     path('', include('user_auth.urls')),
-    path('content_recommender/', include('content_recommender.urls')),
-    path('symptom_checker/', include('symptom_checker.urls')),
+    path('', include('content_recommender.urls')),
+    path('', include('symptom_checker.urls')),
     path('security_measures/', include('security_measures.urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

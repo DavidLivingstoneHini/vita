@@ -12,23 +12,10 @@ import {
   PixelRatio,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-
-// Dummy data for "For You" section
-const forYouData = Array.from({ length: 10 }, (_, i) => ({
-  id: i,
-  image: `https://picsum.photos/200/300?random=${i}`,
-  descriptionTitle: `Image ${i} Description Title`,
-  text: `Image ${i} Description`,
-}));
-
-// Dummy data for "Editor's Pick"
-const editorsPick = {
-  image: "https://picsum.photos/200/300?random=800",
-  descriptionTitle: "Local Heroes of Health care  in Africa",
-  text: "Get to know the heroes who are making big impacts on the communities through health innovation and projects",
-};
+import { getRecommendedArticles } from "../../services/api";
 
 // Dummy data for buttons with health-related titles
 const buttonsData = [
@@ -72,44 +59,65 @@ const News = () => {
   const [selectedButton, setSelectedButton] = useState(buttonsData[0]);
   const [refreshing, setRefreshing] = useState(false);
   const [dimensions, setDimensions] = useState({ screenWidth, screenHeight });
+  const [recommendedArticles, setRecommendedArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Handle screen rotation and dimension changes
+  const fetchRecommendedArticles = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await getRecommendedArticles();
+      if (response.status === "success") {
+        setRecommendedArticles(response.data);
+      } else {
+        throw new Error(response.message || "Failed to load recommendations");
+      }
+    } catch (err) {
+      console.error("Failed to fetch recommendations:", err);
+      setError(err.message || "Failed to load recommendations");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setDimensions({
-        screenWidth: window.width,
-        screenHeight: window.height,
-      });
-    });
-
-    return () => subscription?.remove();
+    fetchRecommendedArticles();
   }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchRecommendedArticles();
+  };
 
   const renderContent = () => {
     if (selectedButton.id === 0) {
-      return <ForYouContent selectedButton={selectedButton} />;
+      return (
+        <ForYouContent
+          selectedButton={selectedButton}
+          articles={recommendedArticles}
+          loading={loading}
+          error={error}
+          onRefresh={onRefresh}
+          refreshing={refreshing}
+        />
+      );
     } else {
       return (
-        <View>
-          <Text>Content for {selectedButton.text}</Text>
+        <View style={styles.categoryContent}>
+          <Text style={styles.categoryTitle}>Coming Soon</Text>
+          <Text style={styles.categoryText}>
+            {selectedButton.text} content will be available soon
+          </Text>
         </View>
       );
     }
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    // TO DO: Implement your refresh logic here (e.g., API calls, data updates)
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000); // Simulate refresh delay
-  };
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="#FFFFFF"
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <View style={styles.header}>
@@ -119,19 +127,12 @@ const News = () => {
           </View>
         </View>
 
-        <View
-          style={styles.mainContent}
-          showsVerticalScrollIndicator={false}
-          stickyHeaderIndices={[0]}
-        >
+        <View style={styles.mainContent}>
           <View style={[styles.buttonsContainer, { height: vh * 20 }]}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.multiRowScrollView}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
             >
               <View style={styles.buttonRowsContainer}>
                 {Array.from({ length: 3 }, (_, rowIndex) => (
@@ -144,7 +145,7 @@ const News = () => {
                           style={[
                             styles.smallButton,
                             selectedButton.id === button.id && styles.selectedSmallButton,
-                            { minWidth: vw * 20 }, // Ensure buttons aren't too small
+                            { minWidth: vw * 20 },
                           ]}
                           onPress={() => setSelectedButton(button)}
                         >
@@ -173,58 +174,124 @@ const News = () => {
   );
 };
 
-const ForYouContent = ({ selectedButton }) => {
+const ForYouContent = ({
+  selectedButton,
+  articles,
+  loading,
+  error,
+  onRefresh,
+  refreshing
+}) => {
   const navigation = useNavigation();
 
-  return (
-    <ScrollView style={forYouStyles.forYouContainer}>
-      <View style={forYouStyles.editorsPickContainer}>
-        <Text style={[forYouStyles.editorsPickTitle, { fontSize: normalizeFont(20) }]}>
-          Editor's Pick
-        </Text>
-        <Image
-          source={{ uri: editorsPick.image }}
-          style={[forYouStyles.editorsPickImage, { height: vh * 25 }]}
-          resizeMode="cover"
-        />
-        <Text style={[forYouStyles.descriptionTitle, { fontSize: normalizeFont(14) }]}>
-          {editorsPick.descriptionTitle}
-        </Text>
-        <Text style={[forYouStyles.forYouText, { fontSize: normalizeFont(13) }]}>
-          {editorsPick.text}
-        </Text>
-      </View>
+  const handleArticlePress = (articleId) => {
+    navigation.navigate("articles/index", {
+      articleId: articleId.toString()
+    });
+  };
 
-      <View style={forYouStyles.listTitleContainer}>
-        <Text style={[forYouStyles.listTitle, { fontSize: normalizeFont(18) }]}>
-          {selectedButton.text}
-        </Text>
-        <TouchableOpacity onPress={() => navigation.navigate("events/index")}>
-          <Text style={[forYouStyles.seeAll, { fontSize: normalizeFont(12) }]}>
-            See All
-          </Text>
-        </TouchableOpacity>
+  if (loading && !refreshing) {
+    return (
+      <View style={forYouStyles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1C3612" />
       </View>
+    );
+  }
 
-      {forYouData.map((item) => (
+  if (error) {
+    return (
+      <View style={forYouStyles.errorContainer}>
+        <Text style={forYouStyles.errorText}>{error}</Text>
         <TouchableOpacity
-          key={item.id}
-          style={forYouStyles.forYouItem}
-          onPress={() => console.log(`Image ${item.id} pressed`)}
+          style={forYouStyles.retryButton}
+          onPress={onRefresh}
         >
-          <Image
-            source={{ uri: item.image }}
-            style={[forYouStyles.forYouImage, { height: vh * 20 }]}
-            resizeMode="cover"
-          />
-          <Text style={[forYouStyles.descriptionTitle, { fontSize: normalizeFont(14) }]}>
-            {item.descriptionTitle}
-          </Text>
-          <Text style={[forYouStyles.forYouText, { fontSize: normalizeFont(13) }]}>
-            {item.text}
-          </Text>
+          <Text style={forYouStyles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
-      ))}
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={forYouStyles.forYouContainer}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      {articles.length > 0 ? (
+        <>
+          <View style={forYouStyles.editorsPickContainer}>
+            <Text style={[forYouStyles.editorsPickTitle, { fontSize: normalizeFont(20) }]}>
+              Editor's Pick
+            </Text>
+            <TouchableOpacity
+              onPress={() => handleArticlePress(articles[0].id)}
+            >
+              <Image
+                source={{ uri: articles[0].header_image || articles[0].image || 'https://via.placeholder.com/300x200?text=No+Image' }}
+                style={[forYouStyles.editorsPickImage, { height: vh * 25 }]}
+                resizeMode="cover"
+              />
+              <Text style={[forYouStyles.descriptionTitle, { fontSize: normalizeFont(14) }]}>
+                {articles[0].title}
+              </Text>
+              <Text
+                style={[forYouStyles.forYouText, { fontSize: normalizeFont(13) }]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {articles[0].summary || "Read more about this article"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={forYouStyles.listTitleContainer}>
+            <Text style={[forYouStyles.listTitle, { fontSize: normalizeFont(18) }]}>
+              {selectedButton.text}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Library")}>
+              <Text style={[forYouStyles.seeAll, { fontSize: normalizeFont(12) }]}>
+                See All
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {articles.slice(1).map((article) => (
+            <TouchableOpacity
+              key={article.id}
+              style={forYouStyles.forYouItem}
+              onPress={() => handleArticlePress(article.id)}
+            >
+              <Image
+                source={{ uri: article.header_image || 'https://via.placeholder.com/300x200?text=No+Image' }}
+                style={[forYouStyles.forYouImage, { height: vh * 20 }]}
+                resizeMode="cover"
+              />
+              <Text style={[forYouStyles.descriptionTitle, { fontSize: normalizeFont(14) }]}>
+                {article.title}
+              </Text>
+              <Text
+                style={[forYouStyles.forYouText, { fontSize: normalizeFont(13) }]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {article.summary || "Read more about this article"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </>
+      ) : (
+        <View style={forYouStyles.emptyContainer}>
+          <Text style={forYouStyles.emptyText}>No recommendations available</Text>
+          <TouchableOpacity
+            style={forYouStyles.retryButton}
+            onPress={onRefresh}
+          >
+            <Text style={forYouStyles.retryButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -253,12 +320,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  header: {
-    paddingHorizontal: vw * 4,
-    paddingVertical: vh * 1.5,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
   },
   title: {
     fontWeight: '700',
@@ -297,6 +358,23 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: vw * 4,
   },
+  categoryContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  categoryTitle: {
+    fontSize: normalizeFont(20),
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#1C3612',
+  },
+  categoryText: {
+    fontSize: normalizeFont(16),
+    textAlign: 'center',
+    color: '#555',
+  },
 });
 
 const forYouStyles = StyleSheet.create({
@@ -304,8 +382,8 @@ const forYouStyles = StyleSheet.create({
     flex: 1,
   },
   editorsPickContainer: {
-    marginBottom: vh * 2,
-    marginTop: vh * 1,
+    marginBottom: vh * 4,
+    marginTop: vh * 0.5,
   },
   editorsPickTitle: {
     fontWeight: "bold",
@@ -329,6 +407,7 @@ const forYouStyles = StyleSheet.create({
   },
   forYouText: {
     marginTop: vh * 0.4,
+    color: '#555',
   },
   listTitleContainer: {
     flexDirection: "row",
@@ -342,6 +421,45 @@ const forYouStyles = StyleSheet.create({
   seeAll: {
     color: "#000000",
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: normalizeFont(16),
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: '#1C3612',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: normalizeFont(14),
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: normalizeFont(16),
+    color: '#555',
+    marginBottom: 20,
+    textAlign: 'center',
   },
 });
 

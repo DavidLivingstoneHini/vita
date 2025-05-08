@@ -12,6 +12,8 @@ from .serializers import LoginSerializer, UserSerializer, RegisterSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
 class SignUpView(APIView):
+    authentication_classes = []  # Disable authentication for this view
+    permission_classes = []  # Disable permission checks
     def post(self, request, *args, **kwargs):
         serializer = RegisterSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -28,6 +30,8 @@ class SignUpView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
+    authentication_classes = []  # Disable authentication for this view
+    permission_classes = []  # Disable permission checks
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():

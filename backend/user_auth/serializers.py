@@ -28,6 +28,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
     def validate_email(self, value):
+        value = value.lower()  # Normalize email to lowercase before checking
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError('Email already in use')
         return value
@@ -44,7 +45,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=255, write_only=True)
 
     def validate(self, data):
-        email = data['email']
+        email = data['email'].lower()  # Normalize email to lowercase
         password = data['password']
 
         user = User.objects.filter(email=email).first()
@@ -53,7 +54,6 @@ class LoginSerializer(serializers.Serializer):
                 'email': ['Invalid email or password. Please try again.']
             })
 
-        # Return the actual user object
         return user
 
 class PasswordChangeSerializer(serializers.Serializer):

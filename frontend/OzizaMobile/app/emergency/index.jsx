@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,180 +7,476 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
+  StatusBar,
+  SafeAreaView,
+  ScrollView,
+  Linking,
+  Alert,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function (same as in Settings Screen)
+// Responsive Font Size Function
 const responsiveFontSize = (size) => {
-  const scaleFactor = width / 375; // Base width of 375 (iPhone SE)
+  const scaleFactor = width / 375;
   const newSize = size * scaleFactor;
-  return Math.ceil(newSize); // Round to nearest whole number
+  return Math.round(newSize);
 };
 
-// Function to get safe area top padding (same as in Settings Screen)
+// Get safe area padding
 const getSafeAreaTop = () => {
-  if (Platform.OS === "ios") {
-    return 40; // Adjust for iOS
-  }
-  return 20; // Default for Android
+  return Platform.OS === "ios" ? 44 : 20;
 };
 
-export default function EmergencyServicesScreen({ }) {
+export default function EmergencyServicesScreen() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const emergencyServices = [
+    {
+      id: 1,
+      name: "Ambulance",
+      number: "112",
+      icon: "ambulance",
+      color: "#FF3B30",
+      gradient: ["#FF5E3A", "#FF2A68"],
+    },
+    {
+      id: 2,
+      name: "Fire Service",
+      number: "101",
+      icon: "fire-extinguisher",
+      color: "#FF9500",
+      gradient: ["#FF9500", "#FF5E3A"],
+    },
+    {
+      id: 3,
+      name: "Police",
+      number: "911",
+      icon: "shield-alt",
+      color: "#007AFF",
+      gradient: ["#5AC8FA", "#007AFF"],
+    },
+  ];
+
+  const additionalContacts = [
+    {
+      id: 1,
+      name: "Poison Control",
+      number: "1-800-222-1222",
+      icon: "medkit",
+      color: "#4CD964",
+      iconFamily: "Ionicons",
+    },
+    {
+      id: 2,
+      name: "Nearest Hospital",
+      number: "1-800-HOSPITAL",
+      icon: "hospital",
+      color: "#5856D6",
+      iconFamily: "FontAwesome5",
+    },
+  ];
+
+  // Function to handle phone calls
+  const handleCall = async (number) => {
+    setIsLoading(true);
+
+    try {
+      const phoneUrl = `tel:${number}`;
+      const canOpen = await Linking.canOpenURL(phoneUrl);
+
+      if (canOpen) {
+        await Linking.openURL(phoneUrl);
+      } else {
+        Alert.alert(
+          "Call Error",
+          "Unable to initialize call function. Please dial manually: " + number,
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error making call:", error);
+      Alert.alert(
+        "Call Error",
+        "There was a problem making the call. Please try again or dial manually: " + number,
+        [{ text: "OK" }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Confirm before making emergency calls
+  const confirmCall = (service) => {
+    Alert.alert(
+      "Confirm Emergency Call",
+      `Are you sure you want to call ${service.name} (${service.number})?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Call Now",
+          style: "destructive",
+          onPress: () => handleCall(service.number)
+        }
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      {/* Header Section */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.push("/home")}>
-            <Image
-              source={require("../../assets/images/back-arrow-white.png")}
-              style={styles.backArrow}
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerText}>Home</Text>
-        </View>
-        <View style={styles.headerCenter}>
-          <Text style={styles.subHeaderText}>
-            Are you in an Emergency? Do you need help?
-          </Text>
-          <Text style={styles.subSubHeaderText}>
-            Tap the required emergency service to call them or use their official
-            help numbers
-          </Text>
-        </View>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#C92035" />
 
-      {/* Emergency Services Buttons */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity style={styles.emergencyButton}>
-          <Image
-            source={require("../../assets/images/ambulance-icon.png")}
-            style={styles.buttonIcon}
-          />
-          <Text style={styles.emergencyButtonText}>Ambulance</Text>
-          <Text style={styles.emergencyButtonNumber}>112</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.emergencyButton}>
-          <Image
-            source={require("../../assets/images/firetruck.png")}
-            style={styles.buttonIcon}
-          />
-          <Text style={styles.emergencyButtonText}>Fire Service</Text>
-          <Text style={styles.emergencyButtonNumber}>101</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.emergencyButton}>
-          <Image
-            source={require("../../assets/images/police-icon.png")}
-            style={styles.buttonIcon}
-          />
-          <Text style={styles.emergencyButtonText}>Police</Text>
-          <Text style={styles.emergencyButtonNumber}>911</Text>
-        </TouchableOpacity>
-      </View>
+      <ScrollView style={styles.container} bounces={false}>
+        {/* Header with gradient */}
+        <LinearGradient
+          colors={["#D82747", "#C92035"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.header}
+        >
+          <View style={styles.headerTop}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.push("/home")}
+              disabled={isLoading}
+            >
+              <Ionicons name="arrow-back" size={responsiveFontSize(24)} color="#FFF" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Emergency Services</Text>
+          </View>
 
-      {/* Red Text at the Bottom */}
-      <Text style={styles.footerText}>
-        Please make sure to be specific on the type of emergency and also the
-        location of the incident to make it easier for the emergency services to
-        locate you
-      </Text>
-    </View>
+          <View style={styles.headerContent}>
+            <View style={styles.emergencyIconContainer}>
+              <Ionicons name="warning" size={responsiveFontSize(32)} color="#FFF" />
+            </View>
+            <Text style={styles.headerMainText}>
+              Are you in an Emergency?
+            </Text>
+            <Text style={styles.headerSubText}>
+              Tap any emergency service below to call for immediate assistance
+            </Text>
+          </View>
+        </LinearGradient>
+
+        {/* Emergency Services Buttons */}
+        <View style={styles.servicesContainer}>
+          {emergencyServices.map((service) => (
+            <TouchableOpacity
+              key={service.id}
+              style={styles.serviceCard}
+              onPress={() => confirmCall(service)}
+              activeOpacity={0.8}
+              disabled={isLoading}
+            >
+              <LinearGradient
+                colors={service.gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.serviceIconContainer}
+              >
+                <FontAwesome5 name={service.icon} size={responsiveFontSize(24)} color="#FFF" />
+              </LinearGradient>
+
+              <View style={styles.serviceInfo}>
+                <Text style={styles.serviceName}>{service.name}</Text>
+                <Text style={styles.serviceDescription}>
+                  {service.name === "Ambulance"
+                    ? "Medical emergencies & accidents"
+                    : service.name === "Fire Service"
+                      ? "Fire incidents & rescues"
+                      : "Security & urgent assistance"}
+                </Text>
+              </View>
+
+              <View style={styles.serviceNumberContainer}>
+                <Text style={[styles.serviceNumber, { color: service.color }]}>
+                  {service.number}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.callButton, { backgroundColor: service.color }]}
+                  onPress={() => confirmCall(service)}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="call" size={responsiveFontSize(16)} color="#FFF" />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Additional Information Card */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoIconContainer}>
+            <Ionicons name="information-circle" size={responsiveFontSize(24)} color="#C92035" />
+          </View>
+          <Text style={styles.infoTitle}>When you call</Text>
+          <Text style={styles.infoText}>
+            Please be specific about your emergency and provide clear location details to help emergency services reach you quickly.
+          </Text>
+        </View>
+
+        {/* Additional Emergency Contacts */}
+        <View style={styles.additionalContactsContainer}>
+          <Text style={styles.contactsTitle}>Additional Emergency Contacts</Text>
+
+          <View style={styles.contactsGrid}>
+            {additionalContacts.map((contact) => (
+              <TouchableOpacity
+                key={contact.id}
+                style={styles.contactItem}
+                onPress={() => confirmCall(contact)}
+                disabled={isLoading}
+              >
+                <View style={[styles.contactIcon, { backgroundColor: contact.color }]}>
+                  {contact.iconFamily === "Ionicons" ? (
+                    <Ionicons name={contact.icon} size={responsiveFontSize(20)} color="#FFF" />
+                  ) : (
+                    <FontAwesome5 name={contact.icon} size={responsiveFontSize(18)} color="#FFF" />
+                  )}
+                </View>
+                <Text style={styles.contactText}>{contact.name}</Text>
+                <Text style={styles.contactNumberText}>{contact.number}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Disclaimer */}
+        <View style={styles.disclaimerContainer}>
+          <Text style={styles.disclaimerText}>
+            In case of emergency, if this app fails to connect you, please directly dial the emergency number on your phone.
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#C92035",
+  },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: getSafeAreaTop(), // Add safe area padding
+    backgroundColor: "#F8F9FC",
   },
   header: {
-    backgroundColor: "#C92035",
-    borderBottomLeftRadius: width * 0.45, // Responsive border radius
-    borderBottomRightRadius: width * 0.45, // Responsive border radius
-    paddingVertical: height * 0.02, // Responsive padding (3% of screen height)
-    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
-    flexDirection: "column",
+    paddingTop: Platform.OS === "android" ? getSafeAreaTop() : 0,
+    paddingBottom: height * 0.06,
+    borderBottomLeftRadius: width * 0.08,
+    borderBottomRightRadius: width * 0.08,
+    paddingHorizontal: width * 0.05,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.27,
+    shadowRadius: 4.65,
+    elevation: 6,
   },
-  headerLeft: {
+  headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: height * 0.02, // Responsive margin (2% of screen height)
+    marginTop: height * 0.02,
+    marginBottom: height * 0.02,
   },
-  headerText: {
-    fontSize: responsiveFontSize(17), // Responsive font size
-    color: "#fff",
-    fontWeight: "bold",
-    marginLeft: width * 0.03, // Responsive margin (3% of screen width)
-    marginBottom: height * 0.05, // Responsive margin (5% of screen height)
+  backButton: {
+    padding: width * 0.02,
+    borderRadius: width * 0.04,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
-  headerCenter: {
+  headerTitle: {
+    fontSize: responsiveFontSize(18),
+    fontWeight: "700",
+    color: "#FFF",
+    marginLeft: width * 0.03,
+  },
+  headerContent: {
     alignItems: "center",
-    marginTop: height * -0.01, // Responsive margin (-1% of screen height)
-    marginBottom: height * 0.02, // Responsive margin (2% of screen height)
+    paddingTop: height * 0.02,
+    paddingBottom: height * 0.02,
   },
-  subHeaderText: {
-    fontSize: responsiveFontSize(20), // Responsive font size
-    color: "#fff",
-    fontWeight: "700",
-    paddingHorizontal: width * 0.08, // Responsive padding (8% of screen width)
-    marginBottom: height * 0.02, // Responsive margin (2% of screen height)
-    textAlign: "center", // Center text
-  },
-  subSubHeaderText: {
-    fontSize: responsiveFontSize(12), // Responsive font size
-    fontWeight: "500",
-    color: "#fff",
-    marginBottom: height * 0.03, // Responsive margin (3% of screen height)
-    paddingHorizontal: width * 0.08, // Responsive padding (8% of screen width)
-    textAlign: "center", // Center text
-  },
-  buttonsContainer: {
-    marginTop: height * 0.06, // Responsive margin (6% of screen height)
-    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
-  },
-  emergencyButton: {
-    flexDirection: "row",
+  emergencyIconContainer: {
+    width: width * 0.18,
+    height: width * 0.18,
+    borderRadius: width * 0.09,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
-    height: height * 0.1, // Responsive height (10% of screen height)
-    paddingHorizontal: width * 0.04, // Responsive padding (4% of screen width)
-    borderWidth: 1,
-    borderColor: "#C92035",
-    borderRadius: width * 0.02, // Responsive border radius (2% of screen width)
-    marginBottom: height * 0.02, // Responsive margin (2% of screen height)
+    marginBottom: height * 0.02,
   },
-  buttonIcon: {
-    width: width * 0.06, // Responsive width (6% of screen width)
-    height: width * 0.06, // Responsive height (6% of screen width)
-    marginRight: width * 0.03, // Responsive margin (3% of screen width)
-  },
-  emergencyButtonText: {
-    fontSize: responsiveFontSize(21), // Responsive font size
-    marginLeft: width * 0.05, // Responsive margin (5% of screen width)
-    fontWeight: "700",
-    flex: 1,
-    color: "#000000",
-  },
-  emergencyButtonNumber: {
-    fontSize: responsiveFontSize(24), // Responsive font size
-    color: "#C92035",
-    fontWeight: "700",
-  },
-  footerText: {
-    fontSize: responsiveFontSize(12), // Responsive font size
-    color: "#C92035",
+  headerMainText: {
+    fontSize: responsiveFontSize(24),
+    fontWeight: "800",
+    color: "#FFF",
+    marginBottom: height * 0.01,
     textAlign: "center",
-    marginTop: height * 0.04, // Responsive margin (4% of screen height)
-    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
   },
-  backArrow: {
-    width: width * 0.05, // Responsive width (5% of screen width)
-    height: width * 0.05, // Responsive height (5% of screen width)
-    marginRight: width * 0.02, // Responsive margin (2% of screen width)
-    marginTop: height * -0.03, // Responsive margin (-3% of screen height)
+  headerSubText: {
+    fontSize: responsiveFontSize(14),
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.9)",
+    textAlign: "center",
+    paddingHorizontal: width * 0.05,
+  },
+  servicesContainer: {
+    paddingHorizontal: width * 0.05,
+    paddingTop: height * 0.03,
+    paddingBottom: height * 0.02,
+  },
+  serviceCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: width * 0.04,
+    marginBottom: height * 0.02,
+    padding: width * 0.04,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 3,
+  },
+  serviceIconContainer: {
+    width: width * 0.14,
+    height: width * 0.14,
+    borderRadius: width * 0.07,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: width * 0.04,
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: responsiveFontSize(18),
+    fontWeight: "700",
+    color: "#333333",
+    marginBottom: height * 0.005,
+  },
+  serviceDescription: {
+    fontSize: responsiveFontSize(12),
+    color: "#666666",
+  },
+  serviceNumberContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  serviceNumber: {
+    fontSize: responsiveFontSize(22),
+    fontWeight: "800",
+    marginRight: width * 0.03,
+  },
+  callButton: {
+    width: width * 0.08,
+    height: width * 0.08,
+    borderRadius: width * 0.04,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  infoCard: {
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: width * 0.05,
+    borderRadius: width * 0.04,
+    padding: width * 0.05,
+    marginBottom: height * 0.03,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 2.22,
+    elevation: 2,
+  },
+  infoIconContainer: {
+    alignItems: "center",
+    marginBottom: height * 0.01,
+  },
+  infoTitle: {
+    fontSize: responsiveFontSize(16),
+    fontWeight: "700",
+    color: "#333333",
+    textAlign: "center",
+    marginBottom: height * 0.01,
+  },
+  infoText: {
+    fontSize: responsiveFontSize(14),
+    color: "#555555",
+    textAlign: "center",
+    lineHeight: responsiveFontSize(20),
+  },
+  additionalContactsContainer: {
+    paddingHorizontal: width * 0.05,
+    paddingBottom: height * 0.02,
+  },
+  contactsTitle: {
+    fontSize: responsiveFontSize(16),
+    fontWeight: "700",
+    color: "#333333",
+    marginBottom: height * 0.02,
+  },
+  contactsGrid: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  contactItem: {
+    width: width * 0.43,
+    backgroundColor: "#FFFFFF",
+    borderRadius: width * 0.04,
+    padding: width * 0.04,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 2.22,
+    elevation: 2,
+  },
+  contactIcon: {
+    width: width * 0.12,
+    height: width * 0.12,
+    borderRadius: width * 0.06,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: height * 0.01,
+  },
+  contactText: {
+    fontSize: responsiveFontSize(14),
+    fontWeight: "600",
+    color: "#333333",
+    textAlign: "center",
+    marginBottom: height * 0.005,
+  },
+  contactNumberText: {
+    fontSize: responsiveFontSize(12),
+    color: "#666666",
+    textAlign: "center",
+  },
+  disclaimerContainer: {
+    paddingHorizontal: width * 0.05,
+    paddingBottom: height * 0.04,
+    marginTop: height * 0.01,
+  },
+  disclaimerText: {
+    fontSize: responsiveFontSize(12),
+    color: "#777777",
+    textAlign: "center",
+    fontStyle: "italic",
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -20,6 +20,10 @@ import Toast from 'react-native-toast-message';
 import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { auth } from '../../firebaseConfig';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,6 +36,54 @@ export default function LoginScreen() {
   const [passwordError, setPasswordError] = useState("");
   const router = useRouter();
   const navigation = useNavigation();
+
+  // Google Auth Setup
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: '454261196558-pqg607nr354prbj3526uabnohka4lpk1.apps.googleusercontent.com',
+    androidClientId: '454261196558-jngnv4vq2rfp79o8h2ju5mu2amrcn614.apps.googleusercontent.com',
+    webClientId: '539163820187-og6r7smr5uuo48kvcap399urnfid7blv.apps.googleusercontent.com',
+    // redirectUri: 'https://auth.expo.io/@your-username/your-app-slug'
+  });
+
+  const API_BASE_URL = "http://192.168.100.34:8000/api/";
+
+  // Handle Google Auth Response
+  useEffect(() => {
+    if (response?.type === 'success') {
+      handleGoogleSignIn(response);
+    }
+  }, [response]);
+
+  const handleGoogleSignIn = async (authResponse) => {
+    try {
+      setLoading(true);
+      const { id_token } = authResponse.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      const userCredential = await signInWithCredential(auth, credential);
+
+      // Store user data in SecureStore
+      await SecureStore.setItemAsync("access_token", userCredential.user.accessToken);
+      await SecureStore.setItemAsync("email", userCredential.user.email);
+      await SecureStore.setItemAsync("full_name", userCredential.user.displayName || "");
+      await SecureStore.setItemAsync("userProfilePicture", userCredential.user.photoURL || "");
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Google sign-in successful!',
+      });
+
+      router.push("/(tabs)/home");
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateFields = () => {
     let isValid = true;
@@ -56,56 +108,57 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await api.apiRequest(
-        "https://djbackend-9d8q.onrender.com/api/v1/users/login/",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}v1/users/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-      console.log("Response from server:", response);
+      const responseData = await response.json();
 
-      await SecureStore.setItemAsync("access_token", response.access);
-      await SecureStore.setItemAsync("refresh_token", response.refresh);
-
-      // Access user data from the nested 'user' object
-      await SecureStore.setItemAsync("full_name", String(response.user.full_name)); // Store full name
-      await SecureStore.setItemAsync("email", String(response.user.email)); // Store email
-      // Store profile picture if it exists, otherwise store a default or null
-      await SecureStore.setItemAsync("userProfilePicture", String(response.user.profile_picture || ""));
-
-      const expiresIn = response.expires_in;
-      const expirationTime = new Date(expiresIn).getTime();
-      await SecureStore.setItemAsync(
-        "expiration_time",
-        expirationTime.toString()
-      );
-
-      router.push("/(tabs)/home");
-    } catch (error) {
-      console.error("Sign-in error:", error?.message || "Unknown error");
-
-      // Extract the error message from the API response
-      let errorMessage = "An unknown error occurred. Please try again.";
-      if (error.response && error.response.data) {
-        // Check if the error is in the "email" field
-        if (error.response.data.email && error.response.data.email.length > 0) {
-          errorMessage = error.response.data.email[0]; // Get the first error message
-        }
+      if (!response.ok) {
+        // Handle different error response formats
+        const errorMessage = responseData.detail ||
+          responseData.message ||
+          (responseData.email ? responseData.email[0] : null) ||
+          'Login failed. Please try again.';
+        throw new Error(errorMessage);
       }
 
-      // Show the error message using Toast
+      // Store tokens only if they exist in response
+      if (responseData.access) {
+        await SecureStore.setItemAsync("access_token", responseData.access);
+      }
+      if (responseData.refresh) {
+        await SecureStore.setItemAsync("refresh_token", responseData.refresh);
+      }
+
+      // Store user data
+      if (responseData.user) {
+        await SecureStore.setItemAsync("full_name", responseData.user.full_name || "");
+        await SecureStore.setItemAsync("email", responseData.user.email || "");
+        await SecureStore.setItemAsync("userProfilePicture", responseData.user.profile_picture || "");
+      }
+
+      // Navigate to home
+      router.push("/(tabs)/home");
+
+      Toast.show({
+        type: 'success',
+        text1: 'Login Successful',
+        text2: 'Welcome back!',
+      });
+    } catch (error) {
+      console.error("Sign-in error:", error);
       Toast.show({
         type: 'error',
         text1: 'Login Error',
-        text2: errorMessage,
+        text2: error.message || 'Login failed. Please try again.',
         position: 'top',
         visibilityTime: 4000,
       });
@@ -222,7 +275,10 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.socialButtonsContainer}>
-              <TouchableOpacity style={styles.socialButton}
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={() => promptAsync()}
+                disabled={loading || !request}
               >
                 <Image
                   source={require("../../assets/images/devicon_google.png")}

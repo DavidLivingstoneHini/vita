@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Modal, Dimensions, Platform } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { useRouter } from "expo-router";
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { getSymptoms } from '../../services/api';
+import { useLocalSearchParams } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,53 +27,83 @@ const SypmtomChecker2 = () => {
 
     const [symptomInput, setSymptomInput] = useState('');
     const [symptomsList, setSymptomsList] = useState([]);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [selectedSymptom, setSelectedSymptom] = useState(null);
-    const [selectedTypes, setSelectedTypes] = useState([]);
+    const [suggestedSymptoms, setSuggestedSymptoms] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const symptomsData = [
-        { id: '1', name: 'Fever' },
-        { id: '2', name: 'Headache' },
-        { id: '3', name: 'Diarrhea' },
-        { id: '4', name: 'Cough' },
-    ];
+    useEffect(() => {
+        const fetchSymptoms = async () => {
+            if (symptomInput.trim().length > 0) {  // Changed from > 2 to > 0
+                setIsLoading(true);
+                setError(null);
+                try {
+                    const data = await getSymptoms(symptomInput);
+                    // Filter for exact matches first
+                    const exactMatches = data.filter(s =>
+                        s.name.toLowerCase() === symptomInput.toLowerCase()
+                    );
+                    // If exact match found, use only that
+                    if (exactMatches.length > 0) {
+                        setSuggestedSymptoms(exactMatches);
+                    } else {
+                        setSuggestedSymptoms(data);
+                    }
+                } catch (err) {
+                    setError('Failed to fetch symptoms. Please try again.');
+                    console.error(err);
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                setSuggestedSymptoms([]);
+            }
+        };
 
-    const diarrheaTypes = [
-        { id: '1', type: 'Watery' },
-        { id: '2', type: 'Bloody' },
-        { id: '3', type: 'Mucousy' },
-    ];
+        const debounceTimer = setTimeout(fetchSymptoms, 300);
+        return () => clearTimeout(debounceTimer);
+    }, [symptomInput]);
 
-    const addSymptom = () => {
-        if (symptomInput.trim()) {
-            setSymptomsList([...symptomsList, { id: Date.now().toString(), name: symptomInput }]);
-            setSymptomInput('');
+    const addSymptom = (symptom) => {
+        try {
+            // If symptom is an object (from search), use it directly
+            if (typeof symptom === 'object') {
+                setSymptomsList([...symptomsList, {
+                    id: symptom.id.toString(),
+                    name: symptom.name
+                }]);
+                setSymptomInput('');
+            }
+            // If it's text input, create a new symptom object
+            else if (symptomInput.trim()) {
+                const newSymptom = {
+                    id: Date.now().toString(),
+                    name: symptomInput.trim(),
+                };
+                setSymptomsList([...symptomsList, newSymptom]);
+                setSymptomInput('');
+            }
+        } catch (error) {
+            console.error('Error adding symptom:', error);
+            setError('Failed to add symptom. Please try again.');
         }
     };
 
     const handleAddFromList = (symptom) => {
-        setSelectedSymptom(symptom);
-        setModalVisible(true);
-    };
-
-    const toggleTypeSelection = (type) => {
-        if (selectedTypes.includes(type)) {
-            setSelectedTypes(selectedTypes.filter((t) => t !== type));
-        } else {
-            setSelectedTypes([...selectedTypes, type]);
-        }
-    };
-
-    const handleModalContinue = () => {
-        setSymptomsList([...symptomsList, { id: Date.now().toString(), name: selectedSymptom.name, types: selectedTypes }]);
-        setModalVisible(false);
-        setSelectedTypes([]);
+        addSymptom(symptom);
     };
 
     const handleFinish = () => {
+        if (symptomsList.length === 0) {
+            setError('Please add at least one symptom');
+            return;
+        }
         router.push({
             pathname: "/symptom3",
-            params: { symptomsList: JSON.stringify(symptomsList) },
+            params: {
+                symptomsList: JSON.stringify(symptomsList),
+                age,
+                sex
+            },
         });
     };
 
@@ -84,7 +116,12 @@ const SypmtomChecker2 = () => {
                 <Text style={styles.title}>Symptom Checker</Text>
             </View>
 
-            {/* Input and Button in a Row */}
+            {error && (
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                </View>
+            )}
+
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
@@ -93,60 +130,58 @@ const SypmtomChecker2 = () => {
                     value={symptomInput}
                     onChangeText={setSymptomInput}
                 />
-                <TouchableOpacity style={styles.addButton} onPress={addSymptom}>
+                <TouchableOpacity
+                    style={[styles.addButton, !symptomInput.trim() && styles.disabledButton]}
+                    onPress={() => addSymptom(symptomInput)}
+                    disabled={!symptomInput.trim()}
+                >
                     <Text style={styles.addButtonText}>Add</Text>
                 </TouchableOpacity>
             </View>
+
+            {isLoading && (
+                <ActivityIndicator size="small" color="#032825" style={styles.loadingIndicator} />
+            )}
+
+            {symptomInput.trim().length > 0 && !isLoading && suggestedSymptoms.length > 0 && (
+                <View style={styles.searchResults}>
+                    {suggestedSymptoms.map((item) => (
+                        <TouchableOpacity
+                            key={item.id}
+                            style={[
+                                styles.searchResultItem,
+                                item.name.toLowerCase() === symptomInput.toLowerCase() && styles.exactMatchItem
+                            ]}
+                            onPress={() => handleAddFromList(item)}
+                        >
+                            <Text style={styles.searchResultText}>{item.name}</Text>
+                            {item.name.toLowerCase() === symptomInput.toLowerCase() && (
+                                <Text style={styles.exactMatchBadge}>Exact Match</Text>
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
 
             <Text style={styles.infoText}>
                 For better results, type your primary symptoms first, then add additional symptoms.
             </Text>
 
-            <Text style={styles.subTitle}>Or select from the list below:</Text>
+            <Text style={styles.subTitle}>Recently searched symptoms:</Text>
 
             <View style={styles.symptomsList}>
-                {symptomsData.map((item) => (
+                {symptomsList.slice(0, 5).map((item) => (
                     <View style={styles.symptomItem} key={item.id}>
                         <Text style={styles.symptomText}>{item.name}</Text>
-                        <TouchableOpacity onPress={() => handleAddFromList(item)}>
-                            <Text style={styles.addButton}>Add</Text>
-                        </TouchableOpacity>
                     </View>
                 ))}
             </View>
 
-            <Modal visible={modalVisible} animationType="slide">
-                <View style={styles.modalContainer}>
-                    <Text style={styles.modalTitle}>What kind of {selectedSymptom?.name}?</Text>
-
-                    <View>
-                        {diarrheaTypes.map((item) => (
-                            <TouchableOpacity
-                                key={item.id}
-                                style={styles.modalItem}
-                                onPress={() => toggleTypeSelection(item.type)}
-                            >
-                                <Text style={styles.modalItemText}>{item.type}</Text>
-                                <Icon
-                                    name={selectedTypes.includes(item.type) ? "check-box" : "check-box-outline-blank"}
-                                    size={responsiveFontSize(24)}
-                                    color="#000"
-                                />
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    <TouchableOpacity style={styles.modalButton} onPress={handleModalContinue}>
-                        <Text style={styles.modalButtonText}>Continue</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={() => setModalVisible(false)}>
-                        <Text style={styles.skipText}>Skip</Text>
-                    </TouchableOpacity>
-                </View>
-            </Modal>
-
-            <TouchableOpacity style={styles.finishButton} onPress={handleFinish}>
+            <TouchableOpacity
+                style={[styles.finishButton, symptomsList.length === 0 && styles.disabledButton]}
+                onPress={handleFinish}
+                disabled={symptomsList.length === 0}
+            >
                 <Text style={styles.finishButtonText}>Continue</Text>
             </TouchableOpacity>
         </ScrollView>
@@ -172,14 +207,25 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         marginLeft: width * 0.02,
     },
+    errorContainer: {
+        backgroundColor: '#FFEBEE',
+        padding: width * 0.03,
+        borderRadius: 5,
+        marginVertical: height * 0.01,
+    },
+    errorText: {
+        color: '#D32F2F',
+        fontSize: responsiveFontSize(14),
+    },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: height * 0.02,
-        marginBottom: height * 0.05,
+        marginBottom: height * 0.02,
     },
     input: {
         borderWidth: 1,
+        borderColor: '#ccc',
         borderRadius: 8,
         padding: width * 0.03,
         fontSize: responsiveFontSize(16),
@@ -188,24 +234,43 @@ const styles = StyleSheet.create({
     addButton: {
         backgroundColor: '#032825',
         borderRadius: 8,
-        color: 'white',
-        fontSize: responsiveFontSize(14),
-        paddingVertical: height * 0.01,
-        paddingHorizontal: width * 0.03,
+        paddingVertical: height * 0.015,
+        paddingHorizontal: width * 0.04,
         marginLeft: width * 0.02,
         alignItems: 'center',
+    },
+    disabledButton: {
+        backgroundColor: '#cccccc',
     },
     addButtonText: {
         color: 'white',
         fontSize: responsiveFontSize(14),
     },
+    loadingIndicator: {
+        marginVertical: height * 0.01,
+    },
+    searchResults: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        maxHeight: height * 0.3,
+        marginBottom: height * 0.02,
+    },
+    searchResultItem: {
+        padding: width * 0.03,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    searchResultText: {
+        fontSize: responsiveFontSize(16),
+    },
     infoText: {
         fontSize: responsiveFontSize(14),
         backgroundColor: '#D9D9D9',
         paddingVertical: height * 0.03,
-        paddingHorizontal: width * 0.03, 
+        paddingHorizontal: width * 0.03,
         color: '#000000',
-        marginBottom: height * 0.05,
+        marginBottom: height * 0.03,
         textAlign: 'center',
     },
     subTitle: {
@@ -227,63 +292,25 @@ const styles = StyleSheet.create({
     symptomText: {
         fontSize: responsiveFontSize(16),
     },
-    addText: {
-        color: '#032825',
-        fontSize: responsiveFontSize(16),
-    },
-    modalContainer: {
-        flex: 1,
-        paddingTop: getSafeAreaTop(),
-        paddingHorizontal: width * 0.04,
-        paddingBottom: height * 0.02,
-        backgroundColor: '#fff',
-    },
-    modalTitle: {
-        fontSize: responsiveFontSize(18),
-        fontWeight: '600',
-        marginBottom: height * 0.02,
-        textAlign: 'center',
-    },
-    modalItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: height * 0.015,
-        paddingHorizontal: width * 0.04,
-        borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-    },
-    modalItemText: {
-        fontSize: responsiveFontSize(16),
-    },
-    modalButton: {
-        backgroundColor: '#032825',
-        borderRadius: 8,
-        paddingVertical: height * 0.02,
-        alignItems: 'center',
-        marginTop: height * 0.02,
-        marginHorizontal: width * 0.04,
-    },
-    modalButtonText: {
-        color: 'white',
-        fontSize: responsiveFontSize(16),
-    },
-    skipText: {
-        color: '#032825',
-        textAlign: 'center',
-        marginTop: height * 0.02,
-        fontSize: responsiveFontSize(14),
-    },
     finishButton: {
         backgroundColor: '#032825',
         borderRadius: 8,
         paddingVertical: height * 0.02,
         alignItems: 'center',
-        marginTop: height * 0.06,
+        marginTop: height * 0.02,
     },
     finishButtonText: {
         color: 'white',
         fontSize: responsiveFontSize(16),
+    },
+    exactMatchItem: {
+        backgroundColor: '#e8f5e9', // Light green background for exact matches
+    },
+    exactMatchBadge: {
+        fontSize: responsiveFontSize(12),
+        color: '#2e7d32', // Dark green text
+        marginTop: height * 0.005,
+        fontStyle: 'italic',
     },
 });
 

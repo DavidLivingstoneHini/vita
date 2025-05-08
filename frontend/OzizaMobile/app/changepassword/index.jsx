@@ -7,15 +7,12 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
-  PixelRatio,
   Platform,
   ActivityIndicator,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import api from "../../services/api";
 import Toast from 'react-native-toast-message';
 
 // Get screen dimensions
@@ -42,69 +39,131 @@ const ChangePasswordScreen = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
+    general: ""
+  });
 
-  const navigation = useNavigation();
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = {
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+      general: ""
+    };
+
+    if (!currentPassword) {
+      newErrors.currentPassword = "Current password is required";
+      isValid = false;
+    }
+
+    if (!newPassword) {
+      newErrors.newPassword = "New password is required";
+      isValid = false;
+    } else if (newPassword.length < 8) {
+      newErrors.newPassword = "Password must be at least 8 characters";
+      isValid = false;
+    }
+
+    if (!confirmNewPassword) {
+      newErrors.confirmNewPassword = "Please confirm your new password";
+      isValid = false;
+    } else if (newPassword !== confirmNewPassword) {
+      newErrors.confirmNewPassword = "Passwords don't match";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleUpdatePassword = async () => {
+    if (!validateForm()) return;
+
     setLoading(true);
+    setErrors({ ...errors, general: "" });
+
     try {
       // Retrieve the access token from SecureStore
       const accessToken = await SecureStore.getItemAsync("access_token");
 
-      // Ensure the access token is a string
-      if (!accessToken || typeof accessToken !== "string") {
-        throw new Error("Invalid access token");
+      if (!accessToken) {
+        throw new Error("Authentication required. Please login again.");
       }
 
-      const response = await api.apiRequest(
-        "https://djbackend-9d8q.onrender.com/api/v1/users/password/change/",
+      const response = await fetch(
+        "http://192.168.100.34:8000/api/v1/users/password/change/",
         {
           method: "POST",
-          body: JSON.stringify({
-            old_password: currentPassword,
-            new_password: newPassword,
-          }),
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${accessToken}`,
           },
+          body: JSON.stringify({
+            old_password: currentPassword,
+            new_password: newPassword,
+          }),
         }
       );
 
-      console.log("Response from server:", response);
+      const data = await response.json();
 
-      // Show success message using Toast
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Password updated successfully.',
-        position: 'bottom',
-        visibilityTime: 4000,
-      });
-    } catch (error) {
-      console.error("Update error:", error?.message || "Unknown error");
-
-      // Extract the error message from the API response
-      let errorMessage = "An unknown error occurred. Please try again.";
-      if (error.response && error.response.data) {
-        // Check if the error is in the "old_password" field
-        if (error.response.data.old_password && error.response.data.old_password.length > 0) {
-          errorMessage = error.response.data.old_password[0]; // Get the first error message
-        } else if (error.response.data.new_password && error.response.data.new_password.length > 0) {
-          errorMessage = error.response.data.new_password[0]; // Get the first error message
-        } else if (error.response.data.detail) {
-          errorMessage = error.response.data.detail; // Get the detail error message
+      if (!response.ok) {
+        // Handle API validation errors
+        if (data.old_password) {
+          throw new Error(data.old_password[0] || "Current password is incorrect");
+        } else if (data.new_password) {
+          throw new Error(data.new_password[0] || "Invalid new password");
+        } else if (data.detail) {
+          throw new Error(data.detail);
+        } else {
+          throw new Error("Failed to update password");
         }
       }
 
-      // Show the error message using Toast
+      // Success case
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMessage,
-        position: 'top',
+        type: 'success',
+        text1: 'Success',
+        text2: 'Password updated successfully!',
+        position: 'bottom',
         visibilityTime: 4000,
       });
+
+      // Clear form
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+
+    } catch (error) {
+      console.error("Update error:", error);
+
+      // Handle specific error cases
+      if (error.message.includes("Authentication")) {
+        // Token expired or invalid
+        Toast.show({
+          type: 'error',
+          text1: 'Session Expired',
+          text2: 'Please login again',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+        // Optionally redirect to login
+        router.push("/login");
+      } else {
+        // Show other errors
+        setErrors({ ...errors, general: error.message });
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error.message || 'Failed to update password',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -128,6 +187,13 @@ const ChangePasswordScreen = () => {
         </Text>
       </View>
 
+      {/* Error Message */}
+      {errors.general && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{errors.general}</Text>
+        </View>
+      )}
+
       {/* Form Container */}
       <View style={styles.formContainer}>
         {/* Current Password Field */}
@@ -136,13 +202,23 @@ const ChangePasswordScreen = () => {
             Current Password
           </Text>
           <TextInput
-            style={[styles.textInput, { height: height * 0.06 }]}
+            style={[
+              styles.textInput,
+              { height: height * 0.06 },
+              errors.currentPassword && styles.inputError
+            ]}
             secureTextEntry={true}
             value={currentPassword}
-            onChangeText={(text) => setCurrentPassword(text)}
+            onChangeText={(text) => {
+              setCurrentPassword(text);
+              setErrors({ ...errors, currentPassword: "" });
+            }}
             placeholder="Enter your current password"
             placeholderTextColor="#828282"
           />
+          {errors.currentPassword && (
+            <Text style={styles.fieldError}>{errors.currentPassword}</Text>
+          )}
         </View>
 
         {/* New Password Field */}
@@ -151,13 +227,23 @@ const ChangePasswordScreen = () => {
             New Password
           </Text>
           <TextInput
-            style={[styles.textInput, { height: height * 0.06 }]}
+            style={[
+              styles.textInput,
+              { height: height * 0.06 },
+              errors.newPassword && styles.inputError
+            ]}
             secureTextEntry={true}
             value={newPassword}
-            onChangeText={(text) => setNewPassword(text)}
-            placeholder="Enter your new password"
+            onChangeText={(text) => {
+              setNewPassword(text);
+              setErrors({ ...errors, newPassword: "" });
+            }}
+            placeholder="Enter your new password (min 8 characters)"
             placeholderTextColor="#828282"
           />
+          {errors.newPassword && (
+            <Text style={styles.fieldError}>{errors.newPassword}</Text>
+          )}
         </View>
 
         {/* Confirm New Password Field */}
@@ -166,13 +252,23 @@ const ChangePasswordScreen = () => {
             Confirm New Password
           </Text>
           <TextInput
-            style={[styles.textInput, { height: height * 0.06 }]}
+            style={[
+              styles.textInput,
+              { height: height * 0.06 },
+              errors.confirmNewPassword && styles.inputError
+            ]}
             secureTextEntry={true}
             value={confirmNewPassword}
-            onChangeText={(text) => setConfirmNewPassword(text)}
+            onChangeText={(text) => {
+              setConfirmNewPassword(text);
+              setErrors({ ...errors, confirmNewPassword: "" });
+            }}
             placeholder="Re-enter your new password"
             placeholderTextColor="#828282"
           />
+          {errors.confirmNewPassword && (
+            <Text style={styles.fieldError}>{errors.confirmNewPassword}</Text>
+          )}
         </View>
 
         {/* Update Password Button */}
@@ -200,39 +296,59 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: "#fff",
-    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
+    paddingHorizontal: width * 0.05,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
+    paddingVertical: height * 0.02,
   },
   title: {
     fontWeight: "700",
-    marginLeft: width * 0.04, // Responsive margin (4% of screen width)
+    marginLeft: width * 0.04,
   },
   formContainer: {
-    marginTop: height * 0.02, // Responsive margin (2% of screen height)
+    marginTop: height * 0.02,
   },
   formField: {
-    marginBottom: height * 0.03, // Responsive margin (3% of screen height)
+    marginBottom: height * 0.03,
   },
   fieldTitle: {
     fontWeight: "500",
     color: "#0A0A0A",
-    marginBottom: height * 0.01, // Responsive margin (1% of screen height)
+    marginBottom: height * 0.01,
   },
   textInput: {
     borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 5,
-    paddingHorizontal: width * 0.04, // Responsive padding (4% of screen width)
+    paddingHorizontal: width * 0.04,
     backgroundColor: "#F5F5F5",
+  },
+  inputError: {
+    borderColor: "#C92035",
+    backgroundColor: "#FFF5F6",
+  },
+  fieldError: {
+    color: "#C92035",
+    fontSize: responsiveFontSize(12),
+    marginTop: 5,
+  },
+  errorContainer: {
+    backgroundColor: "#FFF5F6",
+    padding: 15,
+    borderRadius: 5,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: "#C92035",
+    fontSize: responsiveFontSize(14),
   },
   updateButton: {
     backgroundColor: "#000",
     borderRadius: 5,
     alignItems: "center",
+    marginTop: 10,
   },
   updateButtonText: {
     color: "#fff",

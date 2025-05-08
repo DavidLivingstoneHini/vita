@@ -11,13 +11,11 @@ import {
   ScrollView,
   RefreshControl,
   useWindowDimensions,
-  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import YoutubePlayer from "react-native-youtube-iframe";
 import Header from "../../components/Header";
-import * as Notifications from "expo-notifications";
-import { dataStore } from "../../utils/dataStore";
 import { mythsItems } from "../../utils/mythsData";
 import Carousel from "react-native-reanimated-carousel";
 
@@ -62,13 +60,11 @@ const ItemImage20 = require("../../assets/images/gym.png");
 const ItemImage21 = require("../../assets/images/fitness.png");
 const ItemImage22 = require("../../assets/images/sleep.png");
 const ItemImage23 = require("../../assets/images/exercise.png");
-const ItemImage24 = require("../../assets/images/eye.png");
+const ItemImage24 = require("../../assets/images/eye.jpg");
 const ItemImage25 = require("../../assets/images/headache.jpg");
 const ItemImage26 = require("../../assets/images/anxiety.jpg");
 const ItemImage27 = require("../../assets/images/eczema.jpg");
 
-
-const LogoImage = require("../../assets/images/ozizawhite.png");
 
 const featuredImage1 = require("../../assets/images/bgblue.png");
 const featuredImage2 = require("../../assets/images/black_nurse.png");
@@ -80,17 +76,27 @@ const chevronIcon = require("../../assets/images/chevron.png");
 const Home = () => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const navigation = useNavigation();
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [isRefreshing, setIsRefreshing] = useState(false); // Renamed from refreshing for clarity
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
-    // Listen for incoming notifications
-    const subscription = Notifications.addNotificationReceivedListener((notification) => {
-      console.log("Notification received:", notification);
-      // You can update your state or UI here
-    });
+    const loadInitialData = async () => {
+      if (!initialLoadComplete) {
+        setIsLoading(true);
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        } catch (error) {
+          console.error("Initial load error:", error);
+        } finally {
+          setIsLoading(false);
+          setInitialLoadComplete(true);
+        }
+      }
+    };
 
-    // Clean up the listener when the component unmounts
-    return () => subscription.remove();
-  }, []);
+    loadInitialData();
+  }, [initialLoadComplete]);
 
   const healthListItems = [
     { id: 1, image: ItemImage25, title: "Headache" },
@@ -178,11 +184,9 @@ const Home = () => {
 
   const exposingMythsListItems = [
     { id: 1, image: ItemImage11, title: "Penis size doesn’t matter" },
-    { id: 2, image: ItemImage12, title: "Spicy foods don’t induce labour" },
-    { id: 3, image: ItemImage13, title: "Spicy foods don’t induce labour" },
-    { id: 4, image: ItemImage14, title: "Spicy foods don’t induce labour" },
-    { id: 5, image: ItemImage15, title: "Contraceptives don’t cause infertility" },
-    { id: 6, image: ItemImage16, title: "Vaccines do not cause autism" },
+    { id: 2, image: ItemImage12, title: "Spicy foods don't induce labour" },
+    { id: 3, image: ItemImage15, title: "Contraceptives don't cause infertility" },
+    { id: 4, image: ItemImage16, title: "Vaccines do not cause autism" },
   ];
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -204,64 +208,60 @@ const Home = () => {
     );
   };
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000);
+  // Add this useEffect to handle initial load
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      try {
+        // Simulate data loading (replace with actual data fetching)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Initial load error:", error);
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // Modify your onRefresh function
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Simulate refresh (replace with actual refresh logic)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const navigateToDetail = (item) => {
-    let articleId;
+    // Create a mapping between health condition titles and article IDs
+    const conditionToArticleMap = {
+      // Map specific health conditions to article IDs
+      "Headache": 7,       // Maps to Acne article (example)
+      "Eczema": 8,
+      "Hypertension": 9,
+      "Anxiety": 4,
+      "Skin Bleaching": 10,
+      "Phobia": 11,
+      "Diabetes": 2,
+      "Mental Health": 4,
+      "General Ailments": 1,
+      "Weight Loss": 12,
+      "Sleep": 13,
+      "Physical Exercise": 15,
+      "Eye Health": 14,
+    };
 
-    // Determine articleId based on the item
-    switch (item) {
-      case "Men's Health":
-      case "Women's Health":
-        articleId = 2; // Healthy Eating article
-        break;
-      case "Mental Health":
-        articleId = 2; // Healthy Eating
-        break;
-      case "General Ailments":
-      case "Common Cold":
-        articleId = 4; // Using Common Cold from health conditions
-        break;
-      case "Reproductive Health":
-        articleId = 1; // Diabetes 101
-        break;
-      case "Healthy Living":
-        articleId = 2; // Healthy Eating
-        break;
-      case "Hypertension":
-        articleId = 3; // Hypertension Management
-        break;
-      case "Diabetes (Type 1)":
-      case "Diabetes (Type 2)":
-        articleId = 1; // Diabetes 101
-        break;
-      default:
-        // For any other item or glossary term, try to find a matching article
-        const matchingArticle = dataStore.articles.find((article) =>
-          article.title.toLowerCase().includes(item.toLowerCase()) ||
-          article.content.toLowerCase().includes(item.toLowerCase())
-        );
+    // Default to article ID 1 if no match found
+    let articleId = conditionToArticleMap[item] || 1;
 
-        const matchingCondition = dataStore.healthConditions.find((condition) =>
-          condition.title.toLowerCase().includes(item.toLowerCase())
-        );
-
-        if (matchingArticle) {
-          articleId = matchingArticle.id;
-        } else if (matchingCondition) {
-          articleId = matchingCondition.id;
-        } else {
-          articleId = 1; // Default to the first article if no match is found
-        }
-    }
-
-    // Navigate to the articles screen with the selected article ID
-    navigation.navigate("articles/index", { articleId }); // Pass articleId as a parameter
+    // Navigate to the article detail screen
+    navigation.navigate("articles/index", { articleId });
   };
 
   const navigateToMythDetail = (item) => {
@@ -279,11 +279,9 @@ const Home = () => {
         id = 1; // Default to first myth if no match found
       }
     } else {
-      // If item is already a myth object, use its id
       id = item.id;
     }
 
-    // Navigate to the myth detail screen with the mythId parameter
     navigation.navigate("mythdetail/index", { id });
   };
 
@@ -329,6 +327,13 @@ const Home = () => {
     </TouchableOpacity>
   );
 
+  const LoadingIndicator = () => (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color="#000" />
+      <Text style={styles.loadingText}>Loading...</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Header
@@ -337,329 +342,333 @@ const Home = () => {
         onSearchClose={() => setIsSearchVisible(false)}
       />
 
-      <ScrollView
-        vertical
-        showsVerticalScrollIndicator={false}
-        style={{ flex: 1, width: "100%" }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Swiper Section */}
-        <Carousel
-          data={images}
-          renderItem={renderItem}
-          width={screenWidth}
-          style={styles.swiper}
-          autoPlay={true}
-          autoPlayInterval={3000}
-          loop={true}
-          onSnapToItem={(index) => setActiveIndex(index)}
-        />
-        <View style={styles.pagination}>
-          {images.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.paginationCircle,
-                activeIndex === index && styles.activeCircle,
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* Health List Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Health Conditions</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Library")}>
-              <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>
-                <Image
-                  source={chevronIcon}
-                  style={styles.chevronIcon}
-                />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={healthListItems}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigateToDetail(item.title)}>
-                <View style={styles.listItem}>
-                  <Image source={item.image} style={styles.listItemImage} />
-                  <Text style={styles.listItemTitle}>{item.title}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
+      {isLoading ? (
+        <LoadingIndicator />
+      ) : (
+        <ScrollView
+          vertical
+          showsVerticalScrollIndicator={false}
+          style={{ flex: 1, width: "100%" }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Swiper Section */}
+          <Carousel
+            data={images}
+            renderItem={renderItem}
+            width={screenWidth}
+            style={styles.swiper}
+            autoPlay={true}
+            autoPlayInterval={3000}
+            loop={true}
+            onSnapToItem={(index) => setActiveIndex(index)}
           />
-        </View>
-
-        {/* Inspirations Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Inspirations</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("inspiration/index")}>
-              <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>
-                <Image source={chevronIcon} style={styles.chevronIcon} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={lifestyleListItems}
-            renderItem={renderInspirationItem}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
-            contentContainerStyle={styles.inspirationList}
-          />
-        </View>
-
-        {/* Health Tips Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Health Tips</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Library")}>
-              <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>
-                <Image source={chevronIcon} style={styles.chevronIcon} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={healthListItems1}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigateToDetail(item.title)}>
-                <View style={styles.listItem}>
-                  <Image source={item.image} style={styles.listItemImage} />
-                  <Text style={styles.listItemTitle}>{item.title}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-
-        {/* Exposing Myths Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Exposing Myths</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("myths/index")}>
-              <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>
-                <Image source={chevronIcon} style={styles.chevronIcon} />
-              </View>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.mythsGrid}>
-            {exposingMythsListItems.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[styles.mythsGridItem, { width: (screenWidth - 40) / 3 }]}
-                onPress={() => navigateToMythDetail(item.title)}
-              >
-                <Image source={item.image} style={styles.mythsGridImage} />
-                <Text style={styles.mythsGridTitle} numberOfLines={2}>
-                  {item.title}
-                </Text>
-              </TouchableOpacity>
+          <View style={styles.pagination}>
+            {images.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationCircle,
+                  activeIndex === index && styles.activeCircle,
+                ]}
+              />
             ))}
           </View>
-        </View>
 
-        {/* Emergency Section */}
-        <View style={styles.emergencyContainer}>
-          <Text style={styles.emergencyHeading}>Are you in an emergency?</Text>
-          <Text style={styles.emergencySubText}>Do you need help?</Text>
-          <TouchableOpacity
-            style={styles.emergencyButton}
-            onPress={() => navigation.navigate("emergency/index")}
-          >
-            <Text style={styles.emergencyButtonText}>Contact Emergency Services</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Video Section */}
-        <View style={styles.videoContainer}>
-          <Text style={styles.videoTitle}>Highlights on MedWeek ‘24</Text>
-          <View style={styles.videoWrapper}>
-            <YoutubePlayer
-              height={220}
-              videoId="YOUR_YOUTUBE_VIDEO_ID"
-              play={false}
-              onChangeState={state => console.log(state)}
-            />
-          </View>
-        </View>
-
-        {/* Featured Article Section */}
-        <View style={styles.featuredArticleContainer}>
-          <View style={styles.featuredImageStack}>
-            <Image
-              source={featuredImage1}
-              style={styles.featuredImageBack}
-              resizeMode="cover"
-            />
-            <Image
-              source={featuredImage2}
-              style={styles.featuredImageFront}
-              resizeMode="cover"
-            />
-          </View>
-          <View style={styles.featuredContent}>
-            <Text style={styles.featuredTitle}>
-              Talk to an Expert            </Text>
-            <Text style={styles.featuredDescription}>
-              Your Mental Health matters. Are you feeling? Depressed or Anxious?
-              Are you having Mental Breakdowns?
-            </Text>
-            <TouchableOpacity
-              style={styles.learnMoreButton}
-              onPress={() => navigateToDetail("Talk to an Expert")}
-            >
-              <Text style={styles.learnMoreText}>Learn More</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Tools Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
-          <Text style={[styles.listTitle, { textAlign: 'center', marginBottom: screenHeight * 0.02 }]}>
-            Lifestyle Tools
-          </Text>
-          <FlatList
-            data={newSectionItems}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigation.navigate(item.screen)}>
-                <View style={styles.newSectionItem}>
-                  <Image source={item.image} style={styles.newSectionImage} />
-                  <Text style={styles.newSectionText}>{item.title}</Text>
+          {/* Health List Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Health Conditions</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Library")}>
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMoreText}>SEE MORE</Text>
+                  <Image
+                    source={chevronIcon}
+                    style={styles.chevronIcon}
+                  />
                 </View>
               </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.newSectionList}
-          />
-        </View>
+            </View>
+            <FlatList
+              data={healthListItems}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => navigateToDetail(item.title)}>
+                  <View style={styles.listItem}>
+                    <Image source={item.image} style={styles.listItemImage} />
+                    <Text style={styles.listItemTitle}>{item.title}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
 
-        {/* Find a doctor Section */}
-        <View style={styles.lifestyleSection}>
-          <View style={styles.lifestyleContent}>
-            <Text style={styles.lifestyleTitle}>Find a Doctor or a Hospital</Text>
-            <Text style={styles.lifestyleDescription}>
-              Are you in an emergency or just need to find a doctor or hospital for your health needs?
-            </Text>
+          {/* Inspirations Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Inspirations</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("inspiration/index")}>
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMoreText}>SEE MORE</Text>
+                  <Image source={chevronIcon} style={styles.chevronIcon} />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={lifestyleListItems}
+              renderItem={renderInspirationItem}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+              contentContainerStyle={styles.inspirationList}
+            />
+          </View>
+
+          {/* Health Tips Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Health Tips</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Library")}>
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMoreText}>SEE MORE</Text>
+                  <Image source={chevronIcon} style={styles.chevronIcon} />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={healthListItems1}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => navigateToDetail(item.title)}>
+                  <View style={styles.listItem}>
+                    <Image source={item.image} style={styles.listItemImage} />
+                    <Text style={styles.listItemTitle}>{item.title}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+
+          {/* Exposing Myths Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Exposing Myths</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("myths/index")}>
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMoreText}>SEE MORE</Text>
+                  <Image source={chevronIcon} style={styles.chevronIcon} />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.mythsGrid}>
+              {exposingMythsListItems.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[styles.mythsGridItem, { width: (screenWidth - 40) / 3 }]}
+                  onPress={() => navigateToMythDetail(item.title)}
+                >
+                  <Image source={item.image} style={styles.mythsGridImage} />
+                  <Text style={styles.mythsGridTitle} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Emergency Section */}
+          <View style={styles.emergencyContainer}>
+            <Text style={styles.emergencyHeading}>Are you in an emergency?</Text>
+            <Text style={styles.emergencySubText}>Do you need help?</Text>
             <TouchableOpacity
-              style={styles.lifestyleButton}
-              onPress={() => navigation.navigate('findoctor/index')}
+              style={styles.emergencyButton}
+              onPress={() => navigation.navigate("emergency/index")}
             >
-              <Text style={styles.lifestyleButtonText}>Tap Here</Text>
+              <Text style={styles.emergencyButtonText}>Contact Emergency Services</Text>
             </TouchableOpacity>
           </View>
-          <Image
-            source={ItemImage10}
-            style={styles.lifestyleImage}
-            resizeMode="cover"
-          />
-        </View>
 
-        {/* Events Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Events Lineup</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("events/index")}>
-              <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>
-                <Image source={chevronIcon} style={styles.chevronIcon} />
-              </View>
-            </TouchableOpacity>
+          {/* Video Section */}
+          <View style={styles.videoContainer}>
+            <Text style={styles.videoTitle}>Highlights on MedWeek ‘24</Text>
+            <View style={styles.videoWrapper}>
+              <YoutubePlayer
+                height={220}
+                videoId="YOUR_YOUTUBE_VIDEO_ID"
+                play={false}
+                onChangeState={state => console.log(state)}
+              />
+            </View>
           </View>
-          <FlatList
-            data={lifestyleListItems2}
-            renderItem={renderInspirationItem2}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
-            contentContainerStyle={styles.inspirationList}
-          />
-        </View>
 
-        {/* Gym Section */}
-        <View style={styles.lifestyleSection1}>
-          <Image
-            source={ItemImage20}
-            style={styles.lifestyleImage1}
-            resizeMode="cover"
-          />
-          <View style={styles.lifestyleContent1}>
-            <Text style={styles.lifestyleTitle1}>Map out a Gym</Text>
-            <Text style={styles.lifestyleDescription1}>
-              Trying to get fit?
-              Use this feature to locate a gym nearby.
+          {/* Featured Article Section */}
+          <View style={styles.featuredArticleContainer}>
+            <View style={styles.featuredImageStack}>
+              <Image
+                source={featuredImage1}
+                style={styles.featuredImageBack}
+                resizeMode="cover"
+              />
+              <Image
+                source={featuredImage2}
+                style={styles.featuredImageFront}
+                resizeMode="cover"
+              />
+            </View>
+            <View style={styles.featuredContent}>
+              <Text style={styles.featuredTitle}>
+                Talk to an Expert            </Text>
+              <Text style={styles.featuredDescription}>
+                Your Mental Health matters. Are you feeling? Depressed or Anxious?
+                Are you having Mental Breakdowns?
+              </Text>
+              <TouchableOpacity
+                style={styles.learnMoreButton}
+                onPress={() => navigateToDetail("Talk to an Expert")}
+              >
+                <Text style={styles.learnMoreText}>Learn More</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Tools Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
+            <Text style={[styles.listTitle, { textAlign: 'center', marginBottom: screenHeight * 0.02 }]}>
+              Lifestyle Tools
             </Text>
-            <TouchableOpacity
-              style={styles.lifestyleButton1}
-              onPress={() => navigation.navigate('gym/index')}
-            >
-              <Text style={styles.lifestyleButtonText1}>Let's go!</Text>
-            </TouchableOpacity>
+            <FlatList
+              data={newSectionItems}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => navigation.navigate(item.screen)}>
+                  <View style={styles.newSectionItem}>
+                    <Image source={item.image} style={styles.newSectionImage} />
+                    <Text style={styles.newSectionText}>{item.title}</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.newSectionList}
+            />
           </View>
-        </View>
 
-        {/* Agencies Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Agencies & Organizations</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("organizations/index")}>
-              <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>
-                <Image source={chevronIcon} style={styles.chevronIcon} />
-              </View>
-            </TouchableOpacity>
+          {/* Find a doctor Section */}
+          <View style={styles.lifestyleSection}>
+            <View style={styles.lifestyleContent}>
+              <Text style={styles.lifestyleTitle}>Find a Doctor or a Hospital</Text>
+              <Text style={styles.lifestyleDescription}>
+                Are you in an emergency or just need to find a doctor or hospital for your health needs?
+              </Text>
+              <TouchableOpacity
+                style={styles.lifestyleButton}
+                onPress={() => navigation.navigate('findoctor/index')}
+              >
+                <Text style={styles.lifestyleButtonText}>Tap Here</Text>
+              </TouchableOpacity>
+            </View>
+            <Image
+              source={ItemImage10}
+              style={styles.lifestyleImage}
+              resizeMode="cover"
+            />
           </View>
-          <FlatList
-            data={lifestyleListItems}
-            renderItem={renderInspirationItem}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
-            contentContainerStyle={styles.inspirationList}
-          />
-        </View>
 
-        {/* Policies Section */}
-        <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Policies & Insurances</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("policies/index")}>
-              <View style={styles.seeMoreContainer}>
-                <Text style={styles.seeMoreText}>SEE MORE</Text>
-                <Image source={chevronIcon} style={styles.chevronIcon} />
-              </View>
-            </TouchableOpacity>
+          {/* Events Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Events Lineup</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("events/index")}>
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMoreText}>SEE MORE</Text>
+                  <Image source={chevronIcon} style={styles.chevronIcon} />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={lifestyleListItems2}
+              renderItem={renderInspirationItem2}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+              contentContainerStyle={styles.inspirationList}
+            />
           </View>
-          <FlatList
-            data={lifestyleListItems}
-            renderItem={renderInspirationItem}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
-            contentContainerStyle={styles.inspirationList}
-          />
-        </View>
-      </ScrollView>
+
+          {/* Gym Section */}
+          <View style={styles.lifestyleSection1}>
+            <Image
+              source={ItemImage20}
+              style={styles.lifestyleImage1}
+              resizeMode="cover"
+            />
+            <View style={styles.lifestyleContent1}>
+              <Text style={styles.lifestyleTitle1}>Map out a Gym</Text>
+              <Text style={styles.lifestyleDescription1}>
+                Trying to get fit?
+                Use this feature to locate a gym nearby.
+              </Text>
+              <TouchableOpacity
+                style={styles.lifestyleButton1}
+                onPress={() => navigation.navigate('gym/index')}
+              >
+                <Text style={styles.lifestyleButtonText1}>Let's go!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Agencies Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Agencies & Organizations</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("organizations/index")}>
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMoreText}>SEE MORE</Text>
+                  <Image source={chevronIcon} style={styles.chevronIcon} />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={lifestyleListItems}
+              renderItem={renderInspirationItem}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+              contentContainerStyle={styles.inspirationList}
+            />
+          </View>
+
+          {/* Policies Section */}
+          <View style={[styles.listContainer, { marginTop: screenHeight * 0.025 }]}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>Policies & Insurances</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("policies/index")}>
+                <View style={styles.seeMoreContainer}>
+                  <Text style={styles.seeMoreText}>SEE MORE</Text>
+                  <Image source={chevronIcon} style={styles.chevronIcon} />
+                </View>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={lifestyleListItems}
+              renderItem={renderInspirationItem}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ width: 15 }} />}
+              contentContainerStyle={styles.inspirationList}
+            />
+          </View>
+        </ScrollView>
+      )}
     </View >
   );
 };
@@ -831,6 +840,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: Dimensions.get('window').height * 0.02,
     alignItems: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
   },
   emergencyButtonText: {
     color: "white",

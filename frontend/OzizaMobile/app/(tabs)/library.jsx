@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { dataStore } from "../../utils/dataStore"; // Adjust path as needed
+import { dataStore } from "../../utils/dataStore";
 
 // Screen Dimensions
 const { width } = Dimensions.get("window");
@@ -21,9 +21,9 @@ const scale = (size) => (width / 375) * size;
 // Function to get safe area top padding
 const getSafeAreaTop = () => {
   if (Platform.OS === "ios") {
-    return 40; // Adjust for iOS
+    return 40;
   }
-  return 20; // Default for Android
+  return 20;
 };
 
 export default function Library() {
@@ -32,21 +32,230 @@ export default function Library() {
   const glossaryListRef = useRef(null);
   const alphabetRefs = useRef({});
 
-  // Dummy data for categories
+  // Article ID mapping for all library items
+  const articleMappings = {
+    // Categories
+    "Men's Health": 2,
+    "Women's Health": 2,
+    "Mental Health": 4,
+    "General Ailments": 1,
+    "Reproductive Health": 1,
+    "Myths": 5,
+    "Contraception": 6,
+    "Healthy Living": 2,
+    "Child Care": 3,
+    "STIs": 1,
+
+    // Glossary terms - A
+    "Abdominal Pain": 1,
+    "Acne": 1,
+    "Albinism": 1,
+    "Alcoholism": 4,
+    "Allergies": 1,
+    "Alzheimer's Disease": 4,
+    "Anaemia": 1,
+    "Anxiety": 4,
+    "Appendicitis": 1,
+    "Arthritis": 1,
+    "Asthma": 6,
+    "Autism": 4,
+
+    // B
+    "Back Pain": 1,
+    "Baldness": 1,
+    "Bilharzia": 1,
+    "Birth Defects": 1,
+    "Blindness": 1,
+    "Blood Cell Disorders": 1,
+    "Body Piercings and Tattoos": 1,
+    "Brain Disorders": 4,
+    "Breast Cancer": 1,
+    "Bug Bites": 1,
+    "Burns": 1,
+
+    // C
+    "Cancer": 1,
+    "Cavities": 1,
+    "Chest Pain": 1,
+    "Chlamydia": 1,
+    "Cholera": 1,
+    "Common Cold": 1,
+    "Constipation": 1,
+    "Coronary Artery Disease": 1,
+    "COVID-19": 1,
+
+    // D
+    "Dandruff": 1,
+    "Deafness": 1,
+    "Dengue": 1,
+    "Depression": 4,
+    "Diabetes (Type 1)": 2,
+    "Diabetes (Type 2)": 2,
+    "Diarrhoea": 1,
+    "Digestion Problems": 1,
+    "Dizziness": 1,
+    "Drug Addiction": 4,
+
+    // E
+    "Ear Infections": 1,
+    "Eating Disorders": 4,
+    "Ebola": 1,
+    "Eczema": 1,
+    "Epilepsy": 4,
+
+    // F
+    "Fever": 1,
+    "Female Reproductive System": 1,
+    "Female Circumcision": 1,
+    "Fibroids": 1,
+    "Flu": 1,
+    "Food Addiction": 4,
+    "Food Poisoning": 1,
+    "Fungal Skin Infection": 1,
+
+    // G
+    "Gallstones": 1,
+    "Genital Herpes": 1,
+    "Glaucoma": 1,
+    "Gonorrhea": 1,
+    "Gout": 1,
+    "Guinea Worm": 1,
+    "Gum Disease": 1,
+
+    // H
+    "Hair Loss": 1,
+    "Headache": 1,
+    "Heartburn": 1,
+    "Hemorrhoids": 1,
+    "Hepatitis": 1,
+    "Hernia": 1,
+    "HIV": 1,
+    "HPV": 1,
+    "Hypertension": 3,
+
+    // I
+    "Improving Brain Function": 4,
+    "Indigestion": 1,
+    "Infertility": 1,
+    "Insomnia": 4,
+
+    // J
+    "Joint Pain": 1,
+
+    // K
+    "Kidney Problems": 1,
+    "Kidney Stones": 1,
+    "Kwashiorkor": 1,
+
+    // L
+    "Leg Pain": 1,
+    "Leishmaniasis": 1,
+    "Leprosy": 1,
+    "Lice": 1,
+    "Low Testosterone": 1,
+    "Lung Cancer": 1,
+
+    // M
+    "Malaria": 1,
+    "Male Menopause": 1,
+    "Male Reproductive System": 1,
+    "Malnutrition": 1,
+    "Masturbation": 1,
+    "Menopause": 1,
+    "Men's Health": 2,
+    "Meningitis": 1,
+    "Migraine": 1,
+    "Mouth Ulcers": 1,
+    "Mpox": 1,
+    "Multiple Sclerosis": 4,
+    "Mumps": 1,
+
+    // N
+    "Nausea": 1,
+    "Night Eating": 4,
+    "Nosebleed": 1,
+    "Nutrition (Healthy Food)": 2,
+
+    // O
+    "Obesity": 2,
+    "Onchocerciasis": 1,
+    "Overweight Children": 2,
+
+    // P
+    "Parkinson's Disease": 4,
+    "Phobia": 4,
+    "Physical Exercise": 2,
+    "Pneumonia": 1,
+    "Pornography Addiction": 4,
+    "Premature Ejaculation": 1,
+    "Prostate Cancer": 1,
+
+    // Q
+    // Empty as requested
+
+    // R
+    "Rabies": 1,
+    "Rheumatism": 1,
+
+    // S
+    "Safe Sex": 1,
+    "Seizure": 4,
+    "Sex and Pleasure": 1,
+    "Sex Problems in Women": 1,
+    "Sickle Cell Anaemia": 1,
+    "Skin Disorders": 1,
+    "Sleep": 4,
+    "Sleeping Sickness": 1,
+    "Smoking": 1,
+    "Snoring": 1,
+    "Spinal Cord Injury": 1,
+    "Stomach Ulcer": 1,
+    "Stress Management": 4,
+    "Stroke": 1,
+    "Swollen Testicles": 1,
+    "Syphilis": 1,
+
+    // T
+    "Teething": 1,
+    "Tongue Problems": 1,
+    "Tonsillitis": 1,
+    "Trachoma": 1,
+    "Tuberculosis": 1,
+    "Typhoid Fever": 1,
+
+    // U
+    "Ulcers": 1,
+    "Urinary Incontinence in Men": 1,
+    "Urinary Incontinence in Women": 1,
+    "Urinary Tract Infection": 1,
+
+    // V
+    "Vaginal Infection": 1,
+
+    // W
+    "Weight Loss": 2,
+    "Weight Management": 2,
+    "Women's Health": 2,
+
+    // X-Y-Z
+    // Empty as requested
+  };
+
+  // Categories data with article IDs
   const categories = [
-    { id: 0, image: require("../../assets/images/menshealth.jpg"), title: "Men's Health" },
-    { id: 1, image: require("../../assets/images/womenshealth.jpg"), title: "Women's Health" },
-    { id: 2, image: require("../../assets/images/mentalhealth.png"), title: "Mental Health" },
-    { id: 3, image: require("../../assets/images/ailments.png"), title: "General Ailments" },
-    { id: 4, image: require("../../assets/images/reprohealth.png"), title: "Reproductive Health" },
-    { id: 5, image: require("../../assets/images/myth.jpg"), title: "Myths" },
-    { id: 6, image: require("../../assets/images/contraception.jpg"), title: "Contraception" },
-    { id: 7, image: require("../../assets/images/healthy.jpg"), title: "Healthy Living" },
-    { id: 8, image: require("../../assets/images/childcare.jpg"), title: "Child Care" },
-    { id: 9, image: require("../../assets/images/sti.jpg"), title: "STIs" },
+    { id: 0, image: require("../../assets/images/menshealth.jpg"), title: "Men's Health", articleId: 2 },
+    { id: 1, image: require("../../assets/images/womenshealth.jpg"), title: "Women's Health", articleId: 2 },
+    { id: 2, image: require("../../assets/images/mentalhealth.png"), title: "Mental Health", articleId: 4 },
+    { id: 3, image: require("../../assets/images/ailments.png"), title: "General Ailments", articleId: 1 },
+    { id: 4, image: require("../../assets/images/reprohealth.png"), title: "Reproductive Health", articleId: 1 },
+    { id: 5, image: require("../../assets/images/myth.jpg"), title: "Myths", articleId: 5 },
+    { id: 6, image: require("../../assets/images/contraception.jpg"), title: "Contraception", articleId: 6 },
+    { id: 7, image: require("../../assets/images/healthy.jpg"), title: "Healthy Living", articleId: 2 },
+    { id: 8, image: require("../../assets/images/childcare.jpg"), title: "Child Care", articleId: 3 },
+    { id: 9, image: require("../../assets/images/sti.jpg"), title: "STIs", articleId: 1 },
   ];
 
-  // Dummy data for glossary
+  // Glossary data structure
   const glossary = {
     alphabets: Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)),
     lists: {
@@ -246,58 +455,21 @@ export default function Library() {
   };
 
   const handleItemPress = (item) => {
-    let articleId;
+    let articleId = articleMappings[item];
 
-    // Determine articleId based on the item
-    switch (item) {
-      case "Men's Health":
-      case "Women's Health":
-        articleId = 2; // Healthy Eating article
-        break;
-      case "Mental Health":
-        articleId = 2; // Healthy Eating
-        break;
-      case "General Ailments":
-      case "Common Cold":
-        articleId = 4; // Using Common Cold from health conditions
-        break;
-      case "Reproductive Health":
-        articleId = 1; // Diabetes 101
-        break;
-      case "Healthy Living":
-        articleId = 2; // Healthy Eating
-        break;
-      case "Hypertension":
-        articleId = 3; // Hypertension Management
-        break;
-      case "Diabetes (Type 1)":
-      case "Diabetes (Type 2)":
-        articleId = 1; // Diabetes 101
-        break;
-      default:
-        // For any other item or glossary term, try to find a matching article
-        const matchingArticle = dataStore.articles.find(article =>
-          article.title.toLowerCase().includes(item.toLowerCase()) ||
-          article.content.toLowerCase().includes(item.toLowerCase())
-        );
+    if (!articleId) {
+      // Fallback: Find any article that mentions this term
+      const matchingArticle = dataStore.articles.find(article =>
+        article.title.toLowerCase().includes(item.toLowerCase()) ||
+        article.content.toLowerCase().includes(item.toLowerCase())
+      );
 
-        const matchingCondition = dataStore.healthConditions.find(condition =>
-          condition.title.toLowerCase().includes(item.toLowerCase())
-        );
-
-        if (matchingArticle) {
-          articleId = matchingArticle.id;
-        } else if (matchingCondition) {
-          articleId = matchingCondition.id;
-        } else {
-          articleId = 1; // Default to the first article if no match is found
-        }
+      articleId = matchingArticle?.id || 1; // Default to first article
     }
 
-    // Navigate to the articles screen with the selected article ID
     router.push({
       pathname: "/articles",
-      params: { articleId }, // Pass articleId as a query parameter
+      params: { articleId },
     });
   };
 
@@ -321,7 +493,6 @@ export default function Library() {
     }
   };
 
-  // Render list item with dot
   const renderListItem = (item, index, array) => {
     return (
       <TouchableOpacity
@@ -353,7 +524,10 @@ export default function Library() {
               <TouchableOpacity
                 key={category.id}
                 style={styles.categoryItem}
-                onPress={() => handleItemPress(category.title)}
+                onPress={() => router.push({
+                  pathname: "/articles",
+                  params: { articleId: category.articleId },
+                })}
               >
                 <Image
                   source={category.image}
@@ -499,13 +673,13 @@ const styles = StyleSheet.create({
   listContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: scale(10), // Adjusted gap between items
-    justifyContent: "flex-start", // Align items to the start of the row
+    gap: scale(10),
+    justifyContent: "flex-start",
   },
   listItemContainer: {
     flexDirection: "row",
     alignItems: "center",
-    width: "30%", // Adjusted width to fit three items per row
+    width: "30%",
   },
   listItemDot: {
     fontSize: scale(14),

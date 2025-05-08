@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { submitSymptoms } from '../../services/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,7 +19,6 @@ const getSafeAreaTop = () => {
     return 20;
 };
 
-// Visual Indicator Component
 const MatchStrengthIndicator = ({ strength }) => {
     const filledBoxes = {
         'Strong match': 4,
@@ -50,78 +50,173 @@ const SypmtomChecker4 = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { symptomsList, age, sex } = params;
+    const [conditions, setConditions] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const parsedSymptomsList = symptomsList ? JSON.parse(symptomsList) : [];
+    useEffect(() => {
+        const diagnose = async () => {
+            try {
+                if (!symptomsList) {
+                    throw new Error('No symptoms provided');
+                }
 
-    const conditions = [
-        { id: '1', name: 'Common Cold', matchStrength: 'Strong match' },
-        { id: '2', name: 'Flu', matchStrength: 'Moderate match' },
-        { id: '3', name: 'Allergies', matchStrength: 'Weak match' },
-    ];
+                const parsedSymptoms = JSON.parse(symptomsList);
+                if (!Array.isArray(parsedSymptoms)) {
+                    throw new Error('Invalid symptoms format');
+                }
+
+                const symptomIds = parsedSymptoms.map(s => s.id).filter(id => id !== undefined);
+                if (symptomIds.length === 0) {
+                    throw new Error('No valid symptom IDs found');
+                }
+
+                const response = await submitSymptoms(symptomIds);
+
+                if (response.data.potential_diseases.length === 0) {
+                    throw new Error('No matching conditions found for your symptoms');
+                }
+
+                setConditions(response.data.potential_diseases);
+            } catch (err) {
+                setError(err.message || 'Failed to analyze symptoms');
+                setConditions([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        diagnose();
+    }, [symptomsList]);
+
+    const getMatchStrength = (confidence) => {
+        if (!confidence) return 'Unknown';
+        if (confidence > 75) return 'Strong match';
+        if (confidence > 50) return 'Moderate match';
+        return 'Weak match';
+    };
 
     const handlePrevious = () => {
         router.back();
     };
 
     const handleContinue = (condition) => {
-        router.push({
-            pathname: "/symptom5",
-            params: { condition: JSON.stringify(condition), symptomsList, age, sex },
-        });
+        try {
+            if (!condition) {
+                throw new Error('No condition selected');
+            }
+
+            router.push({
+                pathname: "/symptom5",
+                params: {
+                    condition: JSON.stringify(condition),
+                    symptomsList,
+                    age,
+                    sex
+                },
+            });
+        } catch (error) {
+            setError(error.message || "Failed to proceed");
+        }
     };
+
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#032825" />
+                <Text style={styles.loadingText}>Analyzing your symptoms...</Text>
+            </View>
+        );
+    }
+
+    if (error) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>Symptom Checker</Text>
+                </View>
+
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={() => router.back()}
+                    >
+                        <Text style={styles.retryButtonText}>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
+    const parsedSymptomsList = symptomsList ? JSON.parse(symptomsList) : [];
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
+                <TouchableOpacity onPress={handlePrevious}>
                     <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Symptom Checker</Text>
             </View>
 
-            {/* Scrollable Content */}
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Text style={styles.subTitle}>Conditions that match your symptoms</Text>
 
-                {/* Conditions List */}
-                <View style={styles.conditionsList}>
-                    {conditions.map((item) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            style={styles.conditionItem} // Updated style to look like buttons
-                            onPress={() => handleContinue(item)}
-                        >
-                            <View style={styles.conditionContent}>
-                                <Text style={styles.conditionName}>{item.name}</Text>
-                                <MatchStrengthIndicator strength={item.matchStrength} />
-                            </View>
-                            <Icon name="chevron-right" size={responsiveFontSize(24)} color="#000" />
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                {conditions.length > 0 ? (
+                    <View style={styles.conditionsList}>
+                        {conditions.map((item, index) => (
+                            <TouchableOpacity
+                                key={item?.disease?.id || index}
+                                style={styles.conditionItem}
+                                onPress={() => handleContinue(item?.disease)}
+                            >
+                                <View style={styles.conditionContent}>
+                                    <Text style={styles.conditionName}>
+                                        {item?.disease?.name || 'Unknown Condition'}
+                                    </Text>
+                                    <MatchStrengthIndicator strength={getMatchStrength(item?.confidence_score)} />
+                                    <Text style={styles.confidenceText}>
+                                        {item?.confidence_score ? Math.round(item.confidence_score) : 'N/A'}% confidence
+                                    </Text>
+                                </View>
+                                <Icon name="chevron-right" size={responsiveFontSize(24)} color="#000" />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                ) : (
+                    <Text style={styles.noResultsText}>No matching conditions found</Text>
+                )}
 
-                {/* Info Section */}
                 <View style={styles.infoSection}>
-                    <Text style={styles.infoText}>Gender: {sex}</Text>
-                    <Text style={styles.infoText}>Age: {age}</Text>
+                    <Text style={styles.infoText}>Gender: {sex || 'Not specified'}</Text>
+                    <Text style={styles.infoText}>Age: {age || 'Not specified'}</Text>
                 </View>
 
-                {/* Symptoms Section */}
                 <View style={styles.symptomsSection}>
                     <Text style={styles.subTitle}>My Symptoms</Text>
                     <Text style={styles.symptomsText}>
-                        {parsedSymptomsList.map((symptom) => symptom.name).join(', ')}
+                        {parsedSymptomsList.length > 0
+                            ? parsedSymptomsList.map(s => s?.name).filter(Boolean).join(', ')
+                            : 'No symptoms'}
                     </Text>
                 </View>
 
-                {/* Buttons */}
                 <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.button1} onPress={handlePrevious}>
                         <Text style={styles.buttonText}>Previous</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.button} onPress={() => handleContinue(conditions[0])}>
-                        <Text style={styles.buttonText}>Continue</Text>
-                    </TouchableOpacity>
+                    {conditions.length > 0 && (
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => handleContinue(conditions[0]?.disease)}
+                        >
+                            <Text style={styles.buttonText}>Continue</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScrollView>
         </View>
@@ -135,6 +230,16 @@ const styles = StyleSheet.create({
         paddingTop: getSafeAreaTop(),
         paddingHorizontal: width * 0.04,
         paddingBottom: height * 0.02,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    loadingText: {
+        marginTop: height * 0.02,
+        fontSize: responsiveFontSize(16),
     },
     header: {
         flexDirection: 'row',
@@ -165,15 +270,21 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: width * 0.03,
-        backgroundColor: '#E9EBF4',  // Background color to make it look like a button
-        borderRadius: 8,             // Rounded corners
-        marginBottom: height * 0.015,  // Space between items
+        backgroundColor: '#E9EBF4',
+        borderRadius: 8,
+        marginBottom: height * 0.015,
     },
     conditionContent: {
         flex: 1,
     },
     conditionName: {
         fontSize: responsiveFontSize(16),
+        fontWeight: '600',
+    },
+    confidenceText: {
+        fontSize: responsiveFontSize(14),
+        color: '#666',
+        marginTop: height * 0.005,
     },
     matchStrengthContainer: {
         marginTop: height * 0.01,
@@ -196,10 +307,10 @@ const styles = StyleSheet.create({
         marginRight: width * 0.01,
     },
     filledBox: {
-        backgroundColor: '#4CAF50', // Light green
+        backgroundColor: '#4CAF50',
     },
     unfilledBox: {
-        backgroundColor: '#E0E0E0', // Gray
+        backgroundColor: '#E0E0E0',
     },
     infoSection: {
         flexDirection: 'row',
@@ -223,7 +334,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: width * 0.01,
         paddingBottom: height * 0.04,
-        marginTop: height * 0.16,
+        marginTop: height * 0.02,
     },
     button: {
         backgroundColor: '#032825',
@@ -242,6 +353,34 @@ const styles = StyleSheet.create({
     buttonText: {
         color: 'white',
         fontSize: responsiveFontSize(16),
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: width * 0.05,
+    },
+    errorText: {
+        fontSize: responsiveFontSize(16),
+        color: '#D32F2F',
+        textAlign: 'center',
+        marginBottom: height * 0.03,
+    },
+    retryButton: {
+        backgroundColor: '#032825',
+        borderRadius: 8,
+        paddingVertical: height * 0.02,
+        paddingHorizontal: width * 0.05,
+    },
+    retryButtonText: {
+        color: 'white',
+        fontSize: responsiveFontSize(16),
+    },
+    noResultsText: {
+        fontSize: responsiveFontSize(16),
+        textAlign: 'center',
+        marginVertical: height * 0.02,
+        color: '#666',
     },
 });
 

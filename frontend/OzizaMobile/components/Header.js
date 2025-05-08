@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    marginTop: Platform.OS === 'ios' ? 24 : StatusBar.currentHeight,
+    marginTop: Platform.OS === 'ios' ? 2 : StatusBar.currentHeight,
     borderBottomWidth: 1,
     borderBottomColor: "#000000",
     backgroundColor: "#000000",

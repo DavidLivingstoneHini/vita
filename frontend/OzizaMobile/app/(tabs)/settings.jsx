@@ -10,9 +10,10 @@ import {
   PixelRatio,
   Platform,
 } from "react-native";
-import * as SecureStore from "expo-secure-store"; // Correct import
+import * as SecureStore from "expo-secure-store";
 import { Link, useRouter } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
+import Toast from 'react-native-toast-message';
 
 // Get screen dimensions
 const { width, height } = Dimensions.get("window");
@@ -74,6 +75,36 @@ const SettingsPage = () => {
 
   const router = useRouter();
 
+  const handleLogout = async () => {
+    try {
+      // Clear all stored authentication tokens and user data
+      await Promise.all([
+        SecureStore.deleteItemAsync("access_token"),
+        SecureStore.deleteItemAsync("refresh_token"),
+        SecureStore.deleteItemAsync("full_name"),
+        SecureStore.deleteItemAsync("email"),
+        SecureStore.deleteItemAsync("userProfilePicture"),
+      ]);
+
+      // Navigate to login screen
+      router.push("/login");
+
+      // Optional: Show success message
+      Toast.show({
+        type: 'success',
+        text1: 'Logged Out',
+        text2: 'You have been successfully logged out',
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Logout Failed',
+        text2: 'There was an issue logging out. Please try again.',
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.settingsLabelContainer}>
@@ -105,6 +136,17 @@ const SettingsPage = () => {
             onPress={() => console.log("Edit Profile Pressed")}
           >
             <Text style={styles.listItemText}>Edit Profile</Text>
+            <Image
+              source={require("../../assets/images/arrow-right.png")}
+              style={styles.arrowIcon}
+            />
+          </TouchableOpacity>
+          <View style={styles.listItemSeparator} />
+          <TouchableOpacity
+            style={styles.listItem}
+            onPress={() => navigation.navigate("bookmark/index")}
+          >
+            <Text style={styles.listItemText}>Bookmarks</Text>
             <Image
               source={require("../../assets/images/arrow-right.png")}
               style={styles.arrowIcon}
@@ -309,7 +351,7 @@ const SettingsPage = () => {
         {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={() => router.push("/login")}
+          onPress={handleLogout}
         >
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>

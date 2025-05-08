@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "539163820187",
+    "firebase_url": "https://oziza-5927b-default-rtdb.firebaseio.com",
     "project_id": "oziza-5927b",
     "storage_bucket": "oziza-5927b.firebasestorage.app"
   },
@@ -37,6 +38,13 @@
             {
               "client_id": "539163820187-og6r7smr5uuo48kvcap399urnfid7blv.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "539163820187-iii7qa9tjovh08kmh7m0caieqesjagim.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.anonymous.OzizaMobile"
+              }
             }
           ]
         }

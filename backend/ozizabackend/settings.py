@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 from datetime import timedelta
 
@@ -26,10 +26,10 @@ SECRET_KEY = 'django-insecure-xo$!nzfpa3!qsyz7by8m4-is*xt7-jlz287q&@ettrkb6^moe-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.169.90', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['192.168.100.34', 'localhost', '127.0.0.1']
 
 CORS_ORIGIN_WHITELIST = [
-    'http://192.168.169.90:8081',
+    'http://192.168.100.34:8081',
 ]
 
 # Application definition
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'symptom_checker',
     'security_measures',
     'corsheaders',
+    'ckeditor',
 ]
 
 MIDDLEWARE = [
@@ -104,7 +105,7 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': 'developer123',
         'HOST': '127.0.0.1',
-        'PORT': '5433',
+        'PORT': '5432',
     }
 }
 
@@ -156,11 +157,16 @@ AUTH_USER_MODEL = 'user_auth.User'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler'
 }
 
 SIMPLE_JWT = {
@@ -212,6 +218,9 @@ LOGGING = {
         },
     },
 }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Allow all origins (for testing, modify for production)
 CORS_ALLOW_ALL_ORIGINS = True

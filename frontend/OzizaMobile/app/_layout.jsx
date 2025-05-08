@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState, useEffect } from "react";
 import Toast from 'react-native-toast-message';
-import { toastConfig } from "../utils/toastConfig"; 
+import { toastConfig } from "../utils/toastConfig";
 import TabLayout from "../app/(tabs)/_layout";
 
 export default function RootLayout() {
@@ -48,6 +48,7 @@ export default function RootLayout() {
             <Stack.Screen name="pushnotif/index" />
             <Stack.Screen name="timezone/index" />
             <Stack.Screen name="language/index" />
+            <Stack.Screen name="bookmark/index" />
             <Stack.Screen name="myths/index" />
             <Stack.Screen name="mythdetail/index" />
           </>
