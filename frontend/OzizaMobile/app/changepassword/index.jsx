@@ -175,7 +175,7 @@ const ChangePasswordScreen = () => {
     >
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push("/settings")}>
+        <TouchableOpacity onPress={() => router.back()}>
           <AntDesign
             name="arrowleft"
             size={responsiveFontSize(24)}

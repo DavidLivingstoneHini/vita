@@ -7,65 +7,74 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
-  PixelRatio,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import Toast from 'react-native-toast-message';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-// Get screen dimensions
 const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+const API_BASE_URL = "http://192.168.100.34:8000/api/";
+
 const responsiveFontSize = (size) => {
-  const scaleFactor = width / 375; // Base width of 375 (iPhone SE)
+  const scaleFactor = width / 375;
   const newSize = size * scaleFactor;
-  return Math.ceil(newSize); // Round to nearest whole number
+  return Math.ceil(newSize);
 };
 
-// Function to get safe area top padding
 const getSafeAreaTop = () => {
   if (Platform.OS === "ios") {
-    return 40; // Adjust for iOS
+    return 40;
   }
-  return 20; // Default for Android
+  return 20;
 };
 
 const SettingsPage = () => {
-  const [userName, setUserName] = useState("Swae Stone");
-  const [userEmail, setUserEmail] = useState("kwamelivingstone77@icloud.com");
-  const [userProfilePicture, setUserProfilePicture] = useState(
-    "https://picsum.photos/60"
-  );
-
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userProfilePicture, setUserProfilePicture] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
+  const router = useRouter();
 
-  // Function to get user initials
   const getUserInitials = (name) => {
+    if (!name) return "";
     const initials = name
       .split(" ")
       .map((word) => word.charAt(0).toUpperCase());
-    return initials.join("");
+    return initials.slice(0, 2).join("");
   };
 
-  // Retrieve user data from secure store
   const retrieveUserData = async () => {
     try {
-      const storedUserName = await SecureStore.getItemAsync("full_name"); // Correct method
-      const storedUserEmail = await SecureStore.getItemAsync("email"); // Correct method
-      const storedUserProfilePicture = await SecureStore.getItemAsync(
-        "userProfilePicture"
-      ); // Correct method
+      const accessToken = await SecureStore.getItemAsync("access_token");
+      const response = await fetch(`${API_BASE_URL}v1/users/profile/`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
 
-      if (storedUserName) setUserName(storedUserName);
-      if (storedUserEmail) setUserEmail(storedUserEmail);
-      if (storedUserProfilePicture)
-        setUserProfilePicture(storedUserProfilePicture);
+      if (response.ok) {
+        const userData = await response.json();
+        setUserName(userData.full_name);
+        setUserEmail(userData.email);
+        setUserProfilePicture(userData.profile_picture || null);
+      }
     } catch (error) {
       console.log("Error retrieving user data:", error);
-      // Fallback to default data if retrieval fails
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to load profile data',
+      });
     }
   };
 
@@ -73,11 +82,188 @@ const SettingsPage = () => {
     retrieveUserData();
   }, []);
 
-  const router = useRouter();
+  const checkImageSize = async (uri) => {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (fileInfo.size > MAX_IMAGE_SIZE) {
+        throw new Error(`Image size exceeds ${MAX_IMAGE_SIZE / (1024 * 1024)}MB limit`);
+      }
+      return true;
+    } catch (error) {
+      console.error("Error checking image size:", error);
+      throw error;
+    }
+  };
+
+  const pickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'We need access to your photos to upload a profile picture');
+        return;
+      }
+
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled) {
+        await uploadImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Image picker error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to pick image',
+      });
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'We need access to your camera to take a photo');
+        return;
+      }
+
+      let result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
+
+      if (!result.canceled) {
+        await uploadImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Camera error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to take photo',
+      });
+    }
+  };
+
+  const uploadImage = async (uri) => {
+    setIsLoading(true);
+    try {
+      // First check the image size
+      await checkImageSize(uri);
+
+      const accessToken = await SecureStore.getItemAsync("access_token");
+
+      // Create FormData
+      const formData = new FormData();
+      formData.append('profile_picture', {
+        uri: uri,
+        name: 'profile.jpg',
+        type: 'image/jpeg'
+      });
+
+      const response = await fetch(`${API_BASE_URL}v1/users/profile/picture/`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'multipart/form-data',
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserProfilePicture(data.profile_picture);
+        Toast.show({
+          type: 'success',
+          text1: 'Profile Picture Updated',
+          text2: 'Your profile picture has been updated successfully',
+        });
+      } else {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error("Image upload error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Upload Failed',
+        text2: error.message.includes('exceeds')
+          ? error.message
+          : 'There was an issue updating your profile picture',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const removeProfilePicture = async () => {
+    setIsLoading(true);
+    try {
+      const accessToken = await SecureStore.getItemAsync("access_token");
+      const response = await fetch(`${API_BASE_URL}v1/users/profile/picture/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.ok) {
+        setUserProfilePicture(null);
+        Toast.show({
+          type: 'success',
+          text1: 'Profile Picture Removed',
+          text2: 'Your profile picture has been removed',
+        });
+      } else {
+        throw new Error('Failed to remove profile picture');
+      }
+    } catch (error) {
+      console.error("Remove image error:", error);
+      Toast.show({
+        type: 'error',
+        text1: 'Remove Failed',
+        text2: error.message || 'There was an issue removing your profile picture',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      "Profile Picture",
+      "Choose an option",
+      [
+        {
+          text: "Take Photo",
+          onPress: () => takePhoto(),
+        },
+        {
+          text: "Choose from Library",
+          onPress: () => pickImage(),
+        },
+        ...(userProfilePicture ? [{
+          text: "Remove Current Photo",
+          onPress: () => removeProfilePicture(),
+          style: "destructive",
+        }] : []),
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   const handleLogout = async () => {
     try {
-      // Clear all stored authentication tokens and user data
       await Promise.all([
         SecureStore.deleteItemAsync("access_token"),
         SecureStore.deleteItemAsync("refresh_token"),
@@ -86,10 +272,7 @@ const SettingsPage = () => {
         SecureStore.deleteItemAsync("userProfilePicture"),
       ]);
 
-      // Navigate to login screen
       router.push("/login");
-
-      // Optional: Show success message
       Toast.show({
         type: 'success',
         text1: 'Logged Out',
@@ -116,24 +299,47 @@ const SettingsPage = () => {
           />
         </TouchableOpacity>
       </View>
+
       <ScrollView vertical showsVerticalScrollIndicator={false}>
-        {/* User Profile Section with Custom Initials Image */}
         <View style={styles.profileContainer}>
-          <View style={styles.customProfilePicture}>
-            <Text style={styles.initials}>{getUserInitials(userName)}</Text>
-          </View>
+          <TouchableOpacity
+            onPress={showImageOptions}
+            style={styles.profilePictureContainer}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <View style={[styles.profilePicture, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color="#fff" />
+              </View>
+            ) : userProfilePicture ? (
+              <Image
+                source={{ uri: userProfilePicture }}
+                style={styles.profilePicture}
+              />
+            ) : (
+              <View style={styles.defaultProfilePicture}>
+                <Text style={styles.initials}>{getUserInitials(userName)}</Text>
+              </View>
+            )}
+            <View style={styles.uploadIconContainer}>
+              <Icon
+                name={userProfilePicture ? "edit" : "add-a-photo"}
+                size={responsiveFontSize(16)}
+                color="#fff"
+              />
+            </View>
+          </TouchableOpacity>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{userName}</Text>
             <Text style={styles.profileEmail}>{userEmail}</Text>
           </View>
         </View>
 
-        {/* Account Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>ACCOUNT</Text>
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Edit Profile Pressed")}
+            onPress={() => navigation.navigate("editprofile/index")}
           >
             <Text style={styles.listItemText}>Edit Profile</Text>
             <Image
@@ -176,7 +382,6 @@ const SettingsPage = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Privacy & Security Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>PRIVACY & SECURITY</Text>
           <TouchableOpacity
@@ -213,7 +418,6 @@ const SettingsPage = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Notifications */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>NOTIFICATIONS</Text>
           <TouchableOpacity
@@ -250,7 +454,6 @@ const SettingsPage = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Language & Regional Settings */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>LANGUAGE & REGIONAL SETTINGS</Text>
           <TouchableOpacity
@@ -348,14 +551,15 @@ const SettingsPage = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
+          disabled={isLoading}
         >
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
+      <Toast />
     </View>
   );
 };
@@ -364,103 +568,119 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: getSafeAreaTop(), // Add safe area padding
+    paddingTop: getSafeAreaTop(),
   },
   settingsLabelContainer: {
-    paddingVertical: height * 0.02, // 2% of screen height for vertical padding
-    paddingHorizontal: width * 0.04, // 4% of screen width for horizontal padding
+    paddingVertical: height * 0.02,
+    paddingHorizontal: width * 0.04,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   settingsLabel: {
-    fontSize: responsiveFontSize(20), // Use responsive font size
-    fontWeight: "700",
-    // Add minimum and maximum font size constraints
     fontSize: Math.max(Math.min(responsiveFontSize(20), 24), 18),
+    fontWeight: "700",
   },
   iconContainer: {
-    padding: width * 0.02, // Responsive padding (2% of screen width)
+    padding: width * 0.02,
   },
   icon: {
-    width: width * 0.05, // Responsive width (5% of screen width)
-    height: width * 0.05, // Responsive height (5% of screen width)
+    width: width * 0.05,
+    height: width * 0.05,
   },
   profileContainer: {
     flexDirection: "row",
-    padding: width * 0.05, // Responsive padding (5% of screen width)
+    padding: width * 0.05,
     alignItems: "center",
   },
-  customProfilePicture: {
-    width: width * 0.2, // Responsive width (20% of screen width)
-    height: width * 0.2, // Responsive height (20% of screen width)
-    borderRadius: width * 0.1, // Responsive border radius (10% of screen width)
+  profilePictureContainer: {
+    position: 'relative',
+  },
+  profilePicture: {
+    width: width * 0.2,
+    height: width * 0.2,
+    borderRadius: width * 0.1,
+    marginRight: width * 0.04,
+  },
+  loadingContainer: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  defaultProfilePicture: {
+    width: width * 0.2,
+    height: width * 0.2,
+    borderRadius: width * 0.1,
     backgroundColor: "#333",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: width * 0.04, // Responsive margin (4% of screen width)
+    marginRight: width * 0.04,
   },
   initials: {
-    fontSize: responsiveFontSize(14), // Use responsive font size
+    fontSize: responsiveFontSize(14),
     color: "#fff",
+    fontWeight: 'bold',
+  },
+  uploadIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: width * 0.04,
+    backgroundColor: '#007AFF',
+    borderRadius: 20,
+    padding: 5,
   },
   profileInfo: {
     justifyContent: "center",
   },
   profileName: {
-    fontSize: responsiveFontSize(16), // Use responsive font size
+    fontSize: responsiveFontSize(17),
     fontWeight: "500",
     color: "#0A0A0A",
   },
   profileEmail: {
-    fontSize: responsiveFontSize(12), // Use responsive font size
+    fontSize: responsiveFontSize(14),
     fontWeight: "400",
     color: "#828282",
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "#ddd",
-    marginVertical: height * 0.02, // Responsive margin (2% of screen height)
   },
   sectionContainer: {
-    marginHorizontal: width * 0.05, // Responsive margin (5% of screen width)
-    marginBottom: height * 0.02, // Responsive margin (2% of screen height)
+    marginHorizontal: width * 0.05,
+    marginBottom: height * 0.02,
   },
   sectionTitle: {
-    fontSize: responsiveFontSize(12), // Use responsive font size
+    fontSize: responsiveFontSize(12),
     fontWeight: "400",
     color: "#828282",
-    marginBottom: height * 0.01, // Responsive margin (1% of screen height)
+    marginBottom: height * 0.01,
   },
   listItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: height * 0.018, // Responsive padding (1% of screen height)
+    paddingVertical: height * 0.018,
     paddingHorizontal: width * 0.01,
   },
   listItemText: {
-    fontSize: responsiveFontSize(16), // Use responsive font size
+    fontSize: responsiveFontSize(16),
     fontWeight: "500",
     color: "#0A0A0A",
   },
   arrowIcon: {
-    width: width * 0.05, // Responsive width (5% of screen width)
-    height: width * 0.05, // Responsive height (5% of screen width)
+    width: width * 0.05,
+    height: width * 0.05,
   },
   listItemSeparator: {
     height: 1,
     backgroundColor: "#ccc",
   },
   logoutButton: {
-    margin: width * 0.05, // Responsive margin (5% of screen width)
-    padding: width * 0.03, // Responsive padding (3% of screen width)
+    margin: width * 0.05,
+    padding: width * 0.03,
     backgroundColor: "#000",
     borderRadius: 5,
     alignItems: "center",
   },
   logoutButtonText: {
-    fontSize: responsiveFontSize(16), // Use responsive font size
+    fontSize: responsiveFontSize(16),
     color: "#fff",
   },
 });

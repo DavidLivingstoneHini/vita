@@ -17,7 +17,6 @@ import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import Toast from 'react-native-toast-message';
-import api from "../../services/api";
 import * as SecureStore from "expo-secure-store";
 import { useNavigation } from "@react-navigation/native";
 import * as WebBrowser from 'expo-web-browser';
@@ -29,10 +28,10 @@ const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const [passwordVisibility, setPasswordVisibility] = useState(true);
-  const [email, setEmail] = useState("");
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [emailError, setEmailError] = useState("");
+  const [emailOrPhoneError, setEmailOrPhoneError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const router = useRouter();
   const navigation = useNavigation();
@@ -42,7 +41,6 @@ export default function LoginScreen() {
     iosClientId: '454261196558-pqg607nr354prbj3526uabnohka4lpk1.apps.googleusercontent.com',
     androidClientId: '454261196558-jngnv4vq2rfp79o8h2ju5mu2amrcn614.apps.googleusercontent.com',
     webClientId: '539163820187-og6r7smr5uuo48kvcap399urnfid7blv.apps.googleusercontent.com',
-    // redirectUri: 'https://auth.expo.io/@your-username/your-app-slug'
   });
 
   const API_BASE_URL = "http://192.168.100.34:8000/api/";
@@ -87,16 +85,20 @@ export default function LoginScreen() {
 
   const validateFields = () => {
     let isValid = true;
-    if (!email) {
-      setEmailError("Email is required");
+
+    if (!emailOrPhone) {
+      setEmailOrPhoneError("Email or phone number is required");
       isValid = false;
     } else {
-      setEmailError("");
+      setEmailOrPhoneError("");
     }
 
-    const goToHomeTab = () => {
-      navigation.navigate("tabs", { screen: "Home" }); // Navigate to the Home tab
-    };
+    if (!password) {
+      setPasswordError("Password is required");
+      isValid = false;
+    } else {
+      setPasswordError("");
+    }
 
     return isValid;
   };
@@ -114,7 +116,7 @@ export default function LoginScreen() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
+          email_or_phone: emailOrPhone,
           password,
         }),
       });
@@ -122,30 +124,27 @@ export default function LoginScreen() {
       const responseData = await response.json();
 
       if (!response.ok) {
-        // Handle different error response formats
-        const errorMessage = responseData.detail ||
+        const errorMessage = responseData.email_or_phone?.[0] ||
+          responseData.detail ||
           responseData.message ||
-          (responseData.email ? responseData.email[0] : null) ||
           'Login failed. Please try again.';
         throw new Error(errorMessage);
       }
 
-      // Store tokens only if they exist in response
+      // Store tokens and user data
       if (responseData.access) {
         await SecureStore.setItemAsync("access_token", responseData.access);
       }
       if (responseData.refresh) {
         await SecureStore.setItemAsync("refresh_token", responseData.refresh);
       }
-
-      // Store user data
       if (responseData.user) {
         await SecureStore.setItemAsync("full_name", responseData.user.full_name || "");
         await SecureStore.setItemAsync("email", responseData.user.email || "");
+        await SecureStore.setItemAsync("phone_number", responseData.user.phone_number || "");
         await SecureStore.setItemAsync("userProfilePicture", responseData.user.profile_picture || "");
       }
 
-      // Navigate to home
       router.push("/(tabs)/home");
 
       Toast.show({
@@ -154,7 +153,6 @@ export default function LoginScreen() {
         text2: 'Welcome back!',
       });
     } catch (error) {
-      console.error("Sign-in error:", error);
       Toast.show({
         type: 'error',
         text1: 'Login Error',
@@ -167,18 +165,71 @@ export default function LoginScreen() {
     }
   };
 
-  const getErrorMessage = (error) => {
-    if (error.response && error.response.data) {
-      return error?.message || "Invalid email or password";
-    } else {
-      return "An unknown error occurred. Please try again.";
+  const handleForgotPassword = async () => {
+    if (!emailOrPhone) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter your email to reset password',
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}v1/users/password/reset/request/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailOrPhone.includes('@') ? emailOrPhone : null,
+        }),
+      });
+
+      // First check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error('Password reset request failed. Please try again.');
+      }
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          responseData.detail ||
+          responseData.email?.[0] ||
+          responseData.message ||
+          'Password reset request failed'
+        );
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'If this email exists, you will receive a password reset link shortly',
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'Failed to process password reset',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.back()}>
           <AntDesign name="arrowleft" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Sign in</Text>
@@ -203,20 +254,22 @@ export default function LoginScreen() {
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <TextInput
-                style={[styles.input, emailError ? styles.inputError : null]}
-                placeholder="Email"
+                style={[styles.input, emailOrPhoneError ? styles.inputError : null]}
+                placeholder="Email or Phone Number"
                 placeholderTextColor="#808080"
-                value={email}
-                onChangeText={setEmail}
+                value={emailOrPhone}
+                onChangeText={setEmailOrPhone}
+                keyboardType="email-address"
+                autoCapitalize="none"
                 onBlur={() => {
-                  if (!email) {
-                    setEmailError("Email is required");
+                  if (!emailOrPhone) {
+                    setEmailOrPhoneError("Email or phone number is required");
                   } else {
-                    setEmailError("");
+                    setEmailOrPhoneError("");
                   }
                 }}
               />
-              {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+              {emailOrPhoneError ? <Text style={styles.errorText}>{emailOrPhoneError}</Text> : null}
             </View>
 
             <View style={styles.inputWrapper}>
@@ -248,7 +301,10 @@ export default function LoginScreen() {
               {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
             </View>
 
-            <TouchableOpacity style={styles.forgotPasswordContainer}>
+            <TouchableOpacity
+              style={styles.forgotPasswordContainer}
+              onPress={handleForgotPassword}
+            >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
@@ -300,10 +356,10 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.signUpPrompt}>
-            <Text>
+            <Text style={styles.promptText}>
               Don't have an account?{" "}
               <Text style={styles.signUpLink}>
-                <Link href="/signup">Sign up</Link>
+                <Link href="/signup" style={styles.linkText}>Sign up</Link>
               </Text>
             </Text>
           </View>
@@ -460,4 +516,3 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
-

@@ -18,41 +18,42 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import Toast from 'react-native-toast-message';
-import { GoogleAuthProvider, FacebookAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE_URL = "http://192.168.100.34:8000/api/";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignUpScreen() {
   const [passwordVisibility, setPasswordVisibility] = useState(true);
-  const [passwordVisibility2, setPasswordVisibility2] = useState(true);
+  const [confirmPasswordVisibility, setConfirmPasswordVisibility] = useState(true);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [passwordMatch, setPasswordMatch] = useState(true);
 
   // Error states
   const [fullNameError, setFullNameError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
   const [phoneNumberError, setPhoneNumberError] = useState("");
-  const [repeatPasswordError, setRepeatPasswordError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   const router = useRouter();
 
+  // Google Auth Setup
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: '454261196558-pqg607nr354prbj3526uabnohka4lpk1.apps.googleusercontent.com',
     androidClientId: '454261196558-jngnv4vq2rfp79o8h2ju5mu2amrcn614.apps.googleusercontent.com',
     webClientId: '539163820187-og6r7smr5uuo48kvcap399urnfid7blv.apps.googleusercontent.com',
   });
+
+  const API_BASE_URL = "http://192.168.100.34:8000/api/";
 
   // Handle Google Auth Response
   useEffect(() => {
@@ -90,52 +91,6 @@ export default function SignUpScreen() {
     }
   };
 
-  const handleFacebookSignIn = async () => {
-    try {
-      setLoading(true);
-
-      // Initialize Facebook SDK
-      await Facebook.initializeAsync({
-        appId: 'YOUR_FACEBOOK_APP_ID',
-      });
-
-      // Log in with permissions
-      const { type, token } = await Facebook.logInWithReadPermissionsAsync({
-        permissions: ['public_profile', 'email'],
-      });
-
-      if (type === 'success') {
-        // Create a Firebase credential with the Facebook access token
-        const facebookCredential = FacebookAuthProvider.credential(token);
-
-        // Sign in with the credential
-        const userCredential = await signInWithCredential(auth, facebookCredential);
-
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Facebook sign-in successful!',
-          position: 'bottom',
-        });
-
-        router.push("/home");
-      } else {
-        throw new Error('Facebook login was cancelled');
-      }
-    } catch (error) {
-      console.error('Facebook sign-in error:', error);
-
-      Toast.show({
-        type: 'error',
-        text1: 'Facebook Sign-In Error',
-        text2: error.message,
-        position: 'top',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const validateFields = () => {
     let isValid = true;
 
@@ -144,24 +99,27 @@ export default function SignUpScreen() {
     setEmailError("");
     setPhoneNumberError("");
     setPasswordError("");
-    setRepeatPasswordError("");
+    setConfirmPasswordError("");
 
     if (!fullName.trim()) {
       setFullNameError("Full name is required");
       isValid = false;
     }
 
-    if (!email.trim()) {
-      setEmailError("Email is required");
+    if (!email.trim() && !phoneNumber.trim()) {
+      setEmailError("Email or phone number is required");
+      setPhoneNumberError("Email or phone number is required");
       isValid = false;
-    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      setEmailError("Please enter a valid email");
-      isValid = false;
-    }
+    } else {
+      if (email.trim() && !/^\S+@\S+\.\S+$/.test(email)) {
+        setEmailError("Please enter a valid email");
+        isValid = false;
+      }
 
-    if (!phoneNumber.trim()) {
-      setPhoneNumberError("Phone number is required");
-      isValid = false;
+      if (phoneNumber.trim() && !/^\+?[0-9]{10,15}$/.test(phoneNumber)) {
+        setPhoneNumberError("Please enter a valid phone number");
+        isValid = false;
+      }
     }
 
     if (!password) {
@@ -172,8 +130,8 @@ export default function SignUpScreen() {
       isValid = false;
     }
 
-    if (password !== repeatPassword) {
-      setRepeatPasswordError("Passwords don't match");
+    if (password !== confirmPassword) {
+      setConfirmPasswordError("Passwords don't match");
       isValid = false;
     }
 
@@ -192,9 +150,10 @@ export default function SignUpScreen() {
         },
         body: JSON.stringify({
           full_name: fullName,
-          email,
+          email: email.trim() || null,
+          phone_number: phoneNumber.trim() || null,
           password,
-          phone_number: phoneNumber,
+          password2: confirmPassword,
         }),
       });
 
@@ -204,6 +163,7 @@ export default function SignUpScreen() {
         throw new Error(
           data.detail ||
           data.email?.[0] ||
+          data.phone_number?.[0] ||
           data.non_field_errors?.[0] ||
           'Sign-up failed. Please try again.'
         );
@@ -221,12 +181,18 @@ export default function SignUpScreen() {
       if (data.user) {
         await SecureStore.setItemAsync("full_name", data.user.full_name || "");
         await SecureStore.setItemAsync("email", data.user.email || "");
+        await SecureStore.setItemAsync("phone_number", data.user.phone_number || "");
+      }
+
+      let successMessage = 'Account created successfully!';
+      if (data.user.email && !data.user.is_email_verified) {
+        successMessage += ' Please check your email for verification instructions.';
       }
 
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Account created successfully!',
+        text2: successMessage,
       });
 
       router.push("/(tabs)/home");
@@ -272,7 +238,7 @@ export default function SignUpScreen() {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={[styles.input, fullNameError ? styles.inputError : null]}
-                placeholder="Name"
+                placeholder="Full Name"
                 placeholderTextColor="#808080"
                 value={fullName}
                 onChangeText={setFullName}
@@ -290,13 +256,17 @@ export default function SignUpScreen() {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={[styles.input, emailError ? styles.inputError : null]}
-                placeholder="Email"
+                placeholder="Email (optional if using phone)"
                 placeholderTextColor="#808080"
                 value={email}
                 onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
                 onBlur={() => {
-                  if (!email) {
-                    setEmailError("Email is required");
+                  if (!email && !phoneNumber) {
+                    setEmailError("Email or phone number is required");
+                  } else if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+                    setEmailError("Please enter a valid email");
                   } else {
                     setEmailError("");
                   }
@@ -308,13 +278,16 @@ export default function SignUpScreen() {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={[styles.input, phoneNumberError ? styles.inputError : null]}
-                placeholder="Phone number"
+                placeholder="Phone Number (optional if using email)"
                 placeholderTextColor="#808080"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
                 onBlur={() => {
-                  if (!phoneNumber) {
-                    setPhoneNumberError("Phone Number is required");
+                  if (!email && !phoneNumber) {
+                    setPhoneNumberError("Email or phone number is required");
+                  } else if (phoneNumber && !/^\+?[0-9]{10,15}$/.test(phoneNumber)) {
+                    setPhoneNumberError("Please enter a valid phone number");
                   } else {
                     setPhoneNumberError("");
                   }
@@ -334,6 +307,8 @@ export default function SignUpScreen() {
                 onBlur={() => {
                   if (!password) {
                     setPasswordError("Password is required");
+                  } else if (password.length < 8) {
+                    setPasswordError("Password must be at least 8 characters");
                   } else {
                     setPasswordError("");
                   }
@@ -354,34 +329,31 @@ export default function SignUpScreen() {
 
             <View style={styles.inputWrapper}>
               <TextInput
-                style={[styles.input, repeatPasswordError ? styles.inputError : null]}
-                placeholder="Repeat Password"
+                style={[styles.input, confirmPasswordError ? styles.inputError : null]}
+                placeholder="Confirm Password"
                 placeholderTextColor="#808080"
-                value={repeatPassword}
-                onChangeText={(text) => {
-                  setRepeatPassword(text);
-                  setPasswordMatch(text === password);
-                }}
-                secureTextEntry={passwordVisibility2}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={confirmPasswordVisibility}
                 onBlur={() => {
-                  if (password !== repeatPassword) {
-                    setRepeatPasswordError("Passwords do not match");
+                  if (password !== confirmPassword) {
+                    setConfirmPasswordError("Passwords don't match");
                   } else {
-                    setRepeatPasswordError("");
+                    setConfirmPasswordError("");
                   }
                 }}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
-                onPress={() => setPasswordVisibility2(!passwordVisibility2)}
+                onPress={() => setConfirmPasswordVisibility(!confirmPasswordVisibility)}
               >
                 <MaterialCommunityIcons
-                  name={passwordVisibility2 ? "eye-off" : "eye"}
+                  name={confirmPasswordVisibility ? "eye-off" : "eye"}
                   size={24}
                   color="#808080"
                 />
               </TouchableOpacity>
-              {repeatPasswordError ? <Text style={styles.errorText}>{repeatPasswordError}</Text> : null}
+              {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
             </View>
           </View>
 
@@ -389,7 +361,7 @@ export default function SignUpScreen() {
             <TouchableOpacity
               style={styles.signUpButton}
               onPress={handleSignUp}
-              disabled={loading || !passwordMatch}
+              disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -420,11 +392,7 @@ export default function SignUpScreen() {
                 <Text style={styles.socialButtonText}>Continue with Google</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.socialButton}
-                onPress={handleFacebookSignIn}
-                disabled={loading}
-              >
+              <TouchableOpacity style={styles.socialButton}>
                 <Image
                   source={require("../../assets/images/logos_facebook.png")}
                   style={styles.socialIcon}
@@ -436,10 +404,10 @@ export default function SignUpScreen() {
           </View>
 
           <View style={styles.signInPrompt}>
-            <Text>
+            <Text style={styles.promptText}>
               Already have an account?{" "}
               <Text style={styles.signInLink}>
-                <Link href="/login">Sign in</Link>
+                <Link href="/login" style={styles.linkText}>Sign in</Link>
               </Text>
             </Text>
           </View>
@@ -586,5 +554,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
   },
+  linkText: {
+    color: "#0066cc",
+    textDecorationLine: "none",
+  },
 });
-
