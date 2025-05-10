@@ -256,7 +256,7 @@ export default function SignUpScreen() {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={[styles.input, emailError ? styles.inputError : null]}
-                placeholder="Email (optional if using phone)"
+                placeholder="Email"
                 placeholderTextColor="#808080"
                 value={email}
                 onChangeText={setEmail}
@@ -278,7 +278,7 @@ export default function SignUpScreen() {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={[styles.input, phoneNumberError ? styles.inputError : null]}
-                placeholder="Phone Number (optional if using email)"
+                placeholder="Phone Number (optional)"
                 placeholderTextColor="#808080"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
@@ -554,8 +554,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
   },
-  linkText: {
-    color: "#0066cc",
-    textDecorationLine: "none",
-  },
+  // linkText: {
+  //   color: "#0066cc",
+  //   textDecorationLine: "none",
+  // },
 });
