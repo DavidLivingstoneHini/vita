@@ -97,7 +97,7 @@ const BMICalculator = ({ navigation }) => {
         <ScrollView contentContainerStyle={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push("/home")}>
+                <TouchableOpacity onPress={() => router.back()}>
                     <Image
                         source={require("../../assets/images/back-arrow.png")}
                         style={styles.backArrow}

@@ -37,7 +37,7 @@ const SypmtomChecker1 = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push("/home")}>
+                <TouchableOpacity onPress={() => router.back()}>
                     <Icon name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Symptom Checker</Text>

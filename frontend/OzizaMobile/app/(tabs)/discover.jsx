@@ -13,6 +13,9 @@ import {
   SafeAreaView,
   PixelRatio,
   Platform,
+  ActivityIndicator,
+  Linking,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -41,13 +44,35 @@ const spacing = {
   xxl: normalize(40),
 };
 
+// API configuration
+const API_KEY = '21cd8ba8ef5047319e95e3993edd1b17';
+const HEALTH_SOURCES = 'medical-news-today,healthline';
+
+// Fallback health-related image URLs
+const FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1498837167922-ddd27525d352', // Healthy food
+  'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b', // Yoga
+  'https://images.unsplash.com/photo-1538805060514-97d9cc17730c', // Running
+  'https://images.unsplash.com/photo-1518611012118-696072aa579a', // Meditation
+  'https://images.unsplash.com/photo-1535914254981-b5012eebbd15', // Doctor
+  'https://images.unsplash.com/photo-1545205597-3d9d02c29597', // Gym
+  'https://images.unsplash.com/photo-1517430816045-df4b7de11d1d', // Vegetables
+  'https://images.unsplash.com/photo-1530026186672-2cd00ffc50fe', // Sleep
+];
+
 export default function Discover() {
   const [newsBackgroundUrl, setNewsBackgroundUrl] = useState('');
   const [newsImageUrl, setNewsImageUrl] = useState('');
   const [visibleArticles, setVisibleArticles] = useState(4);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const articlesPerPage = 4;
 
-  const topics = [
+  const categories = [
+    'All',
     'Nutrition',
     'Fitness',
     'Mental Health',
@@ -60,45 +85,126 @@ export default function Discover() {
     'Strength Training',
   ];
 
-  const allArticles = [
-    { id: '1', category: 'Nutrition', readTime: '5 min', title: 'Top 10 Superfoods for a Healthy Heart' },
-    { id: '2', category: 'Fitness', readTime: '4 min', title: 'Effective Home Workouts for Beginners' },
-    { id: '3', category: 'Mental Health', readTime: '6 min', title: 'Managing Stress and Anxiety in Daily Life' },
-    { id: '4', category: 'Sleep', readTime: '3 min', title: 'Improving Your Sleep Quality: A Guide' },
-    { id: '5', category: 'Nutrition', readTime: '7 min', title: 'The Role of Vitamins and Minerals in Overall Health' },
-    { id: '6', category: 'Exercise', readTime: '5 min', title: 'The Benefits of Regular Physical Activity' },
-    { id: '7', category: 'Wellness', readTime: '4 min', title: 'Creating a Balanced and Healthy Lifestyle' },
-    { id: '8', category: 'Preventative Care', readTime: '6 min', title: 'Regular Check-ups and Screenings: Why They Matter' },
-    { id: '9', category: 'Cardio', readTime: '3 min', title: 'Best Cardio Exercises for Weight Loss' },
-    { id: '10', category: 'Strength Training', readTime: '7 min', title: 'Building Muscle and Strength: A Comprehensive Guide' },
-    { id: '11', category: 'Nutrition', readTime: '5 min', title: 'Understanding Macronutrients: Proteins, Fats, and Carbs' },
-    { id: '12', category: 'Fitness', readTime: '4 min', title: 'Yoga and Pilates: Benefits for Body and Mind' },
-    { id: '13', category: 'Mental Health', readTime: '6 min', title: 'Mindfulness Techniques for a Calmer Life' },
-  ];
+  const [allArticles, setAllArticles] = useState([]);
+  const [filteredArticles, setFilteredArticles] = useState([]);
 
-  const [trendingArticles, setTrendingArticles] = useState(allArticles.slice(0, visibleArticles));
-
-  const getRandomImageUrl = (width, height, seed) => {
-    const imageUrl = `https://picsum.photos/seed/${seed}/${Math.floor(width)}/${Math.floor(height)}`;
-    return imageUrl;
+  // Get a fallback health image
+  const getFallbackImage = (index) => {
+    return FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
   };
 
-  useEffect(() => {
-    setNewsBackgroundUrl(getRandomImageUrl(SCREEN_WIDTH, SCREEN_HEIGHT * 0.3, 'health-news-bg'));
-    setNewsImageUrl(getRandomImageUrl(normalize(200), normalize(200), 'health-news'));
-  }, []);
+  // Fetch health articles from NewsAPI
+  const fetchHealthArticles = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `https://newsapi.org/v2/everything?sources=${HEALTH_SOURCES}&apiKey=${API_KEY}&pageSize=20`
+      );
+      const data = await response.json();
 
-  const handleShowMore = () => {
-    setVisibleArticles((prevVisibleArticles) => {
-      const newVisibleArticles = prevVisibleArticles + articlesPerPage;
-      setTrendingArticles(allArticles.slice(0, newVisibleArticles));
-      return newVisibleArticles;
+      if (data.articles) {
+        // Transform API data to match our structure
+        const formattedArticles = data.articles.map((article, index) => ({
+          id: `${index}`,
+          title: article.title,
+          description: article.description,
+          url: article.url,
+          urlToImage: article.urlToImage || getFallbackImage(index),
+          publishedAt: new Date(article.publishedAt).toLocaleDateString(),
+          category: categories[Math.floor(Math.random() * (categories.length - 1)) + 1] || 'Wellness',
+          readTime: `${Math.floor(Math.random() * 7) + 3} min`,
+          content: article.content,
+        }));
+
+        setAllArticles(formattedArticles);
+        setFilteredArticles(formattedArticles);
+        setLoading(false);
+
+        // Set featured images from first two articles
+        if (data.articles.length > 0) {
+          setNewsBackgroundUrl(data.articles[0].urlToImage || getFallbackImage(0));
+          setNewsImageUrl(data.articles[1]?.urlToImage || getFallbackImage(1));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching articles:', err);
+      setError('Failed to load health articles. Please try again later.');
+      setLoading(false);
+
+      // Fallback to mock data if API fails
+      const mockArticles = generateMockArticles();
+      setAllArticles(mockArticles);
+      setFilteredArticles(mockArticles);
+      setNewsBackgroundUrl(getFallbackImage(0));
+      setNewsImageUrl(getFallbackImage(1));
+    }
+  };
+
+  // Generate mock articles for fallback
+  const generateMockArticles = () => {
+    return Array.from({ length: 13 }, (_, i) => ({
+      id: `${i + 1}`,
+      title: `Health Article ${i + 1}`,
+      description: `This is a sample health article about ${categories[i % categories.length]}`,
+      url: 'https://example.com',
+      urlToImage: getFallbackImage(i),
+      publishedAt: new Date().toLocaleDateString(),
+      category: categories[(i % (categories.length - 1)) + 1] || 'Wellness',
+      readTime: `${Math.floor(Math.random() * 7) + 3} min`,
+      content: `This is the full content of health article ${i + 1}. In a real app, this would be fetched from the API.`,
+    }));
+  };
+
+  // Filter articles by category
+  const filterArticles = (category) => {
+    setSelectedCategory(category);
+    if (category === 'All') {
+      setFilteredArticles(allArticles);
+    } else {
+      const filtered = allArticles.filter(article => article.category === category);
+      setFilteredArticles(filtered);
+    }
+    setVisibleArticles(articlesPerPage);
+    Keyboard.dismiss(); // Dismiss keyboard when filtering
+  };
+
+  // Filter articles by search query
+  const searchArticles = (query) => {
+    setSearchQuery(query);
+    if (query === '') {
+      filterArticles(selectedCategory);
+    } else {
+      const filtered = allArticles.filter(article =>
+        article.title.toLowerCase().includes(query.toLowerCase()) ||
+        article.description.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredArticles(filtered);
+    }
+  };
+
+  // Open article in browser
+  const openArticle = (url) => {
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        console.log("Don't know how to open URI: " + url);
+      }
     });
   };
 
+  // Load more articles
+  const handleShowMore = () => {
+    setVisibleArticles(prev => prev + articlesPerPage);
+  };
+
+  useEffect(() => {
+    fetchHealthArticles();
+  }, []);
+
   const renderHeader = () => (
     <>
-      {/* Search Box and Settings Icon */}
+      {/* Search Box */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBoxWrapper}>
           <Ionicons name="search" size={normalize(20)} color="#666" style={styles.searchIcon} />
@@ -106,6 +212,10 @@ export default function Discover() {
             style={styles.searchBox}
             placeholder="Search health topics..."
             placeholderTextColor="#808080"
+            value={searchQuery}
+            onChangeText={searchArticles}
+            returnKeyType="search"
+            onSubmitEditing={() => Keyboard.dismiss()}
           />
         </View>
       </View>
@@ -119,16 +229,17 @@ export default function Discover() {
         >
           <View style={styles.overlay} />
           <View style={styles.newsContent}>
-            {/* Image on the left */}
             <Image
               source={{ uri: newsImageUrl }}
               style={styles.newsImage}
               resizeMode="cover"
             />
-            {/* Text and button on the right */}
             <View style={styles.newsTextContent}>
               <Text style={styles.newsHeading}>Stay Informed on Health and Wellness</Text>
-              <TouchableOpacity style={styles.readMoreButton}>
+              <TouchableOpacity
+                style={styles.readMoreButton}
+                onPress={() => openArticle('https://www.healthline.com')}
+              >
                 <Text style={styles.readMoreText}>Learn More</Text>
               </TouchableOpacity>
             </View>
@@ -136,59 +247,112 @@ export default function Discover() {
         </ImageBackground>
       </View>
 
-      {/* Topics */}
+      {/* Categories */}
       <ScrollView
         horizontal={true}
         showsHorizontalScrollIndicator={false}
         style={styles.topicsContainer}
         contentContainerStyle={styles.topicsContentContainer}
       >
-        {topics.map((topic, index) => (
-          <TouchableOpacity key={index} style={styles.topicButton}>
-            <Text style={styles.topicText}>{topic}</Text>
+        {categories.map((category, index) => (
+          <TouchableOpacity
+            key={index}
+            style={[
+              styles.topicButton,
+              selectedCategory === category && styles.selectedTopicButton
+            ]}
+            onPress={() => filterArticles(category)}
+          >
+            <Text style={[
+              styles.topicText,
+              selectedCategory === category && styles.selectedTopicText
+            ]}>
+              {category}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       {/* Trending Articles Header */}
       <View style={styles.trendingHeader}>
-        <Text style={styles.sectionTitle}>Trending Health Articles</Text>
+        <Text style={styles.sectionTitle}>
+          {selectedCategory === 'All' ? 'Trending Health Articles' : `${selectedCategory} Articles`}
+        </Text>
       </View>
     </>
   );
 
-  const renderFooter = () => (
-    visibleArticles < allArticles.length && (
-      <TouchableOpacity style={styles.showMoreButton} onPress={handleShowMore}>
-        <Text style={styles.showMoreText}>Show more</Text>
-      </TouchableOpacity>
-    )
+  const renderArticleItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.articleContainer}
+      onPress={() => openArticle(item.url)}
+    >
+      <View style={styles.articleContent}>
+        <View style={styles.metadataContainer}>
+          <Text style={styles.categoryText}>{item.category}</Text>
+          <Text style={styles.readTimeText}> • {item.readTime}</Text>
+        </View>
+        <Text style={styles.articleTitle}>{item.title}</Text>
+        {item.description && (
+          <Text style={styles.articleDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
+        )}
+      </View>
+      <Image
+        source={{ uri: item.urlToImage }}
+        style={styles.articleImage}
+        resizeMode="cover"
+        defaultSource={require('../../assets/images/placeholder-image.jpg')} // Add a placeholder image in your assets
+      />
+    </TouchableOpacity>
   );
+
+  const renderFooter = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color="#000" style={styles.loadingIndicator} />;
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (filteredArticles.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No articles found for this category.</Text>
+        </View>
+      );
+    }
+
+    if (visibleArticles < filteredArticles.length) {
+      return (
+        <TouchableOpacity style={styles.showMoreButton} onPress={handleShowMore}>
+          <Text style={styles.showMoreText}>Show more</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
-        data={trendingArticles}
+        data={filteredArticles.slice(0, visibleArticles)}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.articleContainer}>
-            <View style={styles.articleContent}>
-              <View style={styles.metadataContainer}>
-                <Text style={styles.categoryText}>{item.category}</Text>
-                <Text style={styles.readTimeText}> • {item.readTime}</Text>
-              </View>
-              <Text style={styles.articleTitle}>{item.title}</Text>
-            </View>
-            <Image
-              source={{ uri: getRandomImageUrl(normalize(160), normalize(160), `health-article-${item.id}`) }}
-              style={styles.articleImage}
-              resizeMode="cover"
-            />
-          </View>
-        )}
+        renderItem={renderArticleItem}
         ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
         contentContainerStyle={styles.container}
+        refreshing={loading}
+        onRefresh={fetchHealthArticles}
+        keyboardShouldPersistTaps="always" // This fixes the keyboard issue
+        keyboardDismissMode="on-drag"
       />
     </SafeAreaView>
   );
@@ -202,6 +366,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.m,
     paddingTop: spacing.s,
+    paddingBottom: spacing.m,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -218,6 +383,7 @@ const styles = StyleSheet.create({
     borderRadius: normalize(8),
     paddingHorizontal: spacing.m,
     height: normalize(44),
+    backgroundColor: '#f5f5f5',
   },
   searchIcon: {
     marginRight: spacing.s,
@@ -226,9 +392,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: normalize(16),
-  },
-  settingsButton: {
-    padding: spacing.s,
   },
   newsSection: {
     height: SCREEN_HEIGHT * 0.25,
@@ -252,12 +415,12 @@ const styles = StyleSheet.create({
   },
   newsTextContent: {
     flex: 1,
-    marginLeft: spacing.m, // Add margin to separate text from image
+    marginLeft: spacing.m,
   },
   newsHeading: {
     color: '#fff',
     fontSize: normalize(15),
-    fontWeight: 600,
+    fontWeight: '600',
     marginBottom: spacing.s,
   },
   newsImage: {
@@ -290,14 +453,22 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.s,
     paddingHorizontal: spacing.m,
     borderWidth: 1.2,
-    borderColor: '#000',
+    borderColor: '#ddd',
     borderRadius: normalize(20),
     marginRight: spacing.s,
     marginBottom: spacing.s,
+    backgroundColor: '#f5f5f5',
+  },
+  selectedTopicButton: {
+    borderColor: '#000',
+    backgroundColor: '#000',
   },
   topicText: {
     fontSize: normalize(14),
     color: '#000',
+  },
+  selectedTopicText: {
+    color: '#fff',
   },
   trendingHeader: {
     flexDirection: 'row',
@@ -315,6 +486,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.m,
     padding: spacing.s,
+    backgroundColor: '#f9f9f9',
+    borderRadius: normalize(8),
   },
   articleContent: {
     flex: 1,
@@ -328,6 +501,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontWeight: '600',
     fontSize: normalize(13),
+    color: '#333',
   },
   readTimeText: {
     color: '#666',
@@ -336,6 +510,12 @@ const styles = StyleSheet.create({
   articleTitle: {
     fontSize: normalize(15),
     fontWeight: '500',
+    marginBottom: spacing.xs,
+  },
+  articleDescription: {
+    fontSize: normalize(13),
+    color: '#666',
+    lineHeight: normalize(18),
   },
   articleImage: {
     width: normalize(80),
@@ -346,10 +526,36 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.s,
     paddingHorizontal: spacing.m,
     alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: normalize(8),
+    marginTop: spacing.s,
   },
   showMoreText: {
-    color: '#666',
+    color: '#000',
     fontWeight: 'bold',
     fontSize: normalize(14),
+  },
+  loadingIndicator: {
+    marginVertical: spacing.l,
+  },
+  errorContainer: {
+    padding: spacing.m,
+    backgroundColor: '#ffeeee',
+    borderRadius: normalize(8),
+    marginTop: spacing.s,
+  },
+  errorText: {
+    color: '#ff4444',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    padding: spacing.m,
+    backgroundColor: '#f5f5f5',
+    borderRadius: normalize(8),
+    marginTop: spacing.s,
+  },
+  emptyText: {
+    color: '#666',
+    textAlign: 'center',
   },
 });

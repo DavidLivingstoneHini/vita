@@ -62,7 +62,7 @@ const InspirationScreen = ({ navigation }) => {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => router.push("/home")}
+            onPress={() => router.back()}
             style={styles.backButton}
           >
             <Image

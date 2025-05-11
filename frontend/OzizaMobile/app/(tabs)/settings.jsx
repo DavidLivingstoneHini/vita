@@ -70,7 +70,7 @@ const SettingsPage = () => {
       }
     } catch (error) {
       console.log("Error retrieving user data:", error);
-      Toast.show({
+      Toast.show({  
         type: 'error',
         text1: 'Error',
         text2: 'Failed to load profile data',

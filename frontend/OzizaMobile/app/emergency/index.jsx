@@ -145,7 +145,7 @@ export default function EmergencyServicesScreen() {
           <View style={styles.headerTop}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={() => router.push("/home")}
+              onPress={() => router.back()}
               disabled={isLoading}
             >
               <Ionicons name="arrow-back" size={responsiveFontSize(24)} color="#FFF" />

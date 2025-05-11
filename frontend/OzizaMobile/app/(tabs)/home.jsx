@@ -100,11 +100,11 @@ const Home = () => {
 
   const healthListItems = [
     { id: 1, image: ItemImage25, title: "Headache" },
-    { id: 2, image: ItemImage27, title: "Eczema" },
+    // { id: 2, image: ItemImage27, title: "Eczema" },
+    { id: 2, image: ItemImage3, title: "Phobia" },
     { id: 3, image: ItemImage2, title: "Hypertension" },
     { id: 4, image: ItemImage1, title: "Skin Bleaching" },
-    { id: 5, image: ItemImage3, title: "Phobia" },
-    { id: 6, image: ItemImage26, title: "Anxiety" },
+    { id: 5, image: ItemImage26, title: "Anxiety" },
   ];
 
   const healthListItems1 = [
@@ -242,8 +242,7 @@ const Home = () => {
     // Create a mapping between health condition titles and article IDs
     const conditionToArticleMap = {
       // Map specific health conditions to article IDs
-      "Headache": 7,       // Maps to Acne article (example)
-      "Eczema": 8,
+      "Headache": 7,
       "Hypertension": 9,
       "Anxiety": 4,
       "Skin Bleaching": 10,

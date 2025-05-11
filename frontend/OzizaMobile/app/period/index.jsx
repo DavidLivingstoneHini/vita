@@ -120,7 +120,7 @@ const PeriodTracker = () => {
         <ScrollView contentContainerStyle={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push("/home")}>
+                <TouchableOpacity onPress={() => router.back()}>
                     <Icon name="arrow-back" size={24} color="#444" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Period Tracker</Text>

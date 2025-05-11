@@ -87,7 +87,7 @@ const FindDoctorScreen = () => {
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push("/home")}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Image
             source={require("../../assets/images/back-arrow.png")}
             style={styles.backArrow}

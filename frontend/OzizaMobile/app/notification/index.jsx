@@ -1,9 +1,9 @@
-import React from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Platform } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Dimensions, Platform, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import Icon from "react-native-vector-icons/MaterialIcons"; // Or any other icon library
-// import { formatDistanceToNow } from 'date-fns'; // If you want relative dates
-// import { enUS } from 'date-fns/locale'
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { fetchNotifications } from "../../services/notificationService";
+import * as SecureStore from 'expo-secure-store';
 
 const { width, height } = Dimensions.get("window");
 
@@ -13,17 +13,28 @@ const responsiveFontSize = (size) => {
     return Math.ceil(size * scaleFactor);
 };
 
-// Function to handle safe area top padding
 const getSafeAreaTop = () => (Platform.OS === "ios" ? 40 : 20);
-
-const notifications = [
-    { id: 1, title: "New Message", message: "You have a new message from John.", time: "2 hours ago", type: 'message' }, // Added 'type'
-    { id: 2, title: "Appointment Reminder", message: "Your appointment is scheduled for tomorrow at 10 AM.", time: "1 day ago", type: 'reminder' },
-    { id: 3, title: "Health Tip", message: "Drink more water to stay hydrated!", time: "3 days ago", type: 'health' },
-];
 
 const NotificationsScreen = () => {
     const router = useRouter();
+    const [notifications, setNotifications] = useState([]);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const loadNotifications = async () => {
+        setRefreshing(true);
+        try {
+            const fetchedNotifications = await fetchNotifications();
+            setNotifications(fetchedNotifications);
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        loadNotifications();
+    }, []);
 
     const getIconForNotificationType = (type) => {
         switch (type) {
@@ -37,7 +48,6 @@ const NotificationsScreen = () => {
                 return 'notifications';
         }
     };
-
 
     const renderItem = ({ item }) => (
         <TouchableOpacity
@@ -71,6 +81,17 @@ const NotificationsScreen = () => {
                 renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
                 contentContainerStyle={styles.listContainer}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={loadNotifications}
+                    />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No notifications yet</Text>
+                    </View>
+                }
             />
         </View>
     );
@@ -87,11 +108,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingVertical: height * 0.02,
-        backgroundColor: '#f0f0f0', // Example: Header background
+        backgroundColor: '#f0f0f0',
     },
     title: {
-        fontSize: responsiveFontSize(22),  // Increased size
-        fontWeight: "700",              // Stronger weight
+        fontSize: responsiveFontSize(22),
+        fontWeight: "700",
         marginLeft: width * 0.02,
     },
     listContainer: {
@@ -102,12 +123,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: height * 0.015,
         paddingHorizontal: width * 0.03,
-        // borderBottomWidth: 1,   Removed the bottom border
-        // borderBottomColor: "#ccc",
         backgroundColor: "#F9F9F9",
-        borderRadius: 12,          // Increased corner radius
+        borderRadius: 12,
         marginBottom: height * 0.01,
-        shadowColor: "#000",       // Added shadow for depth
+        shadowColor: "#000",
         shadowOffset: {
             width: 0,
             height: 2,
@@ -143,7 +162,16 @@ const styles = StyleSheet.create({
         color: "#999",
         marginTop: 2,
     },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: height * 0.3,
+    },
+    emptyText: {
+        fontSize: responsiveFontSize(16),
+        color: '#999',
+    },
 });
 
 export default NotificationsScreen;
-

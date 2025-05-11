@@ -109,7 +109,7 @@ const MythDetail = () => {
                     <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-                    Exposing Mythss
+                    Exposing Myths
                 </Text>
                 <View style={styles.headerActions}>
                     <TouchableOpacity style={styles.actionIcon} onPress={handleShare}>

@@ -152,6 +152,9 @@ export default function LoginScreen() {
         text1: 'Login Successful',
         text2: 'Welcome back!',
       });
+
+      // Inside your handleLogin function after successful login
+      await initializePushNotifications();
     } catch (error) {
       Toast.show({
         type: 'error',

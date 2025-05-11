@@ -1,22 +1,63 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { useState, useEffect } from "react";
+import { View, ActivityIndicator } from "react-native";
 import Toast from 'react-native-toast-message';
 import { toastConfig } from "../utils/toastConfig";
 import TabLayout from "../app/(tabs)/_layout";
+import {
+  setupNotificationHandlers,
+  initializePushNotifications
+} from "../services/notificationService";
 
 export default function RootLayout() {
+  const router = useRouter();
   const [accessToken, setAccessToken] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkToken = async () => {
-      const storedAccessToken = await SecureStore.getItemAsync("access_token");
-      setAccessToken(storedAccessToken);
-      setAuthenticated(!!storedAccessToken); // Set authenticated state based on token presence
+    let notificationCleanup = () => { };
+    let tokenListenerCleanup = () => { };
+
+    const checkAuthAndSetupNotifications = async () => {
+      try {
+        const storedAccessToken = await SecureStore.getItemAsync("access_token");
+        setAccessToken(storedAccessToken);
+        const isAuthenticated = !!storedAccessToken;
+        setAuthenticated(isAuthenticated);
+
+        // Setup notification handlers (works for both auth states)
+        notificationCleanup = setupNotificationHandlers(router);
+
+        if (isAuthenticated) {
+          // Initialize notifications only for authenticated users
+          const cleanup = await initializePushNotifications();
+          tokenListenerCleanup = cleanup || (() => { });
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    checkToken();
+
+    checkAuthAndSetupNotifications();
+
+    return () => {
+      // Clean up all listeners
+      notificationCleanup();
+      tokenListenerCleanup();
+    };
   }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <>
@@ -52,6 +93,7 @@ export default function RootLayout() {
             <Stack.Screen name="bookmark/index" />
             <Stack.Screen name="myths/index" />
             <Stack.Screen name="mythdetail/index" />
+            <Stack.Screen name="categories/index" />
           </>
         ) : (
           <>

@@ -12,8 +12,7 @@ import {
   Share,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import Icon from "react-native-vector-icons/MaterialIcons";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getArticleById } from "../../services/api";
 import RenderHTML from "react-native-render-html";
 import * as Print from 'expo-print';
@@ -23,28 +22,60 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get("window");
 
-// Responsive font sizing
 const responsiveFontSize = (size) => {
   const scaleFactor = width / 375;
-  const newSize = size * scaleFactor;
-  return Math.ceil(newSize);
+  return Math.ceil(size * scaleFactor);
 };
 
-const getSafeAreaTop = () => {
-  if (Platform.OS === "ios") {
-    return 40;
-  }
-  return 20;
-};
+const getSafeAreaTop = () => (Platform.OS === "ios" ? 40 : 20);
+
+const ContentNotAvailable = ({ onBack }) => (
+  <View style={styles.emptyStateContainer}>
+    <MaterialCommunityIcons
+      name="text-box-remove-outline"
+      size={responsiveFontSize(60)}
+      color="#d3d3d3"
+    />
+    <Text style={styles.emptyStateTitle}>Content Not Available</Text>
+    <Text style={styles.emptyStateText}>
+      The article you're looking for doesn't exist or the link is invalid
+    </Text>
+    <TouchableOpacity
+      style={styles.backButton}
+      onPress={onBack}
+    >
+      <Text style={styles.backButtonText}>Go Back</Text>
+    </TouchableOpacity>
+  </View>
+);
 
 const ArticleScreen = () => {
   const router = useRouter();
   const { articleId } = useLocalSearchParams();
   const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  // Handle undefined/invalid articleId immediately
+  if (!articleId || articleId === "undefined") {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Image
+              source={require("../../assets/images/back-arrow.png")}
+              style={styles.backArrow}
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Article Unavailable</Text>
+          <View style={{ width: responsiveFontSize(24) }} />
+        </View>
+        <ContentNotAvailable onBack={() => router.back()} />
+      </View>
+    );
+  }
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -55,7 +86,6 @@ const ArticleScreen = () => {
 
         if (response.status === "success") {
           setArticle(response.data);
-          // Check if article is bookmarked
           const bookmarks = await AsyncStorage.getItem('bookmarks');
           const bookmarksArray = bookmarks ? JSON.parse(bookmarks) : [];
           setIsBookmarked(bookmarksArray.some(item => item.id === response.data.id));
@@ -65,10 +95,6 @@ const ArticleScreen = () => {
       } catch (err) {
         console.error("Failed to fetch article:", err);
         setError(err.message || "Failed to load article");
-
-        if (err.message.includes("401")) {
-          router.push("/login");
-        }
       } finally {
         setLoading(false);
       }
@@ -79,12 +105,11 @@ const ArticleScreen = () => {
 
   const handleShare = async () => {
     if (!article) return;
-
     try {
       await Share.share({
         title: article.title,
         message: `${article.title}\n\n${article.content.substring(0, 200)}...`,
-        url: article.header_image || "https://oziza.org/articles/" + article.id,
+        url: article.header_image || `https://oziza.org/articles/${article.id}`,
       });
     } catch (error) {
       console.log("Error sharing:", error.message);
@@ -93,7 +118,6 @@ const ArticleScreen = () => {
 
   const handlePrint = async () => {
     if (!article) return;
-
     try {
       const html = `
         <html>
@@ -112,7 +136,6 @@ const ArticleScreen = () => {
           </body>
         </html>
       `;
-
       const { uri } = await Print.printToFileAsync({ html });
       await Sharing.shareAsync(uri);
     } catch (error) {
@@ -122,16 +145,12 @@ const ArticleScreen = () => {
 
   const toggleBookmark = async () => {
     if (!article) return;
-
     try {
       const bookmarks = await AsyncStorage.getItem('bookmarks');
       let bookmarksArray = bookmarks ? JSON.parse(bookmarks) : [];
-
       if (isBookmarked) {
-        // Remove bookmark
         bookmarksArray = bookmarksArray.filter(item => item.id !== article.id);
       } else {
-        // Add bookmark
         bookmarksArray.push({
           id: article.id,
           title: article.title,
@@ -140,7 +159,6 @@ const ArticleScreen = () => {
           date: new Date().toISOString()
         });
       }
-
       await AsyncStorage.setItem('bookmarks', JSON.stringify(bookmarksArray));
       setIsBookmarked(!isBookmarked);
     } catch (error) {
@@ -150,12 +168,10 @@ const ArticleScreen = () => {
 
   const toggleSpeech = () => {
     if (!article) return;
-
     if (isSpeaking) {
       Speech.stop();
       setIsSpeaking(false);
     } else {
-      // Strip HTML tags for speech
       const textContent = article.content.replace(/<[^>]*>/g, ' ');
       Speech.speak(`${article.title}. ${textContent}`, {
         language: 'en',
@@ -168,7 +184,6 @@ const ArticleScreen = () => {
 
   const renderHtmlContent = (html) => {
     if (!html) return null;
-
     return (
       <RenderHTML
         contentWidth={width * 0.9}
@@ -181,10 +196,7 @@ const ArticleScreen = () => {
             marginBottom: height * 0.01,
             textAlign: 'justify',
           },
-          strong: {
-            fontWeight: "bold",
-            color: "#000000",
-          },
+          strong: { fontWeight: "bold", color: "#000000" },
           h2: {
             fontSize: responsiveFontSize(19),
             fontWeight: "bold",
@@ -198,10 +210,7 @@ const ArticleScreen = () => {
             marginVertical: height * 0.015,
             color: "#000000",
           },
-          ul: {
-            marginBottom: height * 0.03,
-            paddingLeft: width * 0.05,
-          },
+          ul: { marginBottom: height * 0.03, paddingLeft: width * 0.05 },
           li: {
             fontSize: responsiveFontSize(16),
             lineHeight: responsiveFontSize(24),
@@ -245,7 +254,7 @@ const ArticleScreen = () => {
     );
   }
 
-  if (error) {
+  if (error || !article) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -258,25 +267,7 @@ const ArticleScreen = () => {
           <Text style={styles.headerTitle}>Error</Text>
           <View style={{ width: responsiveFontSize(24) }} />
         </View>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
-
-  if (!article) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Image
-              source={require("../../assets/images/back-arrow.png")}
-              style={styles.backArrow}
-            />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Not Found</Text>
-          <View style={{ width: responsiveFontSize(24) }} />
-        </View>
-        <Text style={styles.errorText}>Article not found</Text>
+        <ContentNotAvailable onBack={() => router.back()} />
       </View>
     );
   }
@@ -330,25 +321,18 @@ const ArticleScreen = () => {
         </View>
       </View>
 
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {article.header_image && (
-          <>
-            {console.log("Image URL to load:", article.header_image)}
-            <Image
-              source={{ uri: article.header_image }}
-              style={styles.headerImage}
-              defaultSource={require("../../assets/images/placeholder-image.jpg")}
-              onError={(e) => console.log("Image load error:", e.nativeEvent.error)}
-            />
-          </>
+          <Image
+            source={{ uri: article.header_image }}
+            style={styles.headerImage}
+            defaultSource={require("../../assets/images/placeholder-image.jpg")}
+          />
         )}
 
         {renderHtmlContent(article.content)}
 
-        {article.categories && article.categories.length > 0 && (
+        {article.categories?.length > 0 && (
           <View style={styles.categoriesContainer}>
             <Text style={styles.sectionTitle}>Categories:</Text>
             <View style={styles.categoryTags}>
@@ -413,12 +397,6 @@ const styles = StyleSheet.create({
     marginBottom: height * 0.01,
     color: "#000000",
   },
-  errorText: {
-    fontSize: responsiveFontSize(18),
-    color: "red",
-    textAlign: "center",
-    marginTop: height * 0.2,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -449,6 +427,38 @@ const styles = StyleSheet.create({
     width: width * 0.05,
     height: width * 0.05,
     marginRight: width * 0.02,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: width * 0.1,
+  },
+  emptyStateTitle: {
+    fontSize: responsiveFontSize(20),
+    fontWeight: '600',
+    color: '#333',
+    marginTop: height * 0.03,
+    marginBottom: height * 0.01,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    fontSize: responsiveFontSize(16),
+    color: '#707070',
+    textAlign: 'center',
+    lineHeight: responsiveFontSize(24),
+    marginBottom: height * 0.04,
+  },
+  backButton: {
+    backgroundColor: '#000',
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.1,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: responsiveFontSize(16),
+    fontWeight: '600',
   },
 });
 
