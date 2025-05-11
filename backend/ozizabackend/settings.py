@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'content_recommender',
     'symptom_checker',
     'security_measures',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -180,6 +181,16 @@ DISPOSABLE_EMAIL_DOMAINS = [
     'guerrillamail.com',
     'throwawaymail.com',
 ]
+
+# Firebase Configuration
+FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'firebase-service-account.json')
+
+# Optional notification defaults
+FIREBASE_NOTIFICATION_CONFIG = {
+    'DEFAULT_ICON': 'https://yourdomain.com/icon.png',
+    'ANDROID_CHANNEL_ID': 'default_channel',
+    'SOUND': 'default'
+}
 
 # Swagger Settings
 SWAGGER_SETTINGS = {

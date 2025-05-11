@@ -1,7 +1,12 @@
 from django.urls import path
-from .views import save_push_token, send_test_notification
+from .views import (
+    PushTokenView,
+    NotificationListView,
+    SendNotificationView
+)
 
 urlpatterns = [
-    path('save-push-token/', save_push_token, name='save_push_token'),
-    path('send-test-notification/', send_test_notification, name='send_test_notification'),
+    path('api/push-token/', PushTokenView.as_view(), name='push-token'),
+    path('api/notifications/', NotificationListView.as_view(), name='notification-list'),
+    path('api/notifications/send/', SendNotificationView.as_view(), name='send-notification'),
 ]

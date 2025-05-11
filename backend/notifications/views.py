@@ -1,34 +1,92 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import PushToken
-from .serializers import PushTokenSerializer
-from .utils import send_push_notification
+from firebase_admin import messaging
+from .models import UserPushToken, Notification
+from .serializers import UserPushTokenSerializer, NotificationSerializer
+from .firebase import initialize_firebase
+from django.contrib.auth import get_user_model
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def save_push_token(request):
-    token = request.data.get('token')
-    if not token:
-        return Response({'error': 'Token is required'}, status=status.HTTP_400_BAD_REQUEST)
+User = get_user_model()
 
-    # Delete old tokens if they exist
-    PushToken.objects.filter(user=request.user).delete()
 
-    # Save new token
-    push_token = PushToken.objects.create(user=request.user, token=token)
-    serializer = PushTokenSerializer(push_token)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+class PushTokenView(APIView):
+    def post(self, request):
+        serializer = UserPushTokenSerializer(data=request.data)
+        if serializer.is_valid():
+            # Delete existing token if exists
+            UserPushToken.objects.filter(
+                user=request.user,
+                platform=serializer.validated_data['platform']
+            ).delete()
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def send_test_notification(request):
-    try:
-        push_token = PushToken.objects.get(user=request.user)
-        title = "Test Notification"
-        message = "Hello from Django!"
-        result = send_push_notification(push_token.token, title, message)
-        return Response({'success': 'Notification sent', 'result': result}, status=status.HTTP_200_OK)
-    except PushToken.DoesNotExist:
-        return Response({'error': 'User has no registered push token'}, status=status.HTTP_404_NOT_FOUND)
+            # Create new token
+            UserPushToken.objects.create(
+                user=request.user,
+                **serializer.validated_data
+            )
+            return Response({'message': 'Push token saved'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NotificationListView(APIView):
+    def get(self, request):
+        notifications = request.user.notifications.all().order_by('-created_at')[:50]
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+
+
+class SendNotificationView(APIView):
+    def post(self, request):
+        initialize_firebase()  # Ensure Firebase is initialized
+
+        user_id = request.data.get('user_id')
+        title = request.data.get('title')
+        body = request.data.get('body')
+        notification_type = request.data.get('type', 'general')
+        data = request.data.get('data', {})
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create notification record
+        notification = Notification.objects.create(
+            user=user,
+            title=title,
+            body=body,
+            notification_type=notification_type,
+            data=data
+        )
+
+        # Get push tokens
+        push_tokens = UserPushToken.objects.filter(user=user).values_list('token', flat=True)
+
+        if not push_tokens:
+            return Response({'message': 'No push tokens found'}, status=status.HTTP_200_OK)
+
+        # Prepare Firebase message
+        message = messaging.MulticastMessage(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            data={
+                'title': title,
+                'body': body,
+                'type': notification_type,
+                **data
+            },
+            tokens=list(push_tokens)
+        )
+
+        try:
+            response = messaging.send_multicast(message)
+            return Response({
+                'success': response.success_count,
+                'failure': response.failure_count,
+                'notification_id': notification.id
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
