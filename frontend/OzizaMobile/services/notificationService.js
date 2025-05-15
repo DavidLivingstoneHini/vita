@@ -53,9 +53,12 @@ export const registerForPushNotificationsAsync = async () => {
 export const storePushToken = async (token) => {
     try {
         const accessToken = await SecureStore.getItemAsync("access_token");
-        if (!accessToken) return;
+        if (!accessToken) {
+            console.warn('No access token available');
+            return;
+        }
 
-        const response = await fetch(`${API_BASE_URL}users/push-token/`, {
+        const response = await fetch(`${API_BASE_URL}push-token/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -68,34 +71,36 @@ export const storePushToken = async (token) => {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to store push token');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Error response:', errorData);
+            throw new Error(`Failed to store push token: ${response.status} ${response.statusText}`);
         }
 
         console.log('Push token stored successfully');
+        return true;
     } catch (error) {
-        console.error('Error storing push token:', error);
+        console.error('Error storing push token:', error.message);
+        return false;
     }
 };
 
 // listener for token refresh
-export const setupTokenRefreshListener = async () => {
-    const tokenListener = Notifications.addPushTokenListener(async (newToken) => {
+export const setupTokenRefreshListener = () => {
+    return Notifications.addPushTokenListener(async (newToken) => {
         console.log('Push token refreshed:', newToken.data);
-        try {
-            await storePushToken(newToken.data);
-        } catch (error) {
-            console.error('Error updating refreshed token:', error);
-        }
+        await storePushToken(newToken.data);
     });
-
-    return () => {
-        tokenListener.remove();
-    };
 };
 
 // Initialize push notifications
 export const initializePushNotifications = async () => {
     try {
+        // Skip in Expo Go
+        if (Constants.appOwnership === 'expo') {
+            console.warn('Push notifications not fully supported in Expo Go');
+            return () => { };
+        }
+
         // Register for initial token
         const token = await registerForPushNotificationsAsync();
         if (token) {
@@ -103,11 +108,11 @@ export const initializePushNotifications = async () => {
         }
 
         // Set up listener for token changes
-        const cleanupTokenListener = setupTokenRefreshListener();
+        const tokenListener = setupTokenRefreshListener();
 
         // Return cleanup function
         return () => {
-            cleanupTokenListener();
+            tokenListener.remove();
         };
     } catch (error) {
         console.error('Error initializing push notifications:', error);

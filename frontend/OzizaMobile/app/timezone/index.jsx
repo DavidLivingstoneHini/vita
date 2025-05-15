@@ -1,132 +1,333 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Switch,
     Dimensions,
-    Platform
+    Platform,
+    TextInput,
+    FlatList,
+    ActivityIndicator
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Checkbox from "expo-checkbox"; // Import Checkbox from expo-checkbox
+import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
 
-// Get screen dimensions
 const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function
 const responsiveFontSize = (size) => {
-    const scaleFactor = width / 375; // Base width of 375
-    const newSize = size * scaleFactor;
-    return Math.ceil(newSize); // Round to nearest whole number
+    const scaleFactor = width / 375;
+    return Math.ceil(size * scaleFactor);
 };
 
-// Function to get safe area top padding
 const getSafeAreaTop = () => {
-    if (Platform.OS === "ios") {
-        return 40; // Adjust for iOS
-    }
-    return 20; // Default for Android
+    return Platform.OS === "ios" ? 40 : 20;
 };
 
-const TimezoneSelectionScreen = () => {
+const API_BASE_URL = "http://192.168.100.34:8000/api/";
+
+const timeZones = [
+    { label: 'Eastern Time (ET)', value: 'et', offset: '-05:00' },
+    { label: 'Central Time (CT)', value: 'ct', offset: '-06:00' },
+    { label: 'Mountain Time (MT)', value: 'mt', offset: '-07:00' },
+    { label: 'Pacific Time (PT)', value: 'pt', offset: '-08:00' },
+    { label: 'Alaska Time (AKT)', value: 'akt', offset: '-09:00' },
+    { label: 'Hawaii-Aleutian Time (HAT)', value: 'hat', offset: '-10:00' },
+    { label: 'Atlantic Time (AT)', value: 'at', offset: '-04:00' },
+    { label: 'Newfoundland Time (NT)', value: 'nt', offset: '-03:30' },
+    { label: 'Greenwich Mean Time (GMT)', value: 'gmt', offset: '+00:00' },
+    { label: 'Central European Time (CET)', value: 'cet', offset: '+01:00' },
+    { label: 'Eastern European Time (EET)', value: 'eet', offset: '+02:00' },
+    { label: 'Moscow Time (MSK)', value: 'msk', offset: '+03:00' },
+    { label: 'India Standard Time (IST)', value: 'ist', offset: '+05:30' },
+    { label: 'China Standard Time (CST)', value: 'cst', offset: '+08:00' },
+    { label: 'Japan Standard Time (JST)', value: 'jst', offset: '+09:00' },
+    { label: 'Australian Eastern Time (AET)', value: 'aet', offset: '+10:00' },
+];
+
+const TimeZoneScreen = () => {
     const router = useRouter();
-    const [isEnabled, setIsEnabled] = useState(false); // Toggle state
-    const [notifications, setNotifications] = useState([
-        { id: 1, text: "UTC -01:00", checked: false },
-        { id: 2, text: "UTC (GMT)", checked: false },
-        { id: 3, text: "UTC +01:00", checked: false },
-        { id: 4, text: "UTC +02:00", checked: false },
-        { id: 5, text: "UTC +03:00", checked: false },
-        { id: 6, text: "UTC +04:00", checked: false },
-    ]);
+    const [selectedTimeZone, setSelectedTimeZone] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredTimeZones, setFilteredTimeZones] = useState(timeZones);
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Toggle switch handler
-    const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
+    useEffect(() => {
+        // Load saved timezone on mount
+        const loadSavedTimezone = async () => {
+            try {
+                const savedTimezone = await SecureStore.getItemAsync('user_timezone');
+                if (savedTimezone) {
+                    const tz = JSON.parse(savedTimezone);
+                    setSelectedTimeZone(tz.value);
+                }
+            } catch (error) {
+                console.error('Error loading timezone:', error);
+            }
+        };
+        loadSavedTimezone();
+    }, []);
 
-    // Checkbox handler
-    const handleCheckboxChange = (id) => {
-        const updatedNotifications = notifications.map((item) =>
-            item.id === id ? { ...item, checked: !item.checked } : item
-        );
-        setNotifications(updatedNotifications);
+    useEffect(() => {
+        // Filter timezones based on search query
+        if (searchQuery.trim() === '') {
+            setFilteredTimeZones(timeZones);
+        } else {
+            setFilteredTimeZones(
+                timeZones.filter(zone =>
+                    zone.label.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+            );
+        }
+    }, [searchQuery]);
+
+    const handleSelectTimezone = async (timezone) => {
+        setIsLoading(true);
+        try {
+            const accessToken = await SecureStore.getItemAsync('access_token');
+            const response = await fetch(`${API_BASE_URL}v1/users/timezone/`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ timezone: timezone.value }),
+            });
+
+            if (response.ok) {
+                setSelectedTimeZone(timezone.value);
+                await SecureStore.setItemAsync('user_timezone', JSON.stringify(timezone));
+                Toast.show({
+                    type: 'success',
+                    text1: 'Timezone Updated',
+                    text2: `Your timezone has been set to ${timezone.label}`,
+                });
+            } else {
+                throw new Error('Failed to update timezone');
+            }
+        } catch (error) {
+            console.error('Timezone update error:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Update Failed',
+                text2: 'Failed to update timezone settings',
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    return (
-        <ScrollView
-            contentContainerStyle={[styles.container, { paddingTop: getSafeAreaTop() }]}
+    const renderItem = ({ item }) => (
+        <TouchableOpacity
+            style={[
+                styles.timezoneItem,
+                selectedTimeZone === item.value && styles.selectedTimezone
+            ]}
+            onPress={() => handleSelectTimezone(item)}
+            disabled={isLoading}
         >
-            {/* Header */}
+            <Text style={[styles.timezoneText, { fontSize: responsiveFontSize(16) }]}>
+                {item.label}
+            </Text>
+            <Text style={[styles.offsetText, { fontSize: responsiveFontSize(14) }]}>
+                UTC{item.offset}
+            </Text>
+            {selectedTimeZone === item.value && (
+                <AntDesign name="check" size={20} color="#04b332" style={styles.checkIcon} />
+            )}
+        </TouchableOpacity>
+    );
+
+    return (
+        <View style={[styles.container, { paddingTop: getSafeAreaTop() }]}>
             <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()}>
+                    <AntDesign name="arrowleft" size={24} color="black" />
+                </TouchableOpacity>
                 <Text style={[styles.title, { fontSize: responsiveFontSize(20) }]}>
-                    Timezone Selection
+                    Time Zone
                 </Text>
-                <View style={styles.switchContainer}>
-                    <Switch
-                        trackColor={{ false: "#767577", true: "#04b332" }}
-                        thumbColor={isEnabled ? "#f7f7f7" : "#f7f7f7"}
-                        onValueChange={toggleSwitch}
-                        value={isEnabled}
-                    />
-                </View>
+                <View style={{ width: 24 }} />
             </View>
 
-            {/* List Items */}
-            {notifications.map((item) => (
-                <View key={item.id}>
-                    <View style={styles.listItem}>
-                        <Text style={[styles.listItemText, { fontSize: responsiveFontSize(16) }]}>
-                            {item.text}
-                        </Text>
-                        <Checkbox
-                            value={item.checked}
-                            onValueChange={() => handleCheckboxChange(item.id)}
-                            color={item.checked ? "#000" : undefined}
-                        />
-                    </View>
-                    <View style={styles.separator} />
+            <View style={styles.content}>
+                <Text style={[styles.sectionTitle, { fontSize: responsiveFontSize(16) }]}>
+                    Select your time zone
+                </Text>
+
+                <View style={styles.searchContainer}>
+                    <AntDesign
+                        name="search1"
+                        size={responsiveFontSize(18)}
+                        color="#666"
+                        style={styles.searchIcon}
+                    />
+                    <TextInput
+                        style={[styles.searchInput, { fontSize: responsiveFontSize(16) }]}
+                        placeholder="Search time zones..."
+                        placeholderTextColor="#999"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        clearButtonMode="while-editing"
+                    />
                 </View>
-            ))}
-        </ScrollView>
+
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="small" color="#007AFF" />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredTimeZones}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.value}
+                        style={styles.timezoneList}
+                        keyboardShouldPersistTaps="always"
+                        ItemSeparatorComponent={() => <View style={styles.separator} />}
+                        ListEmptyComponent={
+                            <Text style={[styles.noResults, { fontSize: responsiveFontSize(16) }]}>
+                                No matching time zones found
+                            </Text>
+                        }
+                        ListHeaderComponent={
+                            <View style={{ paddingBottom: 10 }} />
+                        }
+                        ListFooterComponent={
+                            selectedTimeZone && !isLoading ? (
+                                <View style={styles.currentTimezone}>
+                                    <Text style={[styles.currentLabel, { fontSize: responsiveFontSize(14) }]}>
+                                        Current:
+                                    </Text>
+                                    <Text style={[styles.currentValue, { fontSize: responsiveFontSize(16) }]}>
+                                        {timeZones.find(z => z.value === selectedTimeZone)?.label}
+                                    </Text>
+                                </View>
+                            ) : null
+                        }
+                    />
+                )}
+            </View>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
         backgroundColor: "#fff",
-        paddingHorizontal: width * 0.06, // Responsive padding (5% of screen width)
+        paddingHorizontal: width * 0.06,
+    },
+    timezoneList: {
+        flex: 1,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#eee',
+        marginBottom: height * 0.02,
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
+        paddingVertical: height * 0.02,
         marginBottom: height * 0.02,
     },
     title: {
         fontWeight: "700",
+        position: "absolute",
+        left: 0,
+        right: 0,
+        textAlign: "center",
+        zIndex: -1,
     },
-    listItem: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
-        paddingHorizontal: width * 0.02, // Responsive padding (5% of screen width)
+    content: {
+        paddingHorizontal: width * 0.04,
+        paddingBottom: height * 0.04,
     },
-    listItemText: {
-        fontWeight: "500",
-        color: "#0A0A0A",
+    sectionTitle: {
+        fontWeight: "600",
+        marginBottom: height * 0.02,
+        color: "#333",
     },
-    switchContainer: {
-        transform: [{ scale: 0.8 }], // Scale down the Switch container
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
+        borderRadius: 8,
+        paddingHorizontal: width * 0.03,
+        marginBottom: height * 0.03,
+    },
+    searchIcon: {
+        marginRight: width * 0.02,
+    },
+    searchInput: {
+        flex: 1,
+        paddingVertical: height * 0.015,
+        color: '#333',
+    },
+    timezoneList: {
+        maxHeight: height * 0.6,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    timezoneItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: height * 0.018,
+        paddingHorizontal: width * 0.04,
+        backgroundColor: '#fff',
+    },
+    selectedTimezone: {
+        backgroundColor: '#f0f9ff',
+    },
+    timezoneText: {
+        flex: 1,
+        color: '#333',
+    },
+    offsetText: {
+        color: '#666',
+        marginRight: width * 0.04,
+    },
+    checkIcon: {
+        marginLeft: width * 0.02,
     },
     separator: {
         height: 1,
-        backgroundColor: "#ccc",
+        backgroundColor: '#eee',
+        marginHorizontal: width * 0.04,
+    },
+    noResults: {
+        textAlign: 'center',
+        padding: width * 0.04,
+        color: '#666',
+    },
+    loadingContainer: {
+        padding: width * 0.04,
+        alignItems: 'center',
+    },
+    currentTimezone: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: height * 0.03,
+        padding: width * 0.03,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 5,
+    },
+    currentLabel: {
+        fontWeight: '500',
+        color: '#666',
+        marginRight: width * 0.02,
+    },
+    currentValue: {
+        fontWeight: '600',
+        color: '#04b332',
     },
 });
 
-export default TimezoneSelectionScreen;
+export default TimeZoneScreen;

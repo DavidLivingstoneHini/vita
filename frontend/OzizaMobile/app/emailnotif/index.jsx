@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Checkbox from "expo-checkbox"; // Import Checkbox from expo-checkbox
+import Checkbox from "expo-checkbox";
 
 // Get screen dimensions
 const { width, height } = Dimensions.get("window");

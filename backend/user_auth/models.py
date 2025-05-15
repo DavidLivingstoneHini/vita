@@ -84,6 +84,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     reset_password_token_expires = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    timezone = models.CharField(max_length=50, blank=True, null=True)
+    country = models.CharField(max_length=2, blank=True, null=True)
+    region = models.CharField(max_length=5, blank=True, null=True)
+    # Add permission-related fields
+    allow_location = models.BooleanField(default=False)
+    allow_notifications = models.BooleanField(default=True)
+    allow_camera = models.BooleanField(default=False)
+    allow_contacts = models.BooleanField(default=False)
+    allow_storage = models.BooleanField(default=True)
 
     objects = CustomUserManager()
     EMAIL_FIELD = 'email'

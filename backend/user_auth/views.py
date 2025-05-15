@@ -1,9 +1,10 @@
+import os
 import uuid
 
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics, permissions
 from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.views import TokenViewBase
@@ -26,7 +27,7 @@ from .serializers import (
     PasswordChangeSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
-    EmailVerificationSerializer
+    EmailVerificationSerializer, UserPermissionsSerializer
 )
 
 
@@ -261,3 +262,112 @@ class ProfilePictureView(APIView):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class PrivacySettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Return default privacy settings (you might want to store these in the User model)
+        return Response({
+            'showEmail': True,
+            'showPhone': False,
+            'searchVisibility': True,
+            'dataSharing': False,
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        user = request.user
+        # Here you would update the user's privacy settings
+        # For now, just return success
+        return Response({'message': 'Privacy settings updated'}, status=status.HTTP_200_OK)
+
+
+class SecuritySettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Return security settings
+        return Response({
+            'twoFactorAuth': False,
+            'loginAlerts': True,
+            'passwordUpdateRequired': False,
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        user = request.user
+        setting = request.data.get('setting')
+        value = request.data.get('value')
+
+        # Here you would update specific security settings
+        # For now, just return success
+        return Response({'message': 'Security setting updated'}, status=status.HTTP_200_OK)
+
+
+class AccountDeactivationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user.is_active = False
+        user.save()
+        return Response({'message': 'Account deactivated'}, status=status.HTTP_200_OK)
+
+
+class TimezoneView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    # Define timezones directly in the class
+    TIMEZONES = [
+        {'label': 'Eastern Time (ET)', 'value': 'et', 'offset': '-05:00'},
+        {'label': 'Central Time (CT)', 'value': 'ct', 'offset': '-06:00'},
+        {'label': 'Mountain Time (MT)', 'value': 'mt', 'offset': '-07:00'},
+        {'label': 'Pacific Time (PT)', 'value': 'pt', 'offset': '-08:00'},
+        {'label': 'Alaska Time (AKT)', 'value': 'akt', 'offset': '-09:00'},
+        {'label': 'Hawaii-Aleutian Time (HAT)', 'value': 'hat', 'offset': '-10:00'},
+        {'label': 'Atlantic Time (AT)', 'value': 'at', 'offset': '-04:00'},
+        {'label': 'Newfoundland Time (NT)', 'value': 'nt', 'offset': '-03:30'},
+        {'label': 'Greenwich Mean Time (GMT)', 'value': 'gmt', 'offset': '+00:00'},
+        {'label': 'Central European Time (CET)', 'value': 'cet', 'offset': '+01:00'},
+        {'label': 'Eastern European Time (EET)', 'value': 'eet', 'offset': '+02:00'},
+        {'label': 'Moscow Time (MSK)', 'value': 'msk', 'offset': '+03:00'},
+        {'label': 'India Standard Time (IST)', 'value': 'ist', 'offset': '+05:30'},
+        {'label': 'China Standard Time (CST)', 'value': 'cst', 'offset': '+08:00'},
+        {'label': 'Japan Standard Time (JST)', 'value': 'jst', 'offset': '+09:00'},
+        {'label': 'Australian Eastern Time (AET)', 'value': 'aet', 'offset': '+10:00'},
+    ]
+
+    def put(self, request):
+        user = request.user
+        timezone = request.data.get('timezone')
+
+        if not timezone:
+            return Response(
+                {'error': 'Timezone is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate the timezone is in our list
+        valid_timezones = [tz['value'] for tz in self.TIMEZONES]
+        if timezone not in valid_timezones:
+            return Response(
+                {'error': 'Invalid timezone'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.timezone = timezone
+        user.save()
+
+        return Response(
+            {'message': 'Timezone updated successfully'},
+            status=status.HTTP_200_OK
+        )
+
+class UserPermissionsView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserPermissionsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

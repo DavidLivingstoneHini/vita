@@ -11,67 +11,57 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Checkbox from "expo-checkbox"; // Import Checkbox from expo-checkbox
+import Checkbox from "expo-checkbox";
 
-// Get screen dimensions
 const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function
 const responsiveFontSize = (size) => {
-    const scaleFactor = width / 375; // Base width of 375
-    const newSize = size * scaleFactor;
-    return Math.ceil(newSize); // Round to nearest whole number
+    const scaleFactor = width / 375;
+    return Math.ceil(size * scaleFactor);
 };
 
-// Function to get safe area top padding
 const getSafeAreaTop = () => {
-    if (Platform.OS === "ios") {
-        return 40; // Adjust for iOS
-    }
-    return 20; // Default for Android
+    return Platform.OS === "ios" ? 40 : 20;
 };
 
 const SmsNotificationsScreen = () => {
     const router = useRouter();
-    const [isEnabled, setIsEnabled] = useState(false); // Toggle state
+    const [isEnabled, setIsEnabled] = useState(false);
     const [notifications, setNotifications] = useState([
-        { id: 1, text: "News", checked: false },
-        { id: 2, text: "Lifestyle Tips", checked: false },
-        { id: 3, text: "Recommendations", checked: false },
-        { id: 4, text: "Emergency Alerts", checked: false },
+        { id: 1, text: "Appointment Reminders", checked: false },
+        { id: 2, text: "Emergency Alerts", checked: false },
+        { id: 3, text: "Security Notifications", checked: false },
     ]);
 
-    // Toggle switch handler
-    const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
+    const toggleSwitch = () => setIsEnabled(prev => !prev);
 
-    // Checkbox handler
     const handleCheckboxChange = (id) => {
-        const updatedNotifications = notifications.map((item) =>
+        setNotifications(notifications.map(item =>
             item.id === id ? { ...item, checked: !item.checked } : item
-        );
-        setNotifications(updatedNotifications);
+        ));
     };
 
     return (
         <ScrollView
             contentContainerStyle={[styles.container, { paddingTop: getSafeAreaTop() }]}
         >
-            {/* Header */}
             <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()}>
+                    <AntDesign name="arrowleft" size={24} color="black" />
+                </TouchableOpacity>
                 <Text style={[styles.title, { fontSize: responsiveFontSize(20) }]}>
-                    Sms Notifications
+                    SMS Notifications
                 </Text>
                 <View style={styles.switchContainer}>
                     <Switch
                         trackColor={{ false: "#767577", true: "#04b332" }}
-                        thumbColor={isEnabled ? "#f7f7f7" : "#f7f7f7"}
+                        thumbColor="#f7f7f7"
                         onValueChange={toggleSwitch}
                         value={isEnabled}
                     />
                 </View>
             </View>
 
-            {/* List Items */}
             {notifications.map((item) => (
                 <View key={item.id}>
                     <View style={styles.listItem}>
@@ -95,31 +85,36 @@ const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
         backgroundColor: "#fff",
-        paddingHorizontal: width * 0.06, // Responsive padding (5% of screen width)
+        paddingHorizontal: width * 0.06,
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
+        paddingVertical: height * 0.02,
         marginBottom: height * 0.02,
     },
     title: {
         fontWeight: "700",
+        position: "absolute",
+        left: 0,
+        right: 0,
+        textAlign: "center",
+        zIndex: -1,
     },
     listItem: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
-        paddingHorizontal: width * 0.02, // Responsive padding (5% of screen width)
+        paddingVertical: height * 0.02,
+        paddingHorizontal: width * 0.02,
     },
     listItemText: {
         fontWeight: "500",
         color: "#0A0A0A",
     },
     switchContainer: {
-        transform: [{ scale: 0.8 }], // Scale down the Switch container
+        transform: [{ scale: 0.8 }],
     },
     separator: {
         height: 1,

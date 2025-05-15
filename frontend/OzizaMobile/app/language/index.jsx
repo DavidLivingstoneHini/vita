@@ -1,133 +1,322 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Switch,
     Dimensions,
-    Platform
+    Platform,
+    Modal,
+    ActivityIndicator
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import Checkbox from "expo-checkbox"; // Import Checkbox from expo-checkbox
+import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
 
-// Get screen dimensions
 const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function
 const responsiveFontSize = (size) => {
-    const scaleFactor = width / 375; // Base width of 375
-    const newSize = size * scaleFactor;
-    return Math.ceil(newSize); // Round to nearest whole number
+    const scaleFactor = width / 375;
+    return Math.ceil(size * scaleFactor);
 };
 
-// Function to get safe area top padding
 const getSafeAreaTop = () => {
-    if (Platform.OS === "ios") {
-        return 40; // Adjust for iOS
-    }
-    return 20; // Default for Android
+    return Platform.OS === "ios" ? 40 : 20;
 };
 
-const LanguageSelectionScreen = () => {
+const API_BASE_URL = "http://192.168.100.34:8000/api/";
+
+const languages = [
+    { id: '1', name: 'English', code: 'en' },
+    { id: '2', name: 'Spanish', code: 'es' },
+    { id: '3', name: 'French', code: 'fr' },
+    { id: '4', name: 'German', code: 'de' },
+    { id: '5', name: 'Chinese', code: 'zh' },
+    { id: '6', name: 'Hindi', code: 'hi' },
+    { id: '7', name: 'Arabic', code: 'ar' },
+    { id: '8', name: 'Portuguese', code: 'pt' },
+    { id: '9', name: 'Russian', code: 'ru' },
+    { id: '10', name: 'Japanese', code: 'ja' },
+    { id: '11', name: 'Italian', code: 'it' },
+    { id: '12', name: 'Korean', code: 'ko' },
+    { id: '13', name: 'Dutch', code: 'nl' },
+    { id: '14', name: 'Turkish', code: 'tr' },
+    { id: '15', name: 'Swedish', code: 'sv' },
+    { id: '16', name: 'Polish', code: 'pl' },
+];
+
+const LanguagePreferencesScreen = () => {
     const router = useRouter();
-    const [isEnabled, setIsEnabled] = useState(false); // Toggle state
-    const [notifications, setNotifications] = useState([
-        { id: 1, text: "English (UK)", checked: false },
-        { id: 2, text: "English (US)", checked: false },
-        { id: 3, text: "Dutch", checked: false },
-        { id: 4, text: "French", checked: false },
-        { id: 5, text: "Arabic", checked: false },
-        { id: 6, text: "Hausa", checked: false },
-        { id: 7, text: "Swahili", checked: false },
-    ]);
+    const [selectedLanguage, setSelectedLanguage] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [selectedLanguageName, setSelectedLanguageName] = useState('Select a language');
 
-    // Toggle switch handler
-    const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
+    // Load saved language preference when component mounts
+    useEffect(() => {
+        const loadLanguagePreference = async () => {
+            setIsLoading(true);
+            try {
+                const accessToken = await SecureStore.getItemAsync('access_token');
+                const response = await fetch(`${API_BASE_URL}v1/users/profile/`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
 
-    // Checkbox handler
-    const handleCheckboxChange = (id) => {
-        const updatedNotifications = notifications.map((item) =>
-            item.id === id ? { ...item, checked: !item.checked } : item
-        );
-        setNotifications(updatedNotifications);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.language) {
+                        const lang = languages.find(l => l.code === data.language);
+                        setSelectedLanguage(data.language);
+                        setSelectedLanguageName(lang?.name || 'Select a language');
+                    }
+                } else {
+                    throw new Error('Failed to load language preference');
+                }
+            } catch (error) {
+                console.error('Error loading language preference:', error);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Load Failed',
+                    text2: 'Could not load your language preference',
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadLanguagePreference();
+    }, []);
+
+    const handleLanguageSelect = async (language) => {
+        setShowDropdown(false);
+        setIsSaving(true);
+        try {
+            const accessToken = await SecureStore.getItemAsync('access_token');
+            const response = await fetch(`${API_BASE_URL}v1/users/profile/`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    language: language.code
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save language preference');
+            }
+
+            setSelectedLanguage(language.code);
+            setSelectedLanguageName(language.name);
+            Toast.show({
+                type: 'success',
+                text1: 'Settings Saved',
+                text2: 'Your language preference has been updated',
+            });
+        } catch (error) {
+            console.error('Error saving language preference:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Save Failed',
+                text2: 'Could not save your language preference',
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
-        <ScrollView
-            contentContainerStyle={[styles.container, { paddingTop: getSafeAreaTop() }]}
-        >
-            {/* Header */}
+        <View style={[styles.container, { paddingTop: getSafeAreaTop() }]}>
             <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()}>
+                    <AntDesign name="arrowleft" size={24} color="black" />
+                </TouchableOpacity>
                 <Text style={[styles.title, { fontSize: responsiveFontSize(20) }]}>
-                    Language Selection
+                    Language Preferences
                 </Text>
-                <View style={styles.switchContainer}>
-                    <Switch
-                        trackColor={{ false: "#767577", true: "#04b332" }}
-                        thumbColor={isEnabled ? "#f7f7f7" : "#f7f7f7"}
-                        onValueChange={toggleSwitch}
-                        value={isEnabled}
-                    />
-                </View>
+                <View style={{ width: 24 }} />
             </View>
 
-            {/* List Items */}
-            {notifications.map((item) => (
-                <View key={item.id}>
-                    <View style={styles.listItem}>
-                        <Text style={[styles.listItemText, { fontSize: responsiveFontSize(16) }]}>
-                            {item.text}
-                        </Text>
-                        <Checkbox
-                            value={item.checked}
-                            onValueChange={() => handleCheckboxChange(item.id)}
-                            color={item.checked ? "#000" : undefined}
-                        />
+            <View style={styles.content}>
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color="#007AFF" />
                     </View>
-                    <View style={styles.separator} />
-                </View>
-            ))}
-        </ScrollView>
+                ) : (
+                    <>
+                        <Text style={[styles.sectionTitle, { fontSize: responsiveFontSize(16) }]}>
+                            Select your preferred language
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.selectField}
+                            onPress={() => setShowDropdown(!showDropdown)}
+                            disabled={isSaving}
+                        >
+                            <Text style={[styles.selectText, { fontSize: responsiveFontSize(16) }]}>
+                                {selectedLanguageName}
+                            </Text>
+                            <AntDesign
+                                name={showDropdown ? "up" : "down"}
+                                size={16}
+                                color="#666"
+                            />
+                        </TouchableOpacity>
+
+                        <Modal
+                            visible={showDropdown}
+                            transparent={true}
+                            animationType="fade"
+                            onRequestClose={() => setShowDropdown(false)}
+                        >
+                            <TouchableOpacity
+                                style={styles.modalOverlay}
+                                activeOpacity={1}
+                                onPress={() => setShowDropdown(false)}
+                            >
+                                <View style={styles.dropdownContainer}>
+                                    <ScrollView style={styles.dropdownScroll}>
+                                        {languages.map((language) => (
+                                            <TouchableOpacity
+                                                key={language.id}
+                                                style={[
+                                                    styles.dropdownItem,
+                                                    selectedLanguage === language.code && styles.selectedItem
+                                                ]}
+                                                onPress={() => handleLanguageSelect(language)}
+                                            >
+                                                <Text style={[styles.dropdownText, { fontSize: responsiveFontSize(16) }]}>
+                                                    {language.name}
+                                                </Text>
+                                                {selectedLanguage === language.code && (
+                                                    <AntDesign name="check" size={20} color="#04b332" />
+                                                )}
+                                            </TouchableOpacity>
+                                        ))}
+                                    </ScrollView>
+                                </View>
+                            </TouchableOpacity>
+                        </Modal>
+
+                        <Text style={[styles.note, { fontSize: responsiveFontSize(14) }]}>
+                            Changing language preference will affect all text in the application.
+                        </Text>
+
+                        {isSaving && (
+                            <View style={styles.savingContainer}>
+                                <ActivityIndicator size="small" color="#007AFF" />
+                                <Text style={styles.savingText}>Saving changes...</Text>
+                            </View>
+                        )}
+                    </>
+                )}
+            </View>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
         backgroundColor: "#fff",
-        paddingHorizontal: width * 0.06, // Responsive padding (5% of screen width)
+        paddingHorizontal: width * 0.06,
     },
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
+        paddingVertical: height * 0.02,
         marginBottom: height * 0.02,
     },
     title: {
         fontWeight: "700",
+        position: "absolute",
+        left: 0,
+        right: 0,
+        textAlign: "center",
+        zIndex: -1,
     },
-    listItem: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
-        paddingHorizontal: width * 0.02, // Responsive padding (5% of screen width)
+    content: {
+        flex: 1,
+        paddingHorizontal: width * 0.04,
     },
-    listItemText: {
-        fontWeight: "500",
-        color: "#0A0A0A",
+    sectionTitle: {
+        fontWeight: "600",
+        marginBottom: height * 0.02,
+        color: "#333",
     },
-    switchContainer: {
-        transform: [{ scale: 0.8 }], // Scale down the Switch container
+    selectField: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        paddingHorizontal: width * 0.03,
+        paddingVertical: height * 0.015,
+        marginBottom: height * 0.03,
     },
-    separator: {
-        height: 1,
-        backgroundColor: "#ccc",
+    selectText: {
+        color: 'black',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        paddingHorizontal: width * 0.1,
+    },
+    dropdownContainer: {
+        maxHeight: height * 0.6,
+        backgroundColor: 'white',
+        borderRadius: 5,
+        padding: width * 0.03,
+    },
+    dropdownScroll: {
+        flexGrow: 0,
+    },
+    dropdownItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: height * 0.018,
+        paddingHorizontal: width * 0.03,
+    },
+    selectedItem: {
+        backgroundColor: '#f0f9ff',
+    },
+    dropdownText: {
+        color: "#333",
+    },
+    note: {
+        color: "#666",
+        fontStyle: "italic",
+        marginTop: height * 0.02,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    savingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 10,
+    },
+    savingText: {
+        marginLeft: 10,
+        color: '#666',
+        fontSize: responsiveFontSize(14),
     },
 });
 
-export default LanguageSelectionScreen;
+export default LanguagePreferencesScreen;

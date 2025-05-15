@@ -86,12 +86,15 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'phone_number', 'full_name', 'profile_picture', 'health_profile',
                 'date_of_birth', 'gender', 'is_staff', 'is_superuser',
-                'is_email_verified', 'created_at', 'updated_at']
+                'is_email_verified', 'created_at', 'updated_at', 'timezone', 'country', 'region']
         read_only_fields = ['is_superuser', 'is_staff', 'is_email_verified']
         extra_kwargs = {
             'date_of_birth': {'required': False},  # Explicitly make optional
             'gender': {'required': False},
-            'phone_number': {'required': False}
+            'phone_number': {'required': False},
+            'timezone': {'required': False},
+            'country': {'required': False},
+            'region': {'required': False}
         }
 
 class LoginSerializer(serializers.Serializer):
@@ -198,3 +201,20 @@ class EmailVerificationSerializer(serializers.Serializer):
         user.email_verification_token = None
         user.save()
         return user
+
+class UserPermissionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'allow_location',
+            'allow_notifications',
+            'allow_camera',
+            'allow_contacts',
+            'allow_storage',
+        ]
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance

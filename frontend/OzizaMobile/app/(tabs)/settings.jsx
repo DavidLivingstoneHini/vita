@@ -18,6 +18,7 @@ import Toast from 'react-native-toast-message';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import Modal from 'react-native-modal';
 
 const { width, height } = Dimensions.get("window");
 
@@ -42,6 +43,7 @@ const SettingsPage = () => {
   const [userEmail, setUserEmail] = useState("");
   const [userProfilePicture, setUserProfilePicture] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
   const navigation = useNavigation();
   const router = useRouter();
 
@@ -70,7 +72,7 @@ const SettingsPage = () => {
       }
     } catch (error) {
       console.log("Error retrieving user data:", error);
-      Toast.show({  
+      Toast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Failed to load profile data',
@@ -292,7 +294,10 @@ const SettingsPage = () => {
     <View style={styles.container}>
       <View style={styles.settingsLabelContainer}>
         <Text style={styles.settingsLabel}>Settings</Text>
-        <TouchableOpacity style={styles.iconContainer}>
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => setIsMenuVisible(true)}
+        >
           <Image
             source={require("../../assets/images/three-dot.png")}
             style={styles.icon}
@@ -372,7 +377,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("")}
+            onPress={() => navigation.navigate("accountdeactivation/index")}
           >
             <Text style={styles.listItemText}>Account Deactivation</Text>
             <Image
@@ -386,7 +391,7 @@ const SettingsPage = () => {
           <Text style={styles.sectionTitle}>PRIVACY & SECURITY</Text>
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Privacy Preferences Pressed")}
+            onPress={() => navigation.navigate("privacypreferences/index")}
           >
             <Text style={styles.listItemText}>Privacy Preferences</Text>
             <Image
@@ -397,7 +402,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Security Settings Pressed")}
+            onPress={() => navigation.navigate("securitysettings/index")}
           >
             <Text style={styles.listItemText}>Security Settings</Text>
             <Image
@@ -408,7 +413,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Manage Permissions Pressed")}
+            onPress={() => navigation.navigate("managepermissions/index")}
           >
             <Text style={styles.listItemText}>Manage Permissions</Text>
             <Image
@@ -469,7 +474,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Email Notifications")}
+            onPress={() => navigation.navigate("region/index")}
           >
             <Text style={styles.listItemText}>Regional Settings</Text>
             <Image
@@ -494,7 +499,7 @@ const SettingsPage = () => {
           <Text style={styles.sectionTitle}>SUPPORT & FEEDBACK</Text>
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Privacy Preferences Pressed")}
+            onPress={() => navigation.navigate("faqs/index")}
           >
             <Text style={styles.listItemText}>FAQs</Text>
             <Image
@@ -505,7 +510,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Email Notifications")}
+            onPress={() => navigation.navigate("contactsupport/index")}
           >
             <Text style={styles.listItemText}>Contact Support</Text>
             <Image
@@ -519,7 +524,7 @@ const SettingsPage = () => {
           <Text style={styles.sectionTitle}>LEGAL</Text>
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Privacy Preferences Pressed")}
+            onPress={() => navigation.navigate("terms/index")}
           >
             <Text style={styles.listItemText}>Terms of Service</Text>
             <Image
@@ -530,7 +535,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Email Notifications")}
+            onPress={() => navigation.navigate("privacypolicy/index")}
           >
             <Text style={styles.listItemText}>Privacy Policy</Text>
             <Image
@@ -541,7 +546,7 @@ const SettingsPage = () => {
           <View style={styles.listItemSeparator} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => console.log("Email Notifications")}
+            onPress={() => navigation.navigate("dataretention/index")}
           >
             <Text style={styles.listItemText}>Data Retention Policy</Text>
             <Image
@@ -559,6 +564,62 @@ const SettingsPage = () => {
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
+      <Modal
+        isVisible={isMenuVisible}
+        onBackdropPress={() => setIsMenuVisible(false)}
+        onBackButtonPress={() => setIsMenuVisible(false)}
+        style={styles.menuModal}
+        animationIn="fadeIn"
+        animationOut="fadeOut"
+      >
+        <View style={styles.menuContainer}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              setIsMenuVisible(false);
+              navigation.navigate("editprofile/index");
+            }}
+          >
+            <Icon name="edit" size={20} color="#555" style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>Edit Profile</Text>
+          </TouchableOpacity>
+          <View style={styles.menuSeparator} />
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              setIsMenuVisible(false);
+              navigation.navigate("bookmark/index");
+            }}
+          >
+            <Icon name="bookmark" size={20} color="#555" style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>My Bookmarks</Text>
+          </TouchableOpacity>
+          <View style={styles.menuSeparator} />
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              setIsMenuVisible(false);
+              navigation.navigate("profile/index");
+            }}
+          >
+            <Icon name="person" size={20} color="#555" style={styles.menuIcon} />
+            <Text style={styles.menuItemText}>View Profile Info</Text>
+          </TouchableOpacity>
+
+          {/* Add this new View for the power button */}
+          <View style={styles.powerButtonContainer}>
+            <TouchableOpacity
+              style={styles.powerButton}
+              onPress={() => {
+                setIsMenuVisible(false);
+                handleLogout();
+              }}
+            >
+              <Icon name="power-settings-new" size={24} color="#FF3B30" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <Toast />
     </View>
   );
@@ -682,6 +743,62 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     fontSize: responsiveFontSize(16),
     color: "#fff",
+  },
+  menuModal: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  menuContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 30,
+  },
+  menuItem: {
+    paddingVertical: 18,
+    paddingHorizontal: 25,
+  },
+  menuItemText: {
+    fontSize: responsiveFontSize(16),
+    color: '#0A0A0A',
+  },
+  menuSeparator: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 15,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 18,
+    paddingHorizontal: 25,
+  },
+  menuIcon: {
+    marginRight: 15,
+    width: 24,
+    textAlign: 'center',
+  },
+  powerButtonContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  powerButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    // Shadow for Android
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
 });
 

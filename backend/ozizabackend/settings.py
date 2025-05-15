@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'symptom_checker',
     'security_measures',
     'notifications',
+    'support',
 ]
 
 MIDDLEWARE = [
@@ -161,6 +162,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'kwamelivingstone77@gmail.com'  # Replace with your Gmail
 EMAIL_HOST_PASSWORD = 'bfjsezjoywempemm'  # Use App Password if 2FA is enabled
 DEFAULT_FROM_EMAIL = 'Oziza Health <kwamelivingstone77@gmail.com>'  # Replace with your Gmail
+SUPPORT_EMAIL = 'kwamelivingstone77@gmail.com'
 
 # Amazon SES for production
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

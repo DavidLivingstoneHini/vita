@@ -94,6 +94,20 @@ export default function RootLayout() {
             <Stack.Screen name="myths/index" />
             <Stack.Screen name="mythdetail/index" />
             <Stack.Screen name="categories/index" />
+            <Stack.Screen name="privacypreferences/index" />
+            <Stack.Screen name="securitysettings/index" />
+            <Stack.Screen name="accountdeactivation/index" />
+            <Stack.Screen name="faqs/index" />
+            <Stack.Screen name="policies/index" />
+            <Stack.Screen name="region/index" />
+            <Stack.Screen name="devicesecurity/index" />
+            <Stack.Screen name="sessions/index" />
+            <Stack.Screen name="managepermissions/index" />
+            <Stack.Screen name="privacypolicy/index" />
+            <Stack.Screen name="terms/index" />
+            <Stack.Screen name="contactsupport/index" />
+            <Stack.Screen name="dataretention/index" />
+
           </>
         ) : (
           <>

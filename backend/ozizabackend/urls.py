@@ -47,5 +47,6 @@ urlpatterns = [
     path('', include('content_recommender.urls')),
     path('', include('symptom_checker.urls')),
     path('', include('notifications.urls')),
+    path('', include('support.urls')),
     path('security_measures/', include('security_measures.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
