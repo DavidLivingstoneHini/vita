@@ -27,7 +27,7 @@ const getSafeAreaTop = () => {
 };
 
 const SecuritySettingsScreen = () => {
-    const API_BASE_URL = "http://192.168.100.34:8000/api/";
+    const API_BASE_URL = "https://www.ozizabackapp.in/api/";
     const router = useRouter();
     const [securitySettings, setSecuritySettings] = useState({
         twoFactorAuth: false,

@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+// import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 
@@ -32,6 +32,17 @@ const getSafeAreaTop = () => {
 };
 
 const FindAGymScreen = () => {
+  if (Platform.OS === "web") {
+    return (
+      <View>
+        <Text>Map is not supported on web.</Text>
+      </View>
+    );
+  }
+
+  const MapView = require("react-native-maps").default;
+  const Marker = require("react-native-maps").Marker;
+
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const router = useRouter();

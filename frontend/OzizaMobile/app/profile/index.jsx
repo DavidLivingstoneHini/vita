@@ -54,7 +54,7 @@ const ProfileInfoScreen = () => {
     const fetchUserData = async () => {
         try {
             const accessToken = await SecureStore.getItemAsync("access_token");
-            const response = await fetch("http://192.168.100.34:8000/api/v1/users/profile/", {
+            const response = await fetch("https://www.ozizabackapp.in/api/v1/users/profile/", {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                 },

@@ -60,8 +60,7 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Oziza to access your location."
         }
       ],
-      "expo-secure-store",
-      "expo-facebook"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

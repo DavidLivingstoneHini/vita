@@ -15,7 +15,7 @@ import * as SecureStore from 'expo-secure-store';
 import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
-const API_BASE_URL = "http://192.168.100.34:8000/api/";
+const API_BASE_URL = "https://www.ozizabackapp.in/api/";
 
 const responsiveFontSize = (size) => {
     const scaleFactor = width / 375;

@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 
-const API_BASE_URL = "http://192.168.100.34:8000/api/";
+const API_BASE_URL = "https://www.ozizabackapp.in/api/";
 
 // Token refresh management
 let isRefreshing = false;

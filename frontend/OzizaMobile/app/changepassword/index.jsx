@@ -95,7 +95,7 @@ const ChangePasswordScreen = () => {
       }
 
       const response = await fetch(
-        "http://192.168.100.34:8000/api/v1/users/password/change/",
+        "https://www.ozizabackapp.in/api/v1/users/password/change/",
         {
           method: "POST",
           headers: {

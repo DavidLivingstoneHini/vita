@@ -23,7 +23,7 @@ import Modal from 'react-native-modal';
 const { width, height } = Dimensions.get("window");
 
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
-const API_BASE_URL = "http://192.168.100.34:8000/api/";
+const API_BASE_URL = "https://www.ozizabackapp.in/api/";
 
 const responsiveFontSize = (size) => {
   const scaleFactor = width / 375;
