@@ -16,6 +16,8 @@ import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
+const API_BASE_URL = "https://www.ozizabackapp.in/api/";
+
 const responsiveFontSize = (size) => {
     const scaleFactor = width / 375;
     return Math.ceil(size * scaleFactor);
