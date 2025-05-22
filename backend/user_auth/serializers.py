@@ -34,7 +34,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             except DjangoValidationError:
                 raise serializers.ValidationError({"email": "Enter a valid email address"})
 
-            # Check for disposable emails
             if hasattr(settings, 'DISPOSABLE_EMAIL_DOMAINS'):
                 domain = data['email'].split('@')[-1]
                 if domain in settings.DISPOSABLE_EMAIL_DOMAINS:
@@ -61,10 +60,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.is_superuser = is_superuser
         user.save()
 
-        # Send verification email if email was provided
-        if user.email:
-            user.send_verification_email()
-
         return user
 
     def validate_email(self, value):
@@ -86,16 +81,17 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'email', 'phone_number', 'full_name', 'profile_picture', 'health_profile',
                 'date_of_birth', 'gender', 'is_staff', 'is_superuser',
-                'is_email_verified', 'created_at', 'updated_at', 'timezone', 'country', 'region']
-        read_only_fields = ['is_superuser', 'is_staff', 'is_email_verified']
+                'created_at', 'updated_at', 'timezone', 'country', 'region']
+        read_only_fields = ['is_superuser', 'is_staff']
         extra_kwargs = {
-            'date_of_birth': {'required': False},  # Explicitly make optional
+            'date_of_birth': {'required': False},
             'gender': {'required': False},
             'phone_number': {'required': False},
             'timezone': {'required': False},
             'country': {'required': False},
             'region': {'required': False}
         }
+
 
 class LoginSerializer(serializers.Serializer):
     email_or_phone = serializers.CharField(max_length=255)
@@ -105,22 +101,14 @@ class LoginSerializer(serializers.Serializer):
         email_or_phone = data['email_or_phone']
         password = data['password']
 
-        # Check if input is email or phone
         if '@' in email_or_phone:
-            # Treat as email
             user = User.objects.filter(email=email_or_phone.lower()).first()
         else:
-            # Treat as phone number
             user = User.objects.filter(phone_number=email_or_phone).first()
 
         if not user or not user.check_password(password):
             raise serializers.ValidationError({
                 'email_or_phone': ['Invalid credentials. Please try again.']
-            })
-
-        if user.email and not user.is_email_verified:
-            raise serializers.ValidationError({
-                'email': ['Email not verified. Please check your email for verification instructions.']
             })
 
         return user
@@ -184,23 +172,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         user.save()
         return user
 
-
-class EmailVerificationSerializer(serializers.Serializer):
-    token = serializers.UUIDField(required=True)
-
-    def validate(self, data):
-        try:
-            user = User.objects.get(email_verification_token=data['token'])
-        except User.DoesNotExist:
-            raise serializers.ValidationError('Invalid verification token')
-        return user
-
-    def save(self):
-        user = self.validated_data
-        user.is_email_verified = True
-        user.email_verification_token = None
-        user.save()
-        return user
 
 class UserPermissionsSerializer(serializers.ModelSerializer):
     class Meta:

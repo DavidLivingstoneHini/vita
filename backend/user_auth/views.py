@@ -27,7 +27,7 @@ from .serializers import (
     PasswordChangeSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
-    EmailVerificationSerializer, UserPermissionsSerializer
+    UserPermissionsSerializer
 )
 
 
@@ -135,18 +135,15 @@ class PasswordResetRequestView(APIView):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
-            # Return success even if user doesn't exist to prevent email enumeration
             return Response(
                 {"detail": "If this email exists, you will receive a password reset link"},
                 status=status.HTTP_200_OK
             )
 
-        # Generate token
         user.reset_password_token = uuid.uuid4()
         user.reset_password_token_expires = timezone.now() + timedelta(hours=1)
         user.save()
 
-        # Send email
         reset_link = f"{settings.FRONTEND_URL}/reset-password/{user.reset_password_token}/"
 
         subject = 'Password Reset Request'
@@ -183,18 +180,6 @@ class PasswordResetConfirmView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class EmailVerificationView(APIView):
-    permission_classes = []
-
-    def post(self, request):
-        serializer = EmailVerificationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({'message': 'Email verified successfully'},
-                            status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 class ProfilePictureView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -204,15 +189,13 @@ class ProfilePictureView(APIView):
         if 'profile_picture' not in request.FILES:
             return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate image size (max 2MB)
         file = request.FILES['profile_picture']
-        if file.size > 2 * 1024 * 1024:  # 2MB
+        if file.size > 2 * 1024 * 1024:
             return Response(
                 {'error': 'Image size exceeds 2MB limit'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validate image type
         valid_types = ['image/jpeg', 'image/png', 'image/gif']
         if file.content_type not in valid_types:
             return Response(
@@ -221,11 +204,9 @@ class ProfilePictureView(APIView):
             )
 
         try:
-            # Save the file
             file_name = default_storage.save(f'profile_pictures/{user.id}_{file.name}', file)
             file_url = request.build_absolute_uri(default_storage.url(file_name))
 
-            # Update user model
             user.profile_picture = file_url
             user.save()
 
@@ -245,11 +226,9 @@ class ProfilePictureView(APIView):
             )
 
         try:
-            # Remove the file from storage
-            file_path = user.profile_picture.split('/media/')[-1]  # Extract relative path
+            file_path = user.profile_picture.split('/media/')[-1]
             default_storage.delete(file_path)
 
-            # Update user model
             user.profile_picture = None
             user.save()
 
@@ -268,8 +247,6 @@ class PrivacySettingsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        # Return default privacy settings (you might want to store these in the User model)
         return Response({
             'showEmail': True,
             'showPhone': False,
@@ -278,9 +255,6 @@ class PrivacySettingsView(APIView):
         }, status=status.HTTP_200_OK)
 
     def put(self, request):
-        user = request.user
-        # Here you would update the user's privacy settings
-        # For now, just return success
         return Response({'message': 'Privacy settings updated'}, status=status.HTTP_200_OK)
 
 
@@ -288,8 +262,6 @@ class SecuritySettingsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        # Return security settings
         return Response({
             'twoFactorAuth': False,
             'loginAlerts': True,
@@ -297,12 +269,6 @@ class SecuritySettingsView(APIView):
         }, status=status.HTTP_200_OK)
 
     def put(self, request):
-        user = request.user
-        setting = request.data.get('setting')
-        value = request.data.get('value')
-
-        # Here you would update specific security settings
-        # For now, just return success
         return Response({'message': 'Security setting updated'}, status=status.HTTP_200_OK)
 
 
@@ -319,7 +285,6 @@ class AccountDeactivationView(APIView):
 class TimezoneView(APIView):
     permission_classes = [IsAuthenticated]
 
-    # Define timezones directly in the class
     TIMEZONES = [
         {'label': 'Eastern Time (ET)', 'value': 'et', 'offset': '-05:00'},
         {'label': 'Central Time (CT)', 'value': 'ct', 'offset': '-06:00'},
@@ -349,7 +314,6 @@ class TimezoneView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validate the timezone is in our list
         valid_timezones = [tz['value'] for tz in self.TIMEZONES]
         if timezone not in valid_timezones:
             return Response(
@@ -364,6 +328,7 @@ class TimezoneView(APIView):
             {'message': 'Timezone updated successfully'},
             status=status.HTTP_200_OK
         )
+
 
 class UserPermissionsView(generics.RetrieveUpdateAPIView):
     serializer_class = UserPermissionsSerializer

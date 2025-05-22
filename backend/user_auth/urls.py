@@ -8,8 +8,12 @@ from .views import (
     PasswordChangeView,
     PasswordResetRequestView,
     PasswordResetConfirmView,
-    EmailVerificationView, ProfilePictureView, PrivacySettingsView, SecuritySettingsView, AccountDeactivationView,
-    TimezoneView, UserPermissionsView
+    ProfilePictureView,
+    PrivacySettingsView,
+    SecuritySettingsView,
+    AccountDeactivationView,
+    TimezoneView,
+    UserPermissionsView
 )
 
 urlpatterns = [
@@ -21,7 +25,6 @@ urlpatterns = [
     path('api/v1/users/password/change/', PasswordChangeView.as_view()),
     path('api/v1/users/password/reset/request/', PasswordResetRequestView.as_view()),
     path('api/v1/users/password/reset/confirm/', PasswordResetConfirmView.as_view()),
-    path('api/v1/users/verify-email/', EmailVerificationView.as_view()),
     path('api/v1/users/profile/picture/', ProfilePictureView.as_view()),
     path('api/v1/users/privacy/', PrivacySettingsView.as_view()),
     path('api/v1/users/security/', SecuritySettingsView.as_view()),

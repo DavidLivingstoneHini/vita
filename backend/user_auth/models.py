@@ -38,13 +38,11 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, email=None, phone_number=None, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
-        extra_fields.setdefault('is_email_verified', True)
         return self._create_user(email, phone_number, password, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_email_verified', True)
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
         if extra_fields.get('is_superuser') is not True:
@@ -78,8 +76,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_of_birth = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_email_verified = models.BooleanField(default=True)
-    email_verification_token = models.UUIDField(default=uuid.uuid4, editable=False)
     reset_password_token = models.UUIDField(null=True, blank=True)
     reset_password_token_expires = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -87,7 +83,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     timezone = models.CharField(max_length=50, blank=True, null=True)
     country = models.CharField(max_length=2, blank=True, null=True)
     region = models.CharField(max_length=5, blank=True, null=True)
-    # Add permission-related fields
     allow_location = models.BooleanField(default=False)
     allow_notifications = models.BooleanField(default=True)
     allow_camera = models.BooleanField(default=False)
@@ -96,7 +91,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
     EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'email'  # Use email as the username field
+    USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
     class Meta:
@@ -104,23 +99,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email or self.phone_number
-
-    def send_verification_email(self):
-        subject = 'Verify your email address'
-        verification_link = f"{settings.FRONTEND_URL}/verify-email/{self.email_verification_token}/"
-        html_message = render_to_string('email_verification.html', {
-            'user': self,
-            'verification_link': verification_link,
-        })
-        plain_message = strip_tags(html_message)
-        send_mail(
-            subject,
-            plain_message,
-            settings.DEFAULT_FROM_EMAIL,
-            [self.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
 
     def send_password_reset_email(self):
         self.reset_password_token = uuid.uuid4()
@@ -148,11 +126,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             raise ValidationError('Either email or phone number must be provided')
 
         if self.email:
-            # Basic email format validation
             if not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', self.email):
                 raise ValidationError('Enter a valid email address')
 
-            # Check for disposable emails if needed
             if hasattr(settings, 'DISPOSABLE_EMAIL_DOMAINS'):
                 domain = self.email.split('@')[-1]
                 if domain in settings.DISPOSABLE_EMAIL_DOMAINS:
