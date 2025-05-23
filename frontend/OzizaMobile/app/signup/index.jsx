@@ -165,37 +165,30 @@ export default function SignUpScreen() {
         );
       }
 
-      // If user provided email, redirect to verification
-      if (email.trim()) {
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Verification code sent to your email',
-        });
-        router.push({
-          pathname: '/verifyemail',
-          params: { token: data.user?.email_verification_token || '' }
-        });
-        return;
-      }
-
-      // For phone-only registration, proceed to login
+      // Store tokens if they exist in response
       if (data.access) {
         await SecureStore.setItemAsync("access_token", data.access);
       }
       if (data.refresh) {
         await SecureStore.setItemAsync("refresh_token", data.refresh);
       }
+
+      // Store user data
       if (data.user) {
         await SecureStore.setItemAsync("full_name", data.user.full_name || "");
         await SecureStore.setItemAsync("email", data.user.email || "");
         await SecureStore.setItemAsync("phone_number", data.user.phone_number || "");
       }
 
+      let successMessage = 'Account created successfully!';
+      if (data.user.email && !data.user.is_email_verified) {
+        successMessage += ' Please check your email for verification instructions.';
+      }
+
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Account created successfully!',
+        text2: successMessage,
       });
 
       router.push("/(tabs)/home");
