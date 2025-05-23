@@ -53,7 +53,6 @@ export default function LoginScreen() {
       const credential = GoogleAuthProvider.credential(id_token);
       signInWithCredential(auth, credential)
         .then(async (userCredential) => {
-          // Handle successful sign-in
           const user = userCredential.user;
           await SecureStore.setItemAsync('access_token', user.accessToken);
           await SecureStore.setItemAsync('email', user.email);
@@ -80,18 +79,18 @@ export default function LoginScreen() {
   const validateFields = () => {
     let isValid = true;
 
+    // Reset errors
+    setEmailOrPhoneError("");
+    setPasswordError("");
+
     if (!emailOrPhone) {
       setEmailOrPhoneError("Email or phone number is required");
       isValid = false;
-    } else {
-      setEmailOrPhoneError("");
     }
 
     if (!password) {
       setPasswordError("Password is required");
       isValid = false;
-    } else {
-      setPasswordError("");
     }
 
     return isValid;
@@ -118,11 +117,23 @@ export default function LoginScreen() {
       const responseData = await response.json();
 
       if (!response.ok) {
-        const errorMessage = responseData.email_or_phone?.[0] ||
-          responseData.detail ||
-          responseData.message ||
-          'Login failed. Please try again.';
-        throw new Error(errorMessage);
+        // Handle specific field errors
+        if (responseData.email_or_phone) {
+          setEmailOrPhoneError(responseData.email_or_phone[0]);
+        }
+        if (responseData.password) {
+          setPasswordError(responseData.password[0]);
+        }
+        if (responseData.detail) {
+          // For generic authentication failures
+          if (responseData.detail.toLowerCase().includes('invalid credentials')) {
+            setEmailOrPhoneError("Invalid email/phone or password");
+            setPasswordError("Invalid email/phone or password");
+          } else {
+            throw new Error(responseData.detail);
+          }
+        }
+        return;
       }
 
       // Store tokens and user data
@@ -140,20 +151,19 @@ export default function LoginScreen() {
       }
 
       router.push("/(tabs)/home");
-
       Toast.show({
         type: 'success',
         text1: 'Login Successful',
         text2: 'Welcome back!',
       });
 
-      // Inside your handleLogin function after successful login
-      await initializePushNotifications();
     } catch (error) {
+      console.error('Login error:', error);
+      // Show generic error for network issues or other unexpected errors
       Toast.show({
         type: 'error',
-        text1: 'Login Error',
-        text2: error.message || 'Login failed. Please try again.',
+        text1: 'Error',
+        text2: 'Something went wrong. Please try again.',
         position: 'top',
         visibilityTime: 4000,
       });
@@ -255,18 +265,16 @@ export default function LoginScreen() {
                 placeholder="Email or Phone Number"
                 placeholderTextColor="#808080"
                 value={emailOrPhone}
-                onChangeText={setEmailOrPhone}
+                onChangeText={(text) => {
+                  setEmailOrPhone(text);
+                  setEmailOrPhoneError(""); // Clear error when typing
+                }}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                onBlur={() => {
-                  if (!emailOrPhone) {
-                    setEmailOrPhoneError("Email or phone number is required");
-                  } else {
-                    setEmailOrPhoneError("");
-                  }
-                }}
               />
-              {emailOrPhoneError ? <Text style={styles.errorText}>{emailOrPhoneError}</Text> : null}
+              {emailOrPhoneError ? (
+                <Text style={styles.errorText}>{emailOrPhoneError}</Text>
+              ) : null}
             </View>
 
             <View style={styles.inputWrapper}>
@@ -275,21 +283,16 @@ export default function LoginScreen() {
                 placeholder="Password"
                 placeholderTextColor="#808080"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setPasswordError(""); // Clear error when typing
+                }}
                 secureTextEntry={passwordVisibility}
-                /* Android-specific improvements */
                 textContentType="password"
                 autoComplete="password"
                 autoCorrect={false}
                 spellCheck={false}
                 underlineColorAndroid="transparent"
-                onBlur={() => {
-                  if (!password) {
-                    setPasswordError("Password is required");
-                  } else {
-                    setPasswordError("");
-                  }
-                }}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -301,7 +304,9 @@ export default function LoginScreen() {
                   color="#808080"
                 />
               </TouchableOpacity>
-              {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+              {passwordError ? (
+                <Text style={styles.errorText}>{passwordError}</Text>
+              ) : null}
             </View>
 
             <TouchableOpacity
@@ -403,12 +408,6 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: height * 0.09,
   },
-  logoText: {
-    fontSize: 14,
-    marginTop: -8,
-    marginLeft: 40,
-    color: "#525252",
-  },
   inputContainer: {
     paddingHorizontal: width * 0.05,
     marginBottom: height * 0.02,
@@ -417,7 +416,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     paddingHorizontal: 10,
     paddingVertical: 2,
-    marginBottom: height * 0.01,
+    marginBottom: height * 0.015, // Increased margin for error text
   },
   input: {
     height: height * 0.06,
@@ -434,6 +433,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 20,
     top: "35%",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 5,
   },
   forgotPasswordContainer: {
     alignItems: "flex-end",
@@ -513,9 +518,5 @@ const styles = StyleSheet.create({
     color: "#525252",
     fontWeight: "700",
     fontSize: 14,
-  },
-  errorText: {
-    color: "red",
-    fontSize: 12,
   },
 });

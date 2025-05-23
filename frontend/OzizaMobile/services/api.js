@@ -41,8 +41,8 @@ const isTokenExpired = (token) => {
   if (!payload || !payload.exp) return true;
 
   const now = Date.now() / 1000;
-  // Consider token expired if it has less than 5 minutes remaining
-  return payload.exp < now + 300;
+  // Consider token expired if it has less than 1 day remaining
+  return payload.exp < now + 86400;
 };
 
 /**
@@ -66,7 +66,8 @@ const refreshTokens = async () => {
     }
 
     // Check if refresh token is expired
-    if (isTokenExpired(refreshToken)) {
+    const refreshPayload = decodeToken(refreshToken);
+    if (!refreshPayload || !refreshPayload.exp || refreshPayload.exp < Date.now() / 1000) {
       await clearTokens();
       throw new Error("Refresh token expired. Please login again.");
     }
@@ -101,6 +102,11 @@ const refreshTokens = async () => {
       await SecureStore.setItemAsync("refresh_token", data.refresh);
     }
 
+    // Get user data if included in response
+    if (data.user) {
+      await SecureStore.setItemAsync("user_data", JSON.stringify(data.user));
+    }
+
     onRefreshed(data.access);
     return data.access;
   } catch (error) {
@@ -118,6 +124,7 @@ const refreshTokens = async () => {
 const clearTokens = async () => {
   await SecureStore.deleteItemAsync("access_token");
   await SecureStore.deleteItemAsync("refresh_token");
+  await SecureStore.deleteItemAsync("user_data");
 };
 
 /**
@@ -229,24 +236,19 @@ export const validateTokenOnStartup = async () => {
  */
 export const getSymptoms = async (searchQuery = '') => {
   try {
-    // Use the search endpoint explicitly for better clarity
     const endpoint = `symptoms/search/?q=${encodeURIComponent(searchQuery.trim())}`;
-
     const response = await apiRequest(endpoint);
 
-    // Handle different response structures
     if (!response) {
       throw new Error('Empty response from server');
     }
 
-    // Check for success status or direct data array
     const data = response.status === 'success' ? response.data : response;
 
     if (!Array.isArray(data)) {
       throw new Error('Invalid response format - expected array');
     }
 
-    // Sort results with exact matches first
     const lowerCaseQuery = searchQuery.toLowerCase();
     const sortedResults = [...data].sort((a, b) => {
       const aExact = a.name.toLowerCase() === lowerCaseQuery;
@@ -357,6 +359,10 @@ export const loginUser = async (email, password) => {
     await SecureStore.setItemAsync("access_token", response.access);
     await SecureStore.setItemAsync("refresh_token", response.refresh);
 
+    if (response.user) {
+      await SecureStore.setItemAsync("user_data", JSON.stringify(response.user));
+    }
+
     return response;
   } catch (error) {
     console.error('Login error:', error);
@@ -382,6 +388,13 @@ export const logoutUser = async () => {
  */
 export const getCurrentUser = async () => {
   try {
+    // First try to get from SecureStore
+    const userData = await SecureStore.getItemAsync("user_data");
+    if (userData) {
+      return JSON.parse(userData);
+    }
+
+    // Fallback to API request
     return await apiRequest('auth/user/');
   } catch (error) {
     console.error('Error fetching user profile:', error);

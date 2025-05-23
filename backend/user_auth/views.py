@@ -106,8 +106,41 @@ class RefreshTokenView(TokenViewBase):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response(
+                {"detail": "Invalid or expired refresh token"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Get the user from the refresh token
+        refresh = RefreshToken(request.data['refresh'])
+        user_id = refresh.payload.get('user_id')
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Generate new tokens
+        new_refresh = RefreshToken.for_user(user)
+        access_token = str(new_refresh.access_token)
+        refresh_token = str(new_refresh)
+
+        # Calculate expiration time
+        expiration_time = datetime.utcnow() + api_settings.ACCESS_TOKEN_LIFETIME
+
+        return Response({
+            'access': access_token,
+            'refresh': refresh_token,
+            'expires_in': expiration_time.isoformat() + 'Z',
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
 
 
 class PasswordChangeView(APIView):

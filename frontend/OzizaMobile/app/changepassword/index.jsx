@@ -208,6 +208,11 @@ const ChangePasswordScreen = () => {
               errors.currentPassword && styles.inputError
             ]}
             secureTextEntry={true}
+            textContentType="password"
+            autoComplete="password"
+            autoCorrect={false}
+            spellCheck={false}
+            underlineColorAndroid="transparent"
             value={currentPassword}
             onChangeText={(text) => {
               setCurrentPassword(text);
@@ -233,6 +238,11 @@ const ChangePasswordScreen = () => {
               errors.newPassword && styles.inputError
             ]}
             secureTextEntry={true}
+            textContentType="password"
+            autoComplete="password"
+            autoCorrect={false}
+            spellCheck={false}
+            underlineColorAndroid="transparent"
             value={newPassword}
             onChangeText={(text) => {
               setNewPassword(text);
@@ -258,6 +268,11 @@ const ChangePasswordScreen = () => {
               errors.confirmNewPassword && styles.inputError
             ]}
             secureTextEntry={true}
+            textContentType="password"
+            autoComplete="password"
+            autoCorrect={false}
+            spellCheck={false}
+            underlineColorAndroid="transparent"
             value={confirmNewPassword}
             onChangeText={(text) => {
               setConfirmNewPassword(text);
