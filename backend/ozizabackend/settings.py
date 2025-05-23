@@ -154,23 +154,14 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Email Configuration (Using Gmail)
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'kwamelivingstone77@gmail.com'  # Replace with your Gmail
-EMAIL_HOST_PASSWORD = 'bfjsezjoywempemm'  # Use App Password if 2FA is enabled
-DEFAULT_FROM_EMAIL = 'Oziza Health <kwamelivingstone77@gmail.com>'  # Replace with your Gmail
-SUPPORT_EMAIL = 'kwamelivingstone77@gmail.com'
-
 # Amazon SES for production
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'email-smtp.us-east-1.amazonaws.com'  # Change region if needed
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'your-smtp-username'
-# EMAIL_HOST_PASSWORD = 'your-smtp-password'
+# Email settings
+EMAIL_BACKEND = 'django_ses.SESBackend'
+AWS_SES_REGION_NAME = 'eu-north-1'  # e.g., 'us-east-1'
+AWS_SES_REGION_ENDPOINT = f'email.{AWS_SES_REGION_NAME}.amazonaws.com'
+AWS_SES_ACCESS_KEY_ID = 'AKIA4DMVQ3SNQXBPMIZK'
+AWS_SES_SECRET_ACCESS_KEY = 'BF+HcjSwKrmsH4iT6vQ6zOkrC93trLNxBUKdL59vKGr+'
+DEFAULT_FROM_EMAIL = 'no-reply@oziza.org'
 
 # Frontend URLs
 FRONTEND_URL = 'http://192.168.100.34:8081'  # Change to your production URL when deployed

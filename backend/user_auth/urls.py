@@ -13,7 +13,7 @@ from .views import (
     SecuritySettingsView,
     AccountDeactivationView,
     TimezoneView,
-    UserPermissionsView
+    UserPermissionsView, VerifyEmailView, SendVerificationEmailView
 )
 
 urlpatterns = [
@@ -31,4 +31,6 @@ urlpatterns = [
     path('api/v1/users/profile/deactivate/', AccountDeactivationView.as_view()),
     path('api/v1/users/timezone/', TimezoneView.as_view()),
     path('api/v1/users/permissions/', UserPermissionsView.as_view()),
+    path('api/v1/users/verify-email/', VerifyEmailView.as_view()),
+    path('api/v1/users/send-verification-email/', SendVerificationEmailView.as_view()),
 ]

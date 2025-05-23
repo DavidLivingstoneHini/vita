@@ -40,7 +40,7 @@ class Command(BaseCommand):
         self.stdout.write("Initializing NLP model...")
         try:
             # Use the small model for better performance
-            nlp = spacy.load("en_core_web_sm")
+            nlp = spacy.load("en_core_web_md")
 
             # Disable unnecessary pipeline components
             with nlp.disable_pipes("tagger", "parser", "ner"):

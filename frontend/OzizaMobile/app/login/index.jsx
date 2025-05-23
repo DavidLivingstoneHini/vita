@@ -38,8 +38,9 @@ export default function LoginScreen() {
 
   // Google Auth Setup
   const [request, response, promptAsync] = Google.useAuthRequest({
-    iosClientId: '454261196558-pqg607nr354prbj3526uabnohka4lpk1.apps.googleusercontent.com',
-    androidClientId: '454261196558-jngnv4vq2rfp79o8h2ju5mu2amrcn614.apps.googleusercontent.com',
+    expoClientId: '539163820187-mtqt7m1a7favr06bqa15ud64irs7he2e.apps.googleusercontent.com',
+    iosClientId: '539163820187-iii7qa9tjovh08kmh7m0caieqesjagim.apps.googleusercontent.com',
+    androidClientId: '539163820187-a82rpc159qoo4fuv50fv4l78b0l8f03f.apps.googleusercontent.com',
     webClientId: '539163820187-og6r7smr5uuo48kvcap399urnfid7blv.apps.googleusercontent.com',
   });
 
@@ -48,40 +49,33 @@ export default function LoginScreen() {
   // Handle Google Auth Response
   useEffect(() => {
     if (response?.type === 'success') {
-      handleGoogleSignIn(response);
+      const { id_token } = response.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, credential)
+        .then(async (userCredential) => {
+          // Handle successful sign-in
+          const user = userCredential.user;
+          await SecureStore.setItemAsync('access_token', user.accessToken);
+          await SecureStore.setItemAsync('email', user.email);
+          await SecureStore.setItemAsync('full_name', user.displayName);
+
+          Toast.show({
+            type: 'success',
+            text1: 'Success',
+            text2: 'Google sign-in successful!',
+          });
+
+          router.push('/(tabs)/home');
+        })
+        .catch((error) => {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: error.message,
+          });
+        });
     }
   }, [response]);
-
-  const handleGoogleSignIn = async (authResponse) => {
-    try {
-      setLoading(true);
-      const { id_token } = authResponse.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      const userCredential = await signInWithCredential(auth, credential);
-
-      // Store user data in SecureStore
-      await SecureStore.setItemAsync("access_token", userCredential.user.accessToken);
-      await SecureStore.setItemAsync("email", userCredential.user.email);
-      await SecureStore.setItemAsync("full_name", userCredential.user.displayName || "");
-      await SecureStore.setItemAsync("userProfilePicture", userCredential.user.photoURL || "");
-
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Google sign-in successful!',
-      });
-
-      router.push("/(tabs)/home");
-    } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const validateFields = () => {
     let isValid = true;
@@ -283,6 +277,12 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={passwordVisibility}
+                /* Android-specific improvements */
+                textContentType="password"
+                autoComplete="password"
+                autoCorrect={false}
+                spellCheck={false}
+                underlineColorAndroid="transparent"
                 onBlur={() => {
                   if (!password) {
                     setPasswordError("Password is required");
@@ -337,7 +337,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={styles.socialButton}
                 onPress={() => promptAsync()}
-                disabled={loading || !request}
+                disabled={!request}
               >
                 <Image
                   source={require("../../assets/images/devicon_google.png")}

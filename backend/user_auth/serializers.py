@@ -1,13 +1,17 @@
-from django.contrib.auth.password_validation import validate_password
-from rest_framework import serializers
-from .models import User
-from django.conf import settings
-from django.contrib.auth import authenticate
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError as DjangoValidationError
-from django.utils import timezone
+import random
 import uuid
-import re
+
+from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.mail import send_mail
+from django.core.validators import validate_email
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.html import strip_tags
+from rest_framework import serializers
+
+from .models import User
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -58,7 +62,34 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         user.is_staff = is_staff
         user.is_superuser = is_superuser
-        user.save()
+
+        # Only send verification if email was provided
+        if user.email:
+            user.email_verification_token = uuid.uuid4()
+            user.email_verification_token_expires = timezone.now() + timezone.timedelta(hours=24)
+            user.verification_code = str(random.randint(100000, 999999))
+            user.save()
+
+            subject = 'Verify Your Email Address'
+            verification_link = f"{settings.FRONTEND_URL}/verify-email/{user.email_verification_token}/"
+            html_message = render_to_string('email_verification.html', {
+                'user': user,
+                'verification_code': user.verification_code,
+                'verification_link': verification_link,
+            })
+            plain_message = strip_tags(html_message)
+
+            send_mail(
+                subject,
+                plain_message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+        else:
+            user.is_email_verified = True  # No email to verify
+            user.save()
 
         return user
 
@@ -189,3 +220,27 @@ class UserPermissionsSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
+
+class EmailVerificationSerializer(serializers.Serializer):
+    token = serializers.UUIDField(required=True)
+    code = serializers.CharField(max_length=6, required=True)
+
+    def validate(self, data):
+        try:
+            user = User.objects.get(email_verification_token=data['token'])
+            if user.email_verification_token_expires < timezone.now():
+                raise serializers.ValidationError('Verification token has expired')
+            if user.verification_code != data['code']:
+                raise serializers.ValidationError('Invalid verification code')
+        except User.DoesNotExist:
+            raise serializers.ValidationError('Invalid verification token')
+        return data
+
+    def save(self):
+        user = User.objects.get(email_verification_token=self.validated_data['token'])
+        user.is_email_verified = True
+        user.email_verification_token = None
+        user.email_verification_token_expires = None
+        user.verification_code = None
+        user.save()
+        return user

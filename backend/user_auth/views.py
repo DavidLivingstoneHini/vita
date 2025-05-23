@@ -27,7 +27,7 @@ from .serializers import (
     PasswordChangeSerializer,
     PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
-    UserPermissionsSerializer
+    UserPermissionsSerializer, EmailVerificationSerializer
 )
 
 
@@ -336,3 +336,61 @@ class UserPermissionsView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class SendVerificationEmailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if user.is_email_verified:
+            return Response(
+                {'detail': 'Email is already verified'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.email_verification_token = uuid.uuid4()
+        user.email_verification_token_expires = timezone.now() + timezone.timedelta(hours=24)
+        user.verification_code = str(random.randint(100000, 999999))  # 6-digit code
+        user.save()
+
+        subject = 'Verify Your Email Address'
+        verification_link = f"{settings.FRONTEND_URL}/verify-email/{user.email_verification_token}/"
+        html_message = render_to_string('email_verification.html', {
+            'user': user,
+            'verification_code': user.verification_code,
+            'verification_link': verification_link,
+        })
+        plain_message = strip_tags(html_message)
+
+        send_mail(
+            subject,
+            plain_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+
+        return Response(
+            {'detail': 'Verification email sent'},
+            status=status.HTTP_200_OK
+        )
+
+
+class VerifyEmailView(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        serializer = EmailVerificationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': UserSerializer(user).data,
+                'message': 'Email verified successfully'
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

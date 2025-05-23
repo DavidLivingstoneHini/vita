@@ -116,6 +116,7 @@ export default function RootLayout() {
             <Stack.Screen name="onboarding2/index" />
             <Stack.Screen name="login/index" />
             <Stack.Screen name="signup/index" />
+            <Stack.Screen name="verifyemail/index" />
           </>
         )}
       </Stack>

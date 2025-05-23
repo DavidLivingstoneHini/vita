@@ -11,7 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 
 logger = logging.getLogger(__name__)
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("en_core_web_md")
 
 
 class SymptomListView(generics.ListAPIView):
