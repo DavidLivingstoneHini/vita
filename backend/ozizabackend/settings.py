@@ -157,8 +157,8 @@ SIMPLE_JWT = {
 # Amazon SES for production
 # Email settings
 EMAIL_BACKEND = 'django_ses.SESBackend'
-AWS_SES_REGION_NAME = 'eu-north-1'  # e.g., 'us-east-1'
-AWS_SES_REGION_ENDPOINT = f'email.{AWS_SES_REGION_NAME}.amazonaws.com'
+AWS_SES_REGION_NAME = 'eu-north-1'
+AWS_SES_REGION_ENDPOINT = 'email-smtp.eu-north-1.amazonaws.com'
 AWS_SES_ACCESS_KEY_ID = 'AKIA4DMVQ3SNQXBPMIZK'
 AWS_SES_SECRET_ACCESS_KEY = 'BF+HcjSwKrmsH4iT6vQ6zOkrC93trLNxBUKdL59vKGr+'
 DEFAULT_FROM_EMAIL = 'no-reply@oziza.org'
