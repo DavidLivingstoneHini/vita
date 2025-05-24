@@ -69,7 +69,7 @@ const FindAGymScreen = () => {
     try {
       setIsLoading(true);
       const accessToken = await SecureStore.getItemAsync("access_token");
-      const response = await axios.get(`${API_URL}/gyms/`, {
+      const response = await axios.get(`${API_URL}/users/gyms/`, {
         params: {
           lat: latitude,
           lng: longitude,
