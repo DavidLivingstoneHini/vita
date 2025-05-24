@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform, ScrollView, ActivityIndicator, FlatList } from 'react-native';
 import { useRouter } from "expo-router";
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { getSymptoms } from '../../services/api';
@@ -20,7 +20,7 @@ const getSafeAreaTop = () => {
     return 20;
 };
 
-const SypmtomChecker2 = () => {
+const SymptomChecker2 = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { age, sex } = params;
@@ -33,16 +33,14 @@ const SypmtomChecker2 = () => {
 
     useEffect(() => {
         const fetchSymptoms = async () => {
-            if (symptomInput.trim().length > 0) {  // Changed from > 2 to > 0
+            if (symptomInput.trim().length > 0) {
                 setIsLoading(true);
                 setError(null);
                 try {
                     const data = await getSymptoms(symptomInput);
-                    // Filter for exact matches first
                     const exactMatches = data.filter(s =>
                         s.name.toLowerCase() === symptomInput.toLowerCase()
                     );
-                    // If exact match found, use only that
                     if (exactMatches.length > 0) {
                         setSuggestedSymptoms(exactMatches);
                     } else {
@@ -65,15 +63,18 @@ const SypmtomChecker2 = () => {
 
     const addSymptom = (symptom) => {
         try {
-            // If symptom is an object (from search), use it directly
             if (typeof symptom === 'object') {
-                setSymptomsList([...symptomsList, {
-                    id: symptom.id.toString(),
-                    name: symptom.name
-                }]);
-                setSymptomInput('');
+                // Check if symptom already exists in the list
+                if (!symptomsList.some(item => item.id === symptom.id)) {
+                    setSymptomsList([...symptomsList, {
+                        id: symptom.id.toString(),
+                        name: symptom.name
+                    }]);
+                    setSymptomInput('');
+                } else {
+                    setError('This symptom is already added');
+                }
             }
-            // If it's text input, create a new symptom object
             else if (symptomInput.trim()) {
                 const newSymptom = {
                     id: Date.now().toString(),
@@ -86,6 +87,10 @@ const SypmtomChecker2 = () => {
             console.error('Error adding symptom:', error);
             setError('Failed to add symptom. Please try again.');
         }
+    };
+
+    const removeSymptom = (id) => {
+        setSymptomsList(symptomsList.filter(item => item.id !== id));
     };
 
     const handleAddFromList = (symptom) => {
@@ -107,105 +112,136 @@ const SypmtomChecker2 = () => {
         });
     };
 
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
-                </TouchableOpacity>
-                <Text style={styles.title}>Symptom Checker</Text>
-            </View>
-
-            {error && (
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{error}</Text>
-                </View>
-            )}
-
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Type a symptom"
-                    placeholderTextColor="#808080"
-                    value={symptomInput}
-                    onChangeText={setSymptomInput}
-                />
-                <TouchableOpacity
-                    style={[styles.addButton, !symptomInput.trim() && styles.disabledButton]}
-                    onPress={() => addSymptom(symptomInput)}
-                    disabled={!symptomInput.trim()}
-                >
-                    <Text style={styles.addButtonText}>Add</Text>
-                </TouchableOpacity>
-            </View>
-
-            {isLoading && (
-                <ActivityIndicator size="small" color="#032825" style={styles.loadingIndicator} />
-            )}
-
-            {symptomInput.trim().length > 0 && !isLoading && suggestedSymptoms.length > 0 && (
-                <View style={styles.searchResults}>
-                    {suggestedSymptoms.map((item) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            style={[
-                                styles.searchResultItem,
-                                item.name.toLowerCase() === symptomInput.toLowerCase() && styles.exactMatchItem
-                            ]}
-                            onPress={() => handleAddFromList(item)}
-                        >
-                            <Text style={styles.searchResultText}>{item.name}</Text>
-                            {item.name.toLowerCase() === symptomInput.toLowerCase() && (
-                                <Text style={styles.exactMatchBadge}>Exact Match</Text>
-                            )}
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            )}
-
-            <Text style={styles.infoText}>
-                For better results, type your primary symptoms first, then add additional symptoms.
+    const renderSymptomItem = ({ item }) => (
+        <View style={styles.symptomItem}>
+            <Text style={styles.symptomText} numberOfLines={1} ellipsizeMode="tail">
+                {item.name}
             </Text>
-
-            <Text style={styles.subTitle}>Recently searched symptoms:</Text>
-
-            <View style={styles.symptomsList}>
-                {symptomsList.slice(0, 5).map((item) => (
-                    <View style={styles.symptomItem} key={item.id}>
-                        <Text style={styles.symptomText}>{item.name}</Text>
-                    </View>
-                ))}
-            </View>
-
-            <TouchableOpacity
-                style={[styles.finishButton, symptomsList.length === 0 && styles.disabledButton]}
-                onPress={handleFinish}
-                disabled={symptomsList.length === 0}
-            >
-                <Text style={styles.finishButtonText}>Continue</Text>
+            <TouchableOpacity onPress={() => removeSymptom(item.id)}>
+                <Icon name="close" size={responsiveFontSize(18)} color="#999" />
             </TouchableOpacity>
-        </ScrollView>
+        </View>
+    );
+
+    return (
+        <View style={styles.container}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                keyboardShouldPersistTaps="handled"
+            >
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()}>
+                        <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
+                    </TouchableOpacity>
+                    <Text style={styles.title}>Symptom Checker</Text>
+                </View>
+
+                {error && (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{error}</Text>
+                    </View>
+                )}
+
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Type a symptom"
+                        placeholderTextColor="#808080"
+                        value={symptomInput}
+                        onChangeText={setSymptomInput}
+                        returnKeyType="done"
+                    />
+                    <TouchableOpacity
+                        style={[styles.addButton, !symptomInput.trim() && styles.disabledButton]}
+                        onPress={() => addSymptom(symptomInput)}
+                        disabled={!symptomInput.trim()}
+                    >
+                        <Text style={styles.addButtonText}>Add</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {isLoading && (
+                    <ActivityIndicator size="small" color="#032825" style={styles.loadingIndicator} />
+                )}
+
+                {symptomInput.trim().length > 0 && !isLoading && suggestedSymptoms.length > 0 && (
+                    <View style={styles.searchResults}>
+                        <FlatList
+                            data={suggestedSymptoms}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.searchResultItem,
+                                        item.name.toLowerCase() === symptomInput.toLowerCase() && styles.exactMatchItem
+                                    ]}
+                                    onPress={() => handleAddFromList(item)}
+                                >
+                                    <Text style={styles.searchResultText}>{item.name}</Text>
+                                    {item.name.toLowerCase() === symptomInput.toLowerCase() && (
+                                        <Text style={styles.exactMatchBadge}>Exact Match</Text>
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                            keyboardShouldPersistTaps="always"
+                            nestedScrollEnabled
+                        />
+                    </View>
+                )}
+
+                <Text style={styles.infoText}>
+                    For better results, type your primary symptoms first, then add additional symptoms.
+                </Text>
+
+                {symptomsList.length > 0 && (
+                    <>
+                        <Text style={styles.subTitle}>Your symptoms:</Text>
+                        <View style={styles.symptomsListContainer}>
+                            <FlatList
+                                data={symptomsList}
+                                renderItem={renderSymptomItem}
+                                keyExtractor={(item) => item.id}
+                                scrollEnabled={false}
+                                contentContainerStyle={styles.symptomsListContent}
+                            />
+                        </View>
+                    </>
+                )}
+
+                <TouchableOpacity
+                    style={[styles.finishButton, symptomsList.length === 0 && styles.disabledButton]}
+                    onPress={handleFinish}
+                    disabled={symptomsList.length === 0}
+                >
+                    <Text style={styles.finishButtonText}>Continue</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
         backgroundColor: '#fff',
+    },
+    scrollContainer: {
         paddingTop: getSafeAreaTop(),
         paddingHorizontal: width * 0.04,
-        paddingBottom: height * 0.02,
+        paddingBottom: height * 0.05,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: height * 0.02,
         paddingHorizontal: width * 0.02,
+        marginBottom: height * 0.01,
     },
     title: {
         fontSize: responsiveFontSize(20),
         fontWeight: '800',
         marginLeft: width * 0.02,
+        flex: 1,
     },
     errorContainer: {
         backgroundColor: '#FFEBEE',
@@ -224,12 +260,13 @@ const styles = StyleSheet.create({
         marginBottom: height * 0.02,
     },
     input: {
+        flex: 1,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
         padding: width * 0.03,
         fontSize: responsiveFontSize(16),
-        flex: 1,
+        minHeight: height * 0.06,
     },
     addButton: {
         backgroundColor: '#032825',
@@ -238,6 +275,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: width * 0.04,
         marginLeft: width * 0.02,
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: height * 0.06,
     },
     disabledButton: {
         backgroundColor: '#cccccc',
@@ -245,6 +284,7 @@ const styles = StyleSheet.create({
     addButtonText: {
         color: 'white',
         fontSize: responsiveFontSize(14),
+        fontWeight: '500',
     },
     loadingIndicator: {
         marginVertical: height * 0.01,
@@ -266,31 +306,43 @@ const styles = StyleSheet.create({
     },
     infoText: {
         fontSize: responsiveFontSize(14),
-        backgroundColor: '#D9D9D9',
-        paddingVertical: height * 0.03,
+        backgroundColor: '#F5F5F5',
+        paddingVertical: height * 0.02,
         paddingHorizontal: width * 0.03,
         color: '#000000',
         marginBottom: height * 0.03,
         textAlign: 'center',
+        borderRadius: 8,
     },
     subTitle: {
         fontSize: responsiveFontSize(16),
         fontWeight: '600',
-        marginBottom: height * 0.02,
+        marginBottom: height * 0.015,
+        marginTop: height * 0.01,
     },
-    symptomsList: {
+    symptomsListContainer: {
         marginBottom: height * 0.02,
+        borderWidth: 1,
+        borderColor: '#eee',
+        borderRadius: 8,
+        backgroundColor: '#FAFAFA',
+    },
+    symptomsListContent: {
+        paddingHorizontal: width * 0.02,
     },
     symptomItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: width * 0.03,
+        paddingVertical: height * 0.015,
+        paddingHorizontal: width * 0.03,
         borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
+        borderBottomColor: '#eee',
     },
     symptomText: {
         fontSize: responsiveFontSize(16),
+        flex: 1,
+        marginRight: width * 0.02,
     },
     finishButton: {
         backgroundColor: '#032825',
@@ -298,20 +350,23 @@ const styles = StyleSheet.create({
         paddingVertical: height * 0.02,
         alignItems: 'center',
         marginTop: height * 0.02,
+        minHeight: height * 0.06,
+        justifyContent: 'center',
     },
     finishButtonText: {
         color: 'white',
         fontSize: responsiveFontSize(16),
+        fontWeight: '600',
     },
     exactMatchItem: {
-        backgroundColor: '#e8f5e9', // Light green background for exact matches
+        backgroundColor: '#e8f5e9',
     },
     exactMatchBadge: {
         fontSize: responsiveFontSize(12),
-        color: '#2e7d32', // Dark green text
+        color: '#2e7d32',
         marginTop: height * 0.005,
         fontStyle: 'italic',
     },
 });
 
-export default SypmtomChecker2;
+export default SymptomChecker2;

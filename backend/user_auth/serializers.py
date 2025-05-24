@@ -1,6 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from .models import User
+from .models import User, Gym
 from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core.validators import validate_email
@@ -189,3 +189,36 @@ class UserPermissionsSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
+
+
+class GymSerializer(serializers.ModelSerializer):
+    distance = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Gym
+        fields = [
+            'id', 'name', 'address', 'city', 'country', 'phone', 'email',
+            'website', 'opening_hours', 'facilities', 'rating',
+            'distance', 'latitude', 'longitude', 'is_verified'
+        ]
+
+    def get_distance(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user_location'):
+            from math import radians, sin, cos, sqrt, atan2
+
+            # Haversine formula to calculate distance
+            lat1 = radians(request.user_location['lat'])
+            lon1 = radians(request.user_location['lng'])
+            lat2 = radians(obj.latitude)
+            lon2 = radians(obj.longitude)
+
+            dlon = lon2 - lon1
+            dlat = lat2 - lat1
+
+            a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+            c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+            distance = 6371 * c  # Earth radius in km
+            return distance
+        return None

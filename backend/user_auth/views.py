@@ -1,33 +1,32 @@
-import os
 import uuid
-
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status, generics, permissions
-from django.conf import settings
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework_simplejwt.views import TokenViewBase
-from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import timedelta, datetime
-from rest_framework_simplejwt.settings import api_settings
-from django.utils import timezone
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from django.conf import settings
-from rest_framework.parsers import MultiPartParser, FormParser
-from django.core.files.storage import default_storage
 
-from .models import User
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.mail import send_mail
+from django.db.models import F, FloatField, ExpressionWrapper
+from django.db.models.functions import ACos, Cos, Radians, Sin, Sqrt
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.html import strip_tags
+from rest_framework import status, generics, permissions
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenViewBase
+
+from .models import User, Gym
 from .serializers import (
     LoginSerializer,
     UserSerializer,
     RegisterSerializer,
     PasswordChangeSerializer,
-    PasswordResetRequestSerializer,
     PasswordResetConfirmSerializer,
-    UserPermissionsSerializer
+    UserPermissionsSerializer, GymSerializer
 )
 
 
@@ -369,3 +368,58 @@ class UserPermissionsView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class GymListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        lat = request.query_params.get('lat')
+        lng = request.query_params.get('lng')
+        radius = float(request.query_params.get('radius', 10))  # Default 10km radius
+
+        if not lat or not lng:
+            return Response(
+                {"error": "Location coordinates are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            lat = float(lat)
+            lng = float(lng)
+            request.user_location = {'lat': lat, 'lng': lng}
+
+            # Haversine formula in Django ORM
+            dlat = Radians(F('latitude') - lat)
+            dlong = Radians(F('longitude') - lng)
+
+            a = (
+                    Sin(dlat / 2) * Sin(dlat / 2) +
+                    Cos(Radians(lat)) *
+                    Cos(Radians(F('latitude'))) *
+                    Sin(dlong / 2) * Sin(dlong / 2)
+            )
+
+            c = 2 * ACos(Sqrt(a))
+            distance = ExpressionWrapper(6371 * c, output_field=FloatField())
+
+            # Filter gyms within radius
+            gyms = Gym.objects.annotate(
+                distance=distance
+            ).filter(
+                distance__lte=radius
+            ).order_by('distance')
+
+            serializer = GymSerializer(gyms, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except ValueError as e:
+            return Response(
+                {"error": "Invalid location parameters"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

@@ -9,29 +9,26 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function (same as in Settings Screen)
 const responsiveFontSize = (size) => {
-  const scaleFactor = width / 375; // Base width of 375 (iPhone SE)
+  const scaleFactor = width / 375;
   const newSize = size * scaleFactor;
-  return Math.ceil(newSize); // Round to nearest whole number
+  return Math.ceil(newSize);
 };
 
-// Function to get safe area top padding (same as in Settings Screen)
 const getSafeAreaTop = () => {
   if (Platform.OS === "ios") {
-    return 40; // Adjust for iOS
+    return 40;
   }
-  return 20; // Default for Android
+  return 20;
 };
 
 const FindDoctorScreen = () => {
   const [selectedSpecialization, setSelectedSpecialization] = useState(null);
-  const navigation = useNavigation();
+  const [selectedSpecializationText, setSelectedSpecializationText] = useState("");
   const router = useRouter();
 
   const specializations = [
@@ -67,16 +64,19 @@ const FindDoctorScreen = () => {
     },
   ];
 
-  const handleSpecializationPress = (id) => {
+  const handleSpecializationPress = (id, text) => {
     setSelectedSpecialization(id);
+    setSelectedSpecializationText(text);
   };
 
   const handleFindDoctorPress = () => {
     if (selectedSpecialization) {
-      // Navigate to doctor list with selected specialization
-      // navigation.navigate("doctorlist/index");
-      navigation.navigate("doctorlist/index", {
-        specializationId: selectedSpecialization,
+      router.push({
+        pathname: "/doctorlist",
+        params: {
+          specializationId: selectedSpecialization,
+          specializationText: selectedSpecializationText,
+        },
       });
     } else {
       alert("Please select a specialization");
@@ -85,9 +85,8 @@ const FindDoctorScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => router.push("/(tabs)/home")}>
           <Image
             source={require("../../assets/images/back-arrow.png")}
             style={styles.backArrow}
@@ -106,7 +105,7 @@ const FindDoctorScreen = () => {
         {specializations.map((specialization) => (
           <TouchableOpacity
             key={specialization.id}
-            onPress={() => handleSpecializationPress(specialization.id)}
+            onPress={() => handleSpecializationPress(specialization.id, specialization.text)}
             style={[
               styles.specializationButton,
               {
@@ -142,80 +141,80 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: getSafeAreaTop(), // Add safe area padding
+    paddingTop: getSafeAreaTop(),
   },
   header: {
-    paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
-    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
+    paddingVertical: height * 0.02,
+    paddingHorizontal: width * 0.05,
     flexDirection: "row",
     alignItems: "center",
   },
   title: {
-    fontSize: responsiveFontSize(17), // Responsive font size
+    fontSize: responsiveFontSize(17),
     fontWeight: "bold",
-    marginLeft: width * 0.03, // Responsive margin (3% of screen width)
+    marginLeft: width * 0.03,
   },
   scrollView: {
-    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
-    paddingVertical: height * 0.02, // Responsive padding (2% of screen height)
+    paddingHorizontal: width * 0.05,
+    paddingVertical: height * 0.02,
   },
   specializationTitle: {
-    fontSize: responsiveFontSize(17), // Responsive font size
+    fontSize: responsiveFontSize(17),
     fontWeight: "800",
-    marginTop: height * 0.02, // Responsive margin (2% of screen height)
-    marginBottom: height * 0.01, // Responsive margin (1% of screen height)
+    marginTop: height * 0.02,
+    marginBottom: height * 0.01,
   },
   specializationSubtitle: {
-    fontSize: responsiveFontSize(14), // Responsive font size
+    fontSize: responsiveFontSize(14),
     fontWeight: "400",
     color: "#000000",
-    marginBottom: height * 0.03, // Responsive margin (3% of screen height)
+    marginBottom: height * 0.03,
   },
   specializationButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: height * 0.015, // Responsive padding (1.5% of screen height)
-    paddingHorizontal: width * 0.04, // Responsive padding (4% of screen width)
-    marginBottom: height * 0.015, // Responsive margin (1.5% of screen height)
-    borderRadius: width * 0.02, // Responsive border radius (2% of screen width)
-    height: height * 0.09, // Responsive height (9% of screen height)
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.04,
+    marginBottom: height * 0.015,
+    borderRadius: width * 0.02,
+    height: height * 0.09,
   },
   iconContainer: {
-    width: width * 0.08, // Responsive width (8% of screen width)
-    height: width * 0.08, // Responsive height (8% of screen width)
+    width: width * 0.08,
+    height: width * 0.08,
     backgroundColor: "#fff",
-    borderRadius: width * 0.01, // Responsive border radius (1% of screen width)
+    borderRadius: width * 0.01,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: width * 0.03, // Responsive margin (3% of screen width)
+    marginRight: width * 0.03,
   },
   specializationIcon: {
-    width: width * 0.06, // Responsive width (6% of screen width)
-    height: width * 0.055, // Responsive height (5.5% of screen width)
+    width: width * 0.06,
+    height: width * 0.055,
   },
   specializationText: {
-    fontSize: responsiveFontSize(15), // Responsive font size
+    fontSize: responsiveFontSize(15),
     fontWeight: "700",
   },
   findDoctorButton: {
     backgroundColor: "#032825",
-    paddingVertical: height * 0.015, // Responsive padding (1.5% of screen height)
-    paddingHorizontal: width * 0.05, // Responsive padding (5% of screen width)
-    borderRadius: width * 0.02, // Responsive border radius (2% of screen width)
-    marginTop: height * 0.03, // Responsive margin (3% of screen height)
-    height: height * 0.06, // Responsive height (6% of screen height)
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.05,
+    borderRadius: width * 0.02,
+    marginTop: height * 0.03,
+    height: height * 0.06,
     justifyContent: "center",
     alignItems: "center",
   },
   findDoctorText: {
-    fontSize: responsiveFontSize(16), // Responsive font size
+    fontSize: responsiveFontSize(16),
     color: "#fff",
     fontWeight: "400",
   },
   backArrow: {
-    width: width * 0.05, // Responsive width (5% of screen width)
-    height: width * 0.05, // Responsive height (5% of screen width)
-    marginRight: width * 0.02, // Responsive margin (2% of screen width)
+    width: width * 0.05,
+    height: width * 0.05,
+    marginRight: width * 0.02,
   },
 });
 

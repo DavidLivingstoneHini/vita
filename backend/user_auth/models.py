@@ -146,3 +146,29 @@ class User(AbstractBaseUser, PermissionsMixin):
         related_query_name='%(app_label)s_%(class)s',
         blank=True,
     )
+
+class Gym(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.TextField()
+    city = models.CharField(max_length=100)
+    country = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    website = models.URLField(blank=True, null=True)
+    opening_hours = models.JSONField(default=list)
+    facilities = models.JSONField(default=list)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    rating = models.FloatField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_verified = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['latitude', 'longitude']),
+        ]

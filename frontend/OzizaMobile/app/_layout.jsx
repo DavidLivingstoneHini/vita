@@ -107,7 +107,7 @@ export default function RootLayout() {
             <Stack.Screen name="terms/index" />
             <Stack.Screen name="contactsupport/index" />
             <Stack.Screen name="dataretention/index" />
-
+            <Stack.Screen name="gym/index" />
           </>
         ) : (
           <>

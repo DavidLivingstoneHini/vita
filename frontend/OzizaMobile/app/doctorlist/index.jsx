@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,18 +10,16 @@ import {
   Platform,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
-// Responsive Font Size Function
 const responsiveFontSize = (size) => {
   const scaleFactor = width / 375;
   const newSize = size * scaleFactor;
   return Math.ceil(newSize);
 };
 
-// Function to get safe area top padding
 const getSafeAreaTop = () => {
   if (Platform.OS === "ios") {
     return 40;
@@ -29,46 +27,24 @@ const getSafeAreaTop = () => {
   return 20;
 };
 
-const DoctorListScreen = ({ route, navigation }) => {
+const DoctorListScreen = () => {
   const router = useRouter();
-  const { specializationId, specializationText } = route?.params || {};
-  const [selectedSpecializationId, setSelectedSpecializationId] = useState(
-    specializationId || null
-  );
-  const [filteredRecommendedDoctors, setFilteredRecommendedDoctors] = useState(
-    []
-  );
+  const params = useLocalSearchParams();
+  const [selectedSpecializationId, setSelectedSpecializationId] = useState(null);
+  const [selectedSpecializationText, setSelectedSpecializationText] = useState("");
+  const [filteredRecommendedDoctors, setFilteredRecommendedDoctors] = useState([]);
   const [filteredNearYouDoctors, setFilteredNearYouDoctors] = useState([]);
 
   const SELECTED_COLOR = "#3C53EC";
   const NOT_SELECTED_COLOR = "#20736C";
-  const TEXT_COLOR = "#FFFFFF";
 
   const specializations = [
-    {
-      id: 1,
-      text: "Physiotherapy",
-    },
-    {
-      id: 2,
-      text: "Dentist",
-    },
-    {
-      id: 3,
-      text: "Cardiologist",
-    },
-    {
-      id: 4,
-      text: "Pediatrician",
-    },
-    {
-      id: 5,
-      text: "Optometrist",
-    },
-    {
-      id: 6,
-      text: "Herbal Doctor",
-    },
+    { id: 1, text: "Physiotherapy" },
+    { id: 2, text: "Dentist" },
+    { id: 3, text: "Cardiologist" },
+    { id: 4, text: "Pediatrician" },
+    { id: 5, text: "Optometrist" },
+    { id: 6, text: "Herbal Doctor" },
   ];
 
   const recommendedDoctors = [
@@ -86,9 +62,6 @@ const DoctorListScreen = ({ route, navigation }) => {
       image: require("../../assets/images/doctor2.png"),
       location: "5.1 km away",
     },
-  ];
-
-  const nearYouDoctors = [
     {
       id: 3,
       name: "Dr. Bob Johnson",
@@ -112,6 +85,23 @@ const DoctorListScreen = ({ route, navigation }) => {
     },
   ];
 
+  const nearYouDoctors = [
+    {
+      id: 6,
+      name: "Dr. Sarah Wilson",
+      specialization: "Optometrist",
+      image: require("../../assets/images/doctor4.png"),
+      location: "0.8 km away",
+    },
+    {
+      id: 7,
+      name: "Dr. James Miller",
+      specialization: "Herbal Doctor",
+      image: require("../../assets/images/doctor3.png"),
+      location: "2.1 km away",
+    },
+  ];
+
   const getSpecializationIcon = (specializationText) => {
     switch (specializationText.toLowerCase()) {
       case "physiotherapy":
@@ -131,43 +121,41 @@ const DoctorListScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleSpecializationPress = (id) => {
-    setSelectedSpecializationId(id);
-    filterDoctors(id);
-  };
-
-  const filterDoctors = (id) => {
+  const filterDoctors = useCallback((id) => {
     if (id) {
-      const filteredRecommended = recommendedDoctors.filter((doctor) => {
-        const specialization = specializations.find((spec) => spec.id === id);
-        return (
-          doctor.specialization.toLowerCase() ===
-          specialization.text.toLowerCase()
-        );
-      });
-      const filteredNearYou = nearYouDoctors.filter((doctor) => {
-        const specialization = specializations.find((spec) => spec.id === id);
-        return (
-          doctor.specialization.toLowerCase() ===
-          specialization.text.toLowerCase()
-        );
-      });
+      const specialization = specializations.find((spec) => spec.id === id);
+      const filteredRecommended = recommendedDoctors.filter(
+        (doctor) => doctor.specialization.toLowerCase() === specialization.text.toLowerCase()
+      );
+      const filteredNearYou = nearYouDoctors.filter(
+        (doctor) => doctor.specialization.toLowerCase() === specialization.text.toLowerCase()
+      );
       setFilteredRecommendedDoctors(filteredRecommended);
       setFilteredNearYouDoctors(filteredNearYou);
     } else {
       setFilteredRecommendedDoctors(recommendedDoctors);
       setFilteredNearYouDoctors(nearYouDoctors);
     }
-  };
+  }, [recommendedDoctors, nearYouDoctors, specializations]);
 
-  React.useEffect(() => {
-    if (specializationId) {
-      filterDoctors(specializationId);
+  useEffect(() => {
+    if (params.specializationId) {
+      const id = Number(params.specializationId);
+      const text = params.specializationText || "";
+      setSelectedSpecializationId(id);
+      setSelectedSpecializationText(text);
+      filterDoctors(id);
     } else {
       setFilteredRecommendedDoctors(recommendedDoctors);
       setFilteredNearYouDoctors(nearYouDoctors);
     }
-  }, [specializationId]);
+  }, [params.specializationId]);
+
+  const handleSpecializationPress = useCallback((id, text) => {
+    setSelectedSpecializationId(id);
+    setSelectedSpecializationText(text);
+    filterDoctors(id);
+  }, [filterDoctors]);
 
   const renderDoctorCard = (doctor) => (
     <TouchableOpacity
@@ -178,9 +166,7 @@ const DoctorListScreen = ({ route, navigation }) => {
       <Image source={doctor.image} style={styles.doctorImage} />
       <View style={styles.doctorInfo}>
         <Text style={styles.doctorName}>{doctor.name}</Text>
-        <Text style={styles.doctorSpecialization}>
-          {doctor.specialization}
-        </Text>
+        <Text style={styles.doctorSpecialization}>{doctor.specialization}</Text>
         <View style={styles.locationContainer}>
           <AntDesign
             name="enviromento"
@@ -226,7 +212,7 @@ const DoctorListScreen = ({ route, navigation }) => {
                 paddingHorizontal: width * 0.05,
               },
             ]}
-            onPress={() => handleSpecializationPress(null)}
+            onPress={() => handleSpecializationPress(null, "All")}
           >
             <Text style={styles.specializationText}>All</Text>
           </TouchableOpacity>
@@ -243,7 +229,7 @@ const DoctorListScreen = ({ route, navigation }) => {
                       : NOT_SELECTED_COLOR,
                 },
               ]}
-              onPress={() => handleSpecializationPress(specialization.id)}
+              onPress={() => handleSpecializationPress(specialization.id, specialization.text)}
             >
               <View style={styles.specializationIconTextContainer}>
                 <Image

@@ -103,7 +103,7 @@ const FaqScreen = () => {
 
                 <TouchableOpacity
                     style={styles.contactButton}
-                    onPress={() => router.push('/settings/contactsupport')}
+                    onPress={() => router.push('/contactsupport')}
                 >
                     <Text style={[styles.contactButtonText, { fontSize: responsiveFontSize(16) }]}>
                         Contact Support

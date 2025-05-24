@@ -13,7 +13,7 @@ from .views import (
     SecuritySettingsView,
     AccountDeactivationView,
     TimezoneView,
-    UserPermissionsView
+    UserPermissionsView, GymListView
 )
 
 urlpatterns = [
@@ -31,4 +31,5 @@ urlpatterns = [
     path('api/v1/users/profile/deactivate/', AccountDeactivationView.as_view()),
     path('api/v1/users/timezone/', TimezoneView.as_view()),
     path('api/v1/users/permissions/', UserPermissionsView.as_view()),
+    path('api/v1/gyms/', GymListView.as_view(), name='gym-list'),
 ]
