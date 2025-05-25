@@ -219,59 +219,55 @@ class ProfilePictureView(APIView):
     def put(self, request):
         user = request.user
         if 'profile_picture' not in request.FILES:
-            return Response({'error': 'No image provided'}, status=status.HTTP_400_BAD_REQUEST)
-
-        file = request.FILES['profile_picture']
-        if file.size > 2 * 1024 * 1024:
             return Response(
-                {'error': 'Image size exceeds 2MB limit'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        valid_types = ['image/jpeg', 'image/png', 'image/gif']
-        if file.content_type not in valid_types:
-            return Response(
-                {'error': 'Invalid image type. Only JPEG, PNG, and GIF are allowed'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'No image provided'},
+                status=status.HTTP_400_BAD_REQUEST,
+                content_type='application/json'  # Explicitly set content type
             )
 
         try:
-            file_name = default_storage.save(f'profile_pictures/{user.id}_{file.name}', file)
-            file_url = request.build_absolute_uri(default_storage.url(file_name))
+            file = request.FILES['profile_picture']
 
+            # Validate file size
+            if file.size > 2 * 1024 * 1024:
+                return Response(
+                    {'error': 'Image size exceeds 2MB limit'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                    content_type='application/json'
+                )
+
+            # Validate file type
+            valid_types = ['image/jpeg', 'image/png']
+            if file.content_type not in valid_types:
+                return Response(
+                    {'error': 'Invalid image type. Only JPEG and PNG are allowed'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                    content_type='application/json'
+                )
+
+            # Generate unique filename
+            file_ext = file.name.split('.')[-1]
+            file_name = f'profile_pictures/{user.id}_profile_{uuid.uuid4().hex[:8]}.{file_ext}'
+
+            # Save file
+            file_path = default_storage.save(file_name, file)
+            file_url = f"{settings.MEDIA_URL}{file_path}"
+
+            # Update user
             user.profile_picture = file_url
             user.save()
 
-            return Response({'profile_picture': file_url}, status=status.HTTP_200_OK)
+            return Response(
+                {'profile_picture': file_url},
+                status=status.HTTP_200_OK,
+                content_type='application/json'
+            )
+
         except Exception as e:
             return Response(
                 {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-    def delete(self, request):
-        user = request.user
-        if not user.profile_picture:
-            return Response(
-                {'error': 'No profile picture to remove'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            file_path = user.profile_picture.split('/media/')[-1]
-            default_storage.delete(file_path)
-
-            user.profile_picture = None
-            user.save()
-
-            return Response(
-                {'message': 'Profile picture removed successfully'},
-                status=status.HTTP_200_OK
-            )
-        except Exception as e:
-            return Response(
-                {'error': str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content_type='application/json'
             )
 
 
