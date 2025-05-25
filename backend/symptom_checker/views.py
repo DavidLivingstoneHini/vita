@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django.db.models import Q
@@ -67,7 +69,6 @@ class SymptomCheckerView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         try:
             symptom_ids = request.data.get('symptoms', [])
-            logger.info(f"Received symptom IDs: {symptom_ids}")
 
             if not symptom_ids:
                 return Response(
@@ -75,32 +76,14 @@ class SymptomCheckerView(generics.CreateAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Convert all IDs to integers
-            try:
-                symptom_ids = [int(id) for id in symptom_ids]
-            except (ValueError, TypeError):
+            symptoms = Symptom.objects.filter(id__in=symptom_ids)
+            if not symptoms.exists():
                 return Response(
-                    {"error": "All symptom IDs must be integers"},
+                    {"error": "None of the provided symptoms exist"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Verify all symptoms exist
-            symptoms = Symptom.objects.filter(id__in=symptom_ids)
-            found_ids = set(symptoms.values_list('id', flat=True))
-            missing_ids = set(symptom_ids) - found_ids
-
-            if missing_ids:
-                logger.warning(f"Missing symptom IDs: {missing_ids}")
-                # Only proceed with found symptoms
-                symptom_ids = list(found_ids)
-                if not symptom_ids:
-                    return Response(
-                        {"error": "None of the provided symptoms exist"},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
             diagnosis = Diagnosis.objects.create(user=request.user)
-            logger.info(f"Created diagnosis with ID: {diagnosis.id}")
 
             # Add symptoms to diagnosis
             for symptom in symptoms:
@@ -109,40 +92,28 @@ class SymptomCheckerView(generics.CreateAPIView):
                     symptom=symptom
                 )
 
-            # Find potential diseases
+            # Enhanced disease matching
             potential_diseases = self.find_potential_diseases(diagnosis)
-            logger.info(f"Found {len(potential_diseases)} potential diseases")
 
-            # Format the response properly
+            # Format response
             formatted_diseases = []
             for disease_info in potential_diseases:
-                try:
-                    disease = disease_info.get('disease')
-                    confidence = disease_info.get('confidence', 0)
+                disease = disease_info['disease']
+                confidence = disease_info['confidence']
+                matches = disease_info['matches']
 
-                    if not disease:
-                        continue
+                serializer = DiseaseSerializer(disease)
+                formatted_diseases.append({
+                    "disease": serializer.data,
+                    "confidence_score": confidence,
+                    "matches": matches
+                })
 
-                    serializer = DiseaseSerializer(disease)
-                    formatted_diseases.append({
-                        "disease": serializer.data,
-                        "confidence_score": confidence,
-                        "matches": disease_info.get('matches', [])
-                    })
-                except Exception as e:
-                    logger.error(f"Error serializing disease {disease.id if disease else 'unknown'}: {str(e)}")
-                    continue
-
-            return Response(
-                {
-                    "data": {
-                        "diagnosis_id": diagnosis.id,
-                        "potential_diseases": formatted_diseases,
-                        "count": len(formatted_diseases)
-                    }
-                },
-                status=status.HTTP_200_OK
-            )
+            return Response({
+                "diagnosis_id": diagnosis.id,
+                "potential_diseases": formatted_diseases,
+                "count": len(formatted_diseases)
+            })
 
         except Exception as e:
             logger.error(f"Error in symptom check: {str(e)}", exc_info=True)
@@ -152,105 +123,104 @@ class SymptomCheckerView(generics.CreateAPIView):
             )
 
     def find_potential_diseases(self, diagnosis):
-        try:
-            symptoms = DiagnosisSymptom.objects.filter(diagnosis=diagnosis)
-            logger.debug(f"Found {len(symptoms)} diagnosis symptoms")
+        # Get all symptoms for this diagnosis
+        diagnosis_symptoms = DiagnosisSymptom.objects.filter(diagnosis=diagnosis)
 
-            # Get symptom weights and mappings
-            symptom_data = []
-            for ds in symptoms:
-                try:
-                    mappings = SymptomDOTermMapping.objects.filter(symptom=ds.symptom)
-                    symptom_data.append({
-                        'symptom': ds.symptom,
-                        'intensity': ds.intensity,
-                        'do_terms': [m.do_term for m in mappings]
-                    })
-                except Exception as e:
-                    logger.error(f"Error processing symptom {ds.symptom.id}: {str(e)}")
-                    continue
+        # Step 1: Direct mappings
+        direct_mappings = SymptomDOTermMapping.objects.filter(
+            symptom__in=[ds.symptom for ds in diagnosis_symptoms]
+        ).select_related('do_term')
 
-            # Score diseases
-            disease_scores = {}
-            for data in symptom_data:
-                for do_term in data['do_terms']:
-                    try:
-                        # Direct disease matches
-                        diseases = Disease.objects.filter(do_term=do_term)
-                        for disease in diseases:
-                            if disease.id not in disease_scores:
-                                disease_scores[disease.id] = {
-                                    'disease': disease,
-                                    'score': 0,
-                                    'matches': []
-                                }
-                            # Weight by symptom intensity and mapping confidence
-                            mapping = SymptomDOTermMapping.objects.get(
-                                symptom=data['symptom'],
-                                do_term=do_term
-                            )
-                            score = data['intensity'] * mapping.confidence
-                            disease_scores[disease.id]['score'] += score
-                            disease_scores[disease.id]['matches'].append({
-                                'symptom': data['symptom'].name,
-                                'do_term': do_term.name,
-                                'contribution': score
-                            })
+        # Step 2: Find diseases with these DO terms
+        disease_scores = defaultdict(lambda: {
+            'disease': None,
+            'score': 0,
+            'matches': []
+        })
 
-                        # Related disease matches
-                        relationships = DO_Relationship.objects.filter(
-                            Q(do_term=do_term) | Q(related_do_term=do_term)
-                        )
-                        for rel in relationships:
-                            related_do = rel.related_do_term if rel.do_term == do_term else rel.do_term
-                            diseases = Disease.objects.filter(do_term=related_do)
+        # Score diseases based on direct mappings
+        for mapping in direct_mappings:
+            diseases = Disease.objects.filter(do_term=mapping.do_term)
+            for disease in diseases:
+                disease_info = disease_scores[disease.id]
+                disease_info['disease'] = disease
 
-                            for disease in diseases:
-                                if disease.id not in disease_scores:
-                                    disease_scores[disease.id] = {
-                                        'disease': disease,
-                                        'score': 0,
-                                        'matches': []
-                                    }
+                # Calculate score contribution
+                symptom = mapping.symptom
+                diagnosis_symptom = next(
+                    (ds for ds in diagnosis_symptoms if ds.symptom_id == symptom.id),
+                    None
+                )
 
-                                # Apply relationship weight
-                                rel_weight = {
-                                    'is_a': 0.7,
-                                    'part_of': 0.6,
-                                    'subclass_of': 0.5,
-                                    'related_to': 0.4
-                                }.get(rel.relationship_type, 0.3)
+                intensity = diagnosis_symptom.intensity if diagnosis_symptom else 1
+                score = intensity * mapping.confidence * symptom.weight
 
-                                score = data['intensity'] * mapping.confidence * rel_weight
-                                disease_scores[disease.id]['score'] += score
-                                disease_scores[disease.id]['matches'].append({
-                                    'symptom': data['symptom'].name,
-                                    'do_term': do_term.name,
-                                    'relationship': rel.get_relationship_type_display(),
-                                    'related_do_term': related_do.name,
-                                    'contribution': score
-                                })
-                    except Exception as e:
-                        logger.error(f"Error processing DO term {do_term.id}: {str(e)}")
-                        continue
-
-            # Normalize and sort results
-            max_score = max([d['score'] for d in disease_scores.values()]) if disease_scores else 1
-            potential_diseases = []
-
-            for disease_info in disease_scores.values():
-                confidence = (disease_info['score'] / max_score) * 100
-                potential_diseases.append({
-                    'disease': disease_info['disease'],
-                    'confidence': min(confidence, 100),
-                    'matches': disease_info['matches']
+                disease_info['score'] += score
+                disease_info['matches'].append({
+                    'symptom': symptom.name,
+                    'do_term': mapping.do_term.name,
+                    'contribution': score,
+                    'type': 'direct'
                 })
 
-            return sorted(potential_diseases, key=lambda x: -x['confidence'])[:10]
+        # Step 3: Consider related DO terms (disease relationships)
+        for mapping in direct_mappings:
+            relationships = DO_Relationship.objects.filter(
+                Q(do_term=mapping.do_term) | Q(related_do_term=mapping.do_term)
+            ).select_related('do_term', 'related_do_term')
 
-        except Exception as e:
-            logger.error(f"Error in find_potential_diseases: {str(e)}", exc_info=True)
-            return []
+            for rel in relationships:
+                related_do = rel.related_do_term if rel.do_term == mapping.do_term else rel.do_term
+                diseases = Disease.objects.filter(do_term=related_do)
+
+                for disease in diseases:
+                    disease_info = disease_scores[disease.id]
+                    disease_info['disease'] = disease
+
+                    # Calculate relationship weight
+                    rel_weight = {
+                        'is_a': 0.7,
+                        'part_of': 0.6,
+                        'subclass_of': 0.5,
+                        'related_to': 0.4
+                    }.get(rel.relationship_type, 0.3)
+
+                    symptom = mapping.symptom
+                    diagnosis_symptom = next(
+                        (ds for ds in diagnosis_symptoms if ds.symptom_id == symptom.id),
+                        None
+                    )
+
+                    intensity = diagnosis_symptom.intensity if diagnosis_symptom else 1
+                    score = intensity * mapping.confidence * symptom.weight * rel_weight
+
+                    disease_info['score'] += score
+                    disease_info['matches'].append({
+                        'symptom': symptom.name,
+                        'do_term': mapping.do_term.name,
+                        'relationship': rel.get_relationship_type_display(),
+                        'related_do_term': related_do.name,
+                        'contribution': score,
+                        'type': 'related'
+                    })
+
+        # Step 4: Normalize and sort results
+        max_score = max([d['score'] for d in disease_scores.values()]) if disease_scores else 1
+        potential_diseases = []
+
+        for disease_id, disease_info in disease_scores.items():
+            confidence = (disease_info['score'] / max_score) * 100
+            if confidence < 10:  # Threshold to filter out very low confidence matches
+                continue
+
+            potential_diseases.append({
+                'disease': disease_info['disease'],
+                'confidence': min(confidence, 100),
+                'matches': disease_info['matches']
+            })
+
+        # Sort by confidence descending
+        return sorted(potential_diseases, key=lambda x: -x['confidence'])[:15]  # Return top 15 matches
 
 
 class SymptomSearchView(generics.ListAPIView):

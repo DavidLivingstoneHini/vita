@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform, ScrollView, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Platform, ScrollView, ActivityIndicator, FlatList, Modal } from 'react-native';
 import { useRouter } from "expo-router";
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { getSymptoms } from '../../services/api';
@@ -30,6 +30,41 @@ const SymptomChecker2 = () => {
     const [suggestedSymptoms, setSuggestedSymptoms] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [intensityModalVisible, setIntensityModalVisible] = useState(false);
+    const [selectedSymptom, setSelectedSymptom] = useState(null);
+    const [tempIntensity, setTempIntensity] = useState(3);
+
+    const intensities = [
+        { level: 1, label: 'Mild', description: 'Noticeable but not disruptive' },
+        { level: 2, label: 'Moderate', description: 'Disrupts some activities' },
+        { level: 3, label: 'Severe', description: 'Disrupts most activities' },
+        { level: 4, label: 'Very Severe', description: 'Completely debilitating' }
+    ];
+
+    const addSymptom = (symptom, intensity = 3) => {
+        if (!symptomsList.some(item => item.id === symptom.id)) {
+            setSymptomsList([...symptomsList, {
+                id: symptom.id.toString(),
+                name: symptom.name,
+                intensity: intensity
+            }]);
+            setSymptomInput('');
+            setSuggestedSymptoms([]);
+        } else {
+            setError('This symptom is already added');
+            setTimeout(() => setError(null), 3000);
+        }
+    };
+
+    const showIntensityModal = (symptom) => {
+        setSelectedSymptom(symptom);
+        setIntensityModalVisible(true);
+    };
+
+    const confirmIntensity = () => {
+        addSymptom(selectedSymptom, tempIntensity);
+        setIntensityModalVisible(false);
+    };
 
     useEffect(() => {
         const fetchSymptoms = async () => {
@@ -60,34 +95,6 @@ const SymptomChecker2 = () => {
         const debounceTimer = setTimeout(fetchSymptoms, 300);
         return () => clearTimeout(debounceTimer);
     }, [symptomInput]);
-
-    const addSymptom = (symptom) => {
-        try {
-            if (typeof symptom === 'object') {
-                // Check if symptom already exists in the list
-                if (!symptomsList.some(item => item.id === symptom.id)) {
-                    setSymptomsList([...symptomsList, {
-                        id: symptom.id.toString(),
-                        name: symptom.name
-                    }]);
-                    setSymptomInput('');
-                } else {
-                    setError('This symptom is already added');
-                }
-            }
-            else if (symptomInput.trim()) {
-                const newSymptom = {
-                    id: Date.now().toString(),
-                    name: symptomInput.trim(),
-                };
-                setSymptomsList([...symptomsList, newSymptom]);
-                setSymptomInput('');
-            }
-        } catch (error) {
-            console.error('Error adding symptom:', error);
-            setError('Failed to add symptom. Please try again.');
-        }
-    };
 
     const removeSymptom = (id) => {
         setSymptomsList(symptomsList.filter(item => item.id !== id));
@@ -216,6 +223,50 @@ const SymptomChecker2 = () => {
                     <Text style={styles.finishButtonText}>Continue</Text>
                 </TouchableOpacity>
             </ScrollView>
+
+            {/* Intensity Selection Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={intensityModalVisible}
+                onRequestClose={() => setIntensityModalVisible(false)}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Select Symptom Intensity</Text>
+                        <Text style={styles.modalSubtitle}>{selectedSymptom?.name}</Text>
+
+                        {intensities.map((item) => (
+                            <TouchableOpacity
+                                key={item.level}
+                                style={[
+                                    styles.intensityOption,
+                                    tempIntensity === item.level && styles.selectedIntensity
+                                ]}
+                                onPress={() => setTempIntensity(item.level)}
+                            >
+                                <Text style={styles.intensityLabel}>{item.label}</Text>
+                                <Text style={styles.intensityDescription}>{item.description}</Text>
+                            </TouchableOpacity>
+                        ))}
+
+                        <View style={styles.modalButtons}>
+                            <TouchableOpacity
+                                style={styles.modalButtonCancel}
+                                onPress={() => setIntensityModalVisible(false)}
+                            >
+                                <Text style={styles.modalButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.modalButtonConfirm}
+                                onPress={confirmIntensity}
+                            >
+                                <Text style={styles.modalButtonText}>Confirm</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -366,6 +417,72 @@ const styles = StyleSheet.create({
         color: '#2e7d32',
         marginTop: height * 0.005,
         fontStyle: 'italic',
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        width: '90%',
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    modalSubtitle: {
+        fontSize: 16,
+        marginBottom: 20,
+        color: '#555',
+    },
+    intensityOption: {
+        padding: 15,
+        marginVertical: 5,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    selectedIntensity: {
+        backgroundColor: '#e3f2fd',
+        borderColor: '#90caf9',
+    },
+    intensityLabel: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    intensityDescription: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 5,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    modalButtonCancel: {
+        backgroundColor: '#e0e0e0',
+        padding: 10,
+        borderRadius: 5,
+        flex: 1,
+        marginRight: 10,
+        alignItems: 'center',
+    },
+    modalButtonConfirm: {
+        backgroundColor: '#032825',
+        padding: 10,
+        borderRadius: 5,
+        flex: 1,
+        alignItems: 'center',
+    },
+    modalButtonText: {
+        color: 'white',
+        fontWeight: '500',
     },
 });
 

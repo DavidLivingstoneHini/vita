@@ -18,6 +18,7 @@ import YoutubePlayer from "react-native-youtube-iframe";
 import Header from "../../components/Header";
 import { mythsItems } from "../../utils/mythsData";
 import Carousel from "react-native-reanimated-carousel";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Image Sources
 const images = [
@@ -76,9 +77,47 @@ const chevronIcon = require("../../assets/images/chevron.png");
 const Home = () => {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const navigation = useNavigation();
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
-  const [isRefreshing, setIsRefreshing] = useState(false); // Renamed from refreshing for clarity
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+
+  const healthVideos = [
+    "lxexpPkYlC8?si=Af84qw3IRl9jQzMV",
+    "Kpj9km2oxTE?si=bmatM_f_bOsiI0Wp",
+    "XIUt0DMgmMM?si=8LuumEKuGRC8_Jsb",
+    // Add more health-related video IDs
+  ];
+
+  // Function to rotate videos weekly
+  useEffect(() => {
+    const rotateVideos = async () => {
+      try {
+        const lastUpdate = await AsyncStorage.getItem('lastVideoUpdate');
+        const now = new Date();
+
+        if (!lastUpdate) {
+          // First time - set initial video and date
+          await AsyncStorage.setItem('lastVideoUpdate', now.toString());
+          return;
+        }
+
+        const lastUpdateDate = new Date(lastUpdate);
+        const daysSinceUpdate = Math.floor((now - lastUpdateDate) / (1000 * 60 * 60 * 24));
+
+        if (daysSinceUpdate >= 7) {
+          // Time to rotate to next video
+          const nextIndex = (currentVideoIndex + 1) % healthVideos.length;
+          setCurrentVideoIndex(nextIndex);
+          await AsyncStorage.setItem('lastVideoUpdate', now.toString());
+        }
+      } catch (error) {
+        console.error("Error with video rotation:", error);
+      }
+    };
+
+    rotateVideos();
+  }, [currentVideoIndex]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -493,17 +532,19 @@ const Home = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Video Section */}
           <View style={styles.videoContainer}>
-            <Text style={styles.videoTitle}>Highlights on MedWeek ‘24</Text>
+            <Text style={styles.videoTitle}>Highlights on MedWeek ‘25</Text>
             <View style={styles.videoWrapper}>
               <YoutubePlayer
                 height={220}
-                videoId="YOUR_YOUTUBE_VIDEO_ID"
+                videoId={healthVideos[currentVideoIndex]}
                 play={false}
                 onChangeState={state => console.log(state)}
               />
             </View>
+            <Text style={styles.videoSubtitle}>
+              New health video every week!
+            </Text>
           </View>
 
           {/* Featured Article Section */}
@@ -1057,6 +1098,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#0C1549",
     paddingHorizontal: 4,
+  },
+  videoSubtitle: {
+    fontSize: Dimensions.get('window').width * 0.03,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: Dimensions.get('window').height * 0.01,
   },
 });
 

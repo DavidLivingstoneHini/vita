@@ -55,6 +55,26 @@ class Disease(models.Model):
     do_term = models.ForeignKey(DO_Term, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
     treatment = models.TextField(blank=True)
+    common_symptoms = models.TextField(blank=True, help_text="Comma-separated list of common symptoms")
+    prevalence = models.CharField(max_length=100, blank=True,
+                                choices=[
+                                    ('very_common', 'Very Common'),
+                                    ('common', 'Common'),
+                                    ('uncommon', 'Uncommon'),
+                                    ('rare', 'Rare')
+                                ])
+    risk_factors = models.TextField(blank=True)
+    severity = models.CharField(max_length=100, blank=True,
+                              choices=[
+                                  ('mild', 'Mild'),
+                                  ('moderate', 'Moderate'),
+                                  ('severe', 'Severe'),
+                                  ('life_threatening', 'Life-threatening')
+                              ])
+    typical_duration = models.CharField(max_length=100, blank=True)
+    contagious = models.BooleanField(null=True)
+    icd11_code = models.CharField(max_length=20, blank=True)
+    synonyms = models.TextField(blank=True, help_text="Comma-separated list of alternative names")
 
     def __str__(self):
         return self.name
