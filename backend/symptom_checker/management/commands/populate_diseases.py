@@ -1,15 +1,15 @@
 import json
 from pathlib import Path
+
 from django.core.management.base import BaseCommand
-from django.db.models import Q
+
 from symptom_checker.models import Disease, DO_Term, Symptom
 
 
 class Command(BaseCommand):
-    help = 'Populates the database with comprehensive disease data including symptoms relationships'
+    help = 'Populates the database with comprehensive disease data'
 
     def handle(self, *args, **options):
-        # Path to disease data JSON file
         data_path = Path(__file__).parent.parent.parent / 'data' / 'diseases.json'
 
         try:
@@ -53,15 +53,14 @@ class Command(BaseCommand):
                     defaults=defaults
                 )
 
-                # Process symptoms
+                # Process symptoms - simplified version without common_names
                 if disease_data.get('common_symptoms'):
                     symptom_objects = []
                     for symptom_name in disease_data['common_symptoms']:
                         try:
-                            # Try exact match first
+                            # Try exact match only (remove common_names lookup)
                             symptom = Symptom.objects.filter(
-                                Q(name__iexact=symptom_name) |
-                                Q(common_names__contains=[symptom_name])
+                                name__iexact=symptom_name
                             ).first()
 
                             if symptom:
@@ -96,4 +95,5 @@ class Command(BaseCommand):
         if symptom_not_found:
             self.stdout.write(self.style.WARNING(
                 f"The following symptoms were not found in the database: {', '.join(symptom_not_found)}"
+                "\nPlease add these symptoms to your database and run the command again."
             ))
