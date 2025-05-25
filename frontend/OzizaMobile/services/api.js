@@ -288,10 +288,22 @@ export const submitSymptoms = async (symptoms) => {
     });
 
     if (!response) throw new Error('No response received from server');
-    if (response.error) throw new Error(response.error);
-    if (!response.data?.potential_diseases) throw new Error('Invalid response structure');
 
-    return response;
+    // Handle error response
+    if (response.error) {
+      throw new Error(response.error || 'Invalid response structure');
+    }
+
+    // Handle different response structures
+    if (response.potential_diseases) {
+      return { data: { potential_diseases: response.potential_diseases } };
+    }
+
+    if (response.data?.potential_diseases) {
+      return response;
+    }
+
+    throw new Error('Invalid response structure from diagnosis API');
   } catch (error) {
     console.error('API Error:', { error: error.message, symptoms });
     throw error;

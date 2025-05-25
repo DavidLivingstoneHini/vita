@@ -73,11 +73,14 @@ const SypmtomChecker4 = () => {
 
                 const response = await submitSymptoms(symptomIds);
 
-                if (response.data.potential_diseases.length === 0) {
+                // Handle different response structures
+                const potentialDiseases = response.data?.potential_diseases || response.potential_diseases || [];
+
+                if (potentialDiseases.length === 0) {
                     throw new Error('No matching conditions found for your symptoms');
                 }
 
-                setConditions(response.data.potential_diseases);
+                setConditions(potentialDiseases);
             } catch (err) {
                 setError(err.message || 'Failed to analyze symptoms');
                 setConditions([]);
