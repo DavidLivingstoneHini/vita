@@ -93,7 +93,8 @@ const SypmtomChecker5 = () => {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
+        <View style={styles.container}>
+            {/* Fixed Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={handlePrevious}>
                     <Icon name="arrow-back" size={responsiveFontSize(24)} color="#000" />
@@ -101,79 +102,96 @@ const SypmtomChecker5 = () => {
                 <Text style={styles.title}>Symptom Checker</Text>
             </View>
 
-            <Text style={styles.conditionTitle}>{diseaseDetails?.name}</Text>
-
-            <Text style={styles.sectionTitle}>Symptoms</Text>
-            <Text style={styles.sectionText}>
-                {diseaseDetails?.common_symptoms || 'Not specified'}
-            </Text>
-
-            <Text style={styles.sectionTitle}>How Common</Text>
-            <Text style={styles.sectionText}>
-                {diseaseDetails?.prevalence || 'Not specified'}
-            </Text>
-
-            <Text style={styles.sectionTitle}>Overview</Text>
-            <Text style={styles.sectionText}>
-                {diseaseDetails?.description || 'No description available'}
-            </Text>
-
-            <Text style={styles.sectionTitle}>Treatment</Text>
-            <Text style={styles.sectionText}>
-                {diseaseDetails?.treatment || 'No treatment information available'}
-            </Text>
-
-            <Text style={styles.sectionTitle}>Risk Factors</Text>
-            <Text style={styles.sectionText}>
-                {diseaseDetails?.risk_factors || 'No risk factors specified'}
-            </Text>
-
-            <Text style={styles.sectionTitle}>Do you think you have this condition?</Text>
-            <View style={styles.responseButtons}>
-                <TouchableOpacity
-                    style={[styles.responseButton, selectedResponse === 'Yes' && styles.selectedResponseButton]}
-                    onPress={() => handleResponseSelection('Yes')}
-                >
-                    <Text style={[styles.responseButtonText, selectedResponse === 'Yes' && styles.selectedResponseText]}>Yes</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.responseButton, selectedResponse === 'No' && styles.selectedResponseButton]}
-                    onPress={() => handleResponseSelection('No')}
-                >
-                    <Text style={[styles.responseButtonText, selectedResponse === 'No' && styles.selectedResponseText]}>No</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.responseButton, selectedResponse === 'Maybe' && styles.selectedResponseButton]}
-                    onPress={() => handleResponseSelection('Maybe')}
-                >
-                    <Text style={[styles.responseButtonText, selectedResponse === 'Maybe' && styles.selectedResponseText]}>Maybe</Text>
-                </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-                style={styles.contactDoctorButton}
-                onPress={handleContactDoctor}
+            {/* Scrollable Content */}
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.contactDoctorText}>Contact a Doctor</Text>
-            </TouchableOpacity>
+                <Text style={styles.conditionTitle}>{diseaseDetails?.name}</Text>
 
-            <TouchableOpacity
-                style={styles.previousButton}
-                onPress={handlePrevious}
-            >
-                <Text style={styles.previousButtonText}>Previous</Text>
-            </TouchableOpacity>
-        </ScrollView>
+                <Text style={styles.sectionTitle}>Symptoms</Text>
+                <Text style={styles.sectionText}>
+                    {diseaseDetails?.common_symptoms || 'Not specified'}
+                </Text>
+
+                <Text style={styles.sectionTitle}>How Common</Text>
+                <Text style={styles.sectionText}>
+                    {diseaseDetails?.prevalence || 'Not specified'}
+                </Text>
+
+                <Text style={styles.sectionTitle}>Overview</Text>
+                <Text style={styles.sectionText}>
+                    {diseaseDetails?.description || 'No description available'}
+                </Text>
+
+                <Text style={styles.sectionTitle}>Treatment</Text>
+                <Text style={styles.sectionText}>
+                    {diseaseDetails?.treatment || 'No treatment information available'}
+                </Text>
+
+                <Text style={styles.sectionTitle}>Risk Factors</Text>
+                <Text style={styles.sectionText}>
+                    {diseaseDetails?.risk_factors || 'No risk factors specified'}
+                </Text>
+
+                <Text style={styles.sectionTitle}>Do you think you have this condition?</Text>
+                <View style={styles.responseButtons}>
+                    <TouchableOpacity
+                        style={[styles.responseButton, selectedResponse === 'Yes' && styles.selectedResponseButton]}
+                        onPress={() => handleResponseSelection('Yes')}
+                    >
+                        <Text style={[styles.responseButtonText, selectedResponse === 'Yes' && styles.selectedResponseText]}>Yes</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.responseButton, selectedResponse === 'No' && styles.selectedResponseButton]}
+                        onPress={() => handleResponseSelection('No')}
+                    >
+                        <Text style={[styles.responseButtonText, selectedResponse === 'No' && styles.selectedResponseText]}>No</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.responseButton, selectedResponse === 'Maybe' && styles.selectedResponseButton]}
+                        onPress={() => handleResponseSelection('Maybe')}
+                    >
+                        <Text style={[styles.responseButtonText, selectedResponse === 'Maybe' && styles.selectedResponseText]}>Maybe</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.contactDoctorButton}
+                    onPress={handleContactDoctor}
+                >
+                    <Text style={styles.contactDoctorText}>Contact a Doctor</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.previousButton}
+                    onPress={handlePrevious}
+                >
+                    <Text style={styles.previousButtonText}>Previous</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
         backgroundColor: '#fff',
         paddingTop: getSafeAreaTop(),
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: height * 0.02,
+        paddingHorizontal: width * 0.04,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    scrollContent: {
         paddingHorizontal: width * 0.04,
         paddingBottom: height * 0.02,
     },
@@ -186,12 +204,6 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: height * 0.02,
         fontSize: responsiveFontSize(16),
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: height * 0.02,
-        paddingHorizontal: width * 0.02,
     },
     title: {
         fontSize: responsiveFontSize(20),
