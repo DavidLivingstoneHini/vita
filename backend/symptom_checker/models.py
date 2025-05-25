@@ -55,7 +55,12 @@ class Disease(models.Model):
     do_term = models.ForeignKey(DO_Term, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
     treatment = models.TextField(blank=True)
-    common_symptoms = models.TextField(blank=True, help_text="Comma-separated list of common symptoms")
+    common_symptoms = models.ManyToManyField(
+        'Symptom',
+        related_name='common_in_diseases',
+        blank=True,
+        help_text="Symptoms commonly associated with this disease"
+    )
     prevalence = models.CharField(max_length=100, blank=True,
                                 choices=[
                                     ('very_common', 'Very Common'),
