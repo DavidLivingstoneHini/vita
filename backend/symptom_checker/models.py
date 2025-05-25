@@ -123,3 +123,14 @@ class PatientSymptomHistory(models.Model):
     symptom = models.ForeignKey(Symptom, on_delete=models.CASCADE)
     first_noticed = models.DateField()
     frequency = models.CharField(max_length=100)  # e.g., "daily", "weekly"
+
+class SymptomDiseaseMapping(models.Model):
+    symptom = models.ForeignKey(Symptom, on_delete=models.CASCADE)
+    disease = models.ForeignKey(Disease, on_delete=models.CASCADE)
+    confidence = models.FloatField(default=0.8)
+
+    class Meta:
+        unique_together = ('symptom', 'disease')
+
+    def __str__(self):
+        return f"{self.symptom.name} → {self.disease.name} (confidence: {self.confidence})"

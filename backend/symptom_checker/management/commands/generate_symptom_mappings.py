@@ -2,9 +2,8 @@ import numpy as np
 import spacy
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
-from symptom_checker.models import Symptom, Disease, DO_Term, SymptomDOTermMapping
+from symptom_checker.models import Symptom, Disease, DO_Term, SymptomDOTermMapping, SymptomDiseaseMapping
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +33,12 @@ class Command(BaseCommand):
         parser.add_argument(
             '--skip-do',
             action='store_true',
-            help='Skip DO term mappings and only process diseases'
+            help='Skip DO term mappings'
         )
         parser.add_argument(
             '--skip-diseases',
             action='store_true',
-            help='Skip disease mappings and only process DO terms'
+            help='Skip disease mappings'
         )
 
     def handle(self, *args, **options):
@@ -89,15 +88,47 @@ class Command(BaseCommand):
             return
 
         # Process symptoms
-        self.process_mappings(
-            nlp=nlp,
-            target_vectors=do_term_vectors,
-            target_type='do_term',
-            threshold=threshold,
-            max_workers=max_workers,
-            mapping_model=SymptomDOTermMapping,
-            mapping_fields={'symptom': 'symptom', 'do_term': 'term'}
-        )
+        symptoms = Symptom.objects.all()
+        total_created = 0
+
+        self.stdout.write(f"Processing {symptoms.count()} symptoms against {len(do_term_vectors)} DO terms...")
+
+        for symptom in tqdm(symptoms, desc="Processing symptoms"):
+            try:
+                doc = nlp(symptom.name.lower())
+                if not doc.vector_norm:
+                    continue
+
+                # Calculate similarities
+                similarities = []
+                for term_data in do_term_vectors:
+                    similarity = np.dot(doc.vector, term_data['vector']) / (doc.vector_norm * term_data['norm'])
+                    if similarity >= threshold:
+                        similarities.append((term_data['term'], similarity))
+
+                # Sort and get top matches
+                similarities.sort(key=lambda x: x[1], reverse=True)
+                top_matches = similarities[:3]  # Top 3 matches
+
+                # Create mappings
+                for term, similarity in top_matches:
+                    _, created = SymptomDOTermMapping.objects.get_or_create(
+                        symptom=symptom,
+                        do_term=term,
+                        defaults={'confidence': float(similarity)}
+                    )
+                    if created:
+                        total_created += 1
+                        if self.verbosity >= 2:
+                            self.stdout.write(f"Mapped: {symptom.name} -> {term.name} (score: {similarity:.2f})")
+
+            except Exception as e:
+                logger.error(f"Error processing symptom {symptom.id}: {str(e)}")
+                continue
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Created {total_created} new symptom-DO term mappings"
+        ))
 
     def process_disease_mappings(self, nlp, threshold, max_workers):
         self.stdout.write("Loading diseases...")
@@ -129,72 +160,44 @@ class Command(BaseCommand):
             return
 
         # Process symptoms
-        self.process_mappings(
-            nlp=nlp,
-            target_vectors=disease_vectors,
-            target_type='disease',
-            threshold=threshold,
-            max_workers=max_workers,
-            mapping_model=SymptomDOTermMapping,
-            mapping_fields={'symptom': 'symptom', 'disease': 'disease'}
-        )
-
-    def process_mappings(self, nlp, target_vectors, target_type, threshold, max_workers, mapping_model, mapping_fields):
         symptoms = Symptom.objects.all()
         total_created = 0
 
-        def process_symptom(symptom):
+        self.stdout.write(f"Processing {symptoms.count()} symptoms against {len(disease_vectors)} diseases...")
+
+        for symptom in tqdm(symptoms, desc="Processing symptoms"):
             try:
                 doc = nlp(symptom.name.lower())
                 if not doc.vector_norm:
-                    return 0
+                    continue
 
                 # Calculate similarities
                 similarities = []
-                for target_data in target_vectors:
-                    similarity = np.dot(doc.vector, target_data['vector']) / (doc.vector_norm * target_data['norm'])
+                for disease_data in disease_vectors:
+                    similarity = np.dot(doc.vector, disease_data['vector']) / (doc.vector_norm * disease_data['norm'])
                     if similarity >= threshold:
-                        similarities.append((target_data, similarity))
+                        similarities.append((disease_data['disease'], similarity))
 
                 # Sort and get top matches
                 similarities.sort(key=lambda x: x[1], reverse=True)
                 top_matches = similarities[:3]  # Top 3 matches
 
                 # Create mappings
-                created_count = 0
-                for target_data, similarity in top_matches:
-                    mapping_data = {
-                        'symptom': symptom,
-                        mapping_fields[target_type]: target_data[target_type],
-                        'confidence': float(similarity)
-                    }
+                for disease, similarity in top_matches:
+                    _, created = SymptomDiseaseMapping.objects.get_or_create(
+                        symptom=symptom,
+                        disease=disease,
+                        defaults={'confidence': float(similarity)}
+                    )
+                    if created:
+                        total_created += 1
+                        if self.verbosity >= 2:
+                            self.stdout.write(f"Mapped: {symptom.name} -> {disease.name} (score: {similarity:.2f})")
 
-                    # Skip if mapping already exists
-                    filter_kwargs = {
-                        'symptom': symptom,
-                        mapping_fields[target_type]: target_data[target_type]
-                    }
-
-                    if not mapping_model.objects.filter(**filter_kwargs).exists():
-                        mapping_model.objects.create(**mapping_data)
-                        created_count += 1
-
-                return created_count
             except Exception as e:
                 logger.error(f"Error processing symptom {symptom.id}: {str(e)}")
-                return 0
-
-        # Process in parallel
-        self.stdout.write(f"Processing {symptoms.count()} symptoms against {len(target_vectors)} {target_type}s...")
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = []
-            for symptom in symptoms:
-                futures.append(executor.submit(process_symptom, symptom))
-
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Processing symptoms"):
-                total_created += future.result()
+                continue
 
         self.stdout.write(self.style.SUCCESS(
-            f"Created {total_created} new symptom-{target_type} mappings"
+            f"Created {total_created} new symptom-disease mappings"
         ))
