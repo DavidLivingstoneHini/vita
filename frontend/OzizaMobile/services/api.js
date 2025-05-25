@@ -271,19 +271,29 @@ export const getSymptoms = async (searchQuery = '') => {
  * @param {Array<number>} symptoms - Array of symptom IDs
  * @returns {Promise<object>} Diagnosis results
  */
-export const submitSymptoms = async (symptomIds) => {
+export const submitSymptoms = async (symptoms) => {
   try {
-    const response = await axios.post('diagnose/', {
-      symptoms: symptomIds
+    const symptomIds = symptoms.map(id => {
+      const num = Number(id);
+      if (isNaN(num)) throw new Error(`Invalid symptom ID: ${id}`);
+      return num;
     });
 
-    if (!response.data || !response.data.data) {
-      throw new Error('Invalid response structure');
-    }
+    const response = await apiRequest('diagnose/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ symptoms: symptomIds }),
+    });
 
-    return response.data;
+    if (!response) throw new Error('No response received from server');
+    if (response.error) throw new Error(response.error);
+    if (!response.data?.potential_diseases) throw new Error('Invalid response structure');
+
+    return response;
   } catch (error) {
-    console.error('Error submitting symptoms:', error);
+    console.error('API Error:', { error: error.message, symptoms });
     throw error;
   }
 };

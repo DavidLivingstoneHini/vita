@@ -73,9 +73,8 @@ const SypmtomChecker4 = () => {
 
                 const response = await submitSymptoms(symptomIds);
 
-                // Check if response has the expected structure
-                if (!response.data || !response.data.potential_diseases) {
-                    throw new Error('Invalid response structure from server');
+                if (response.data.potential_diseases.length === 0) {
+                    throw new Error('No matching conditions found for your symptoms');
                 }
 
                 setConditions(response.data.potential_diseases);
