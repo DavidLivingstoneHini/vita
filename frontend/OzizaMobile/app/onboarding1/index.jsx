@@ -12,41 +12,51 @@ export default function OnboardScreen1() {
   const router = useRouter();
 
   return (
-    <ImageBackground
-      source={require("../../assets/images/background.png")}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
-      <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBar, styles.activeProgressBar]} />
-        <View style={styles.progressBar} />
-      </View>
-      <View style={styles.contentContainer}>
-        <View style={styles.bottomContent}>
-          <Text style={styles.title}>Comprehensive Health Resources</Text>
-          <Text style={styles.text}>
-            Access a vast library of over 100+ articles on various health
-            conditions, stay updated on new content, and get notifications about
-            activity on your followed topics.
-          </Text>
-          <Pressable
-            onPress={() => router.push("/onboarding2")}
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-            ]}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </Pressable>
+    <View style={styles.container}>
+      <ImageBackground
+        source={require("../../assets/images/background.jpg")}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        {/* Dark overlay */}
+        <View style={styles.overlay} />
+
+        <View style={styles.progressBarContainer}>
+          {/* <View style={[styles.progressBar, styles.activeProgressBar]} />
+          <View style={styles.progressBar} /> */}
         </View>
-      </View>
-    </ImageBackground>
+        <View style={styles.contentContainer}>
+          <View style={styles.bottomContent}>
+            <Text style={styles.title}>Integrated Health Support & Resources</Text>
+            <Text style={styles.text}>
+              Get instant health updates, expert advice, and access to a rich library of reliable resources — all in one place to help you make informed decisions and stay healthy, every day.
+            </Text>
+            <Pressable
+              onPress={() => router.push("/signup")}
+              style={({ pressed }) => [
+                styles.button,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <Text style={styles.nextButtonText}>Next</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   backgroundImage: {
     flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)", // Adjust opacity (0.4) to make darker or lighter
   },
   progressBarContainer: {
     flexDirection: "row",
@@ -104,7 +114,6 @@ const styles = StyleSheet.create({
   buttonPressed: {
     opacity: 0.7,
     backgroundColor: "#FFFFFF",
-    color: "black",
   },
   nextButtonText: {
     fontSize: 16,

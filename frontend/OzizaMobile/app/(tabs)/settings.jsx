@@ -156,7 +156,9 @@ const SettingsPage = () => {
   const uploadImage = async (uri) => {
     setIsLoading(true);
     try {
+      // First check the image size
       await checkImageSize(uri);
+
       const accessToken = await SecureStore.getItemAsync("access_token");
 
       // Create FormData
@@ -171,27 +173,23 @@ const SettingsPage = () => {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          // Let the browser set the Content-Type with boundary
+          'Content-Type': 'multipart/form-data',
         },
         body: formData,
       });
 
-      // First check if response is OK
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Server response:", errorText);
-        throw new Error(`Server error: ${response.status}`);
-      }
-
-      // Then try to parse as JSON
       const data = await response.json();
 
-      setUserProfilePicture(data.profile_picture);
-      Toast.show({
-        type: 'success',
-        text1: 'Profile Picture Updated',
-        text2: 'Your profile picture has been updated successfully',
-      });
+      if (response.ok) {
+        setUserProfilePicture(data.profile_picture);
+        Toast.show({
+          type: 'success',
+          text1: 'Profile Picture Updated',
+          text2: 'Your profile picture has been updated successfully',
+        });
+      } else {
+        throw new Error(data.error || 'Failed to upload image');
+      }
     } catch (error) {
       console.error("Image upload error:", error);
       Toast.show({
@@ -318,11 +316,6 @@ const SettingsPage = () => {
               <View style={[styles.profilePicture, styles.loadingContainer]}>
                 <ActivityIndicator size="large" color="#fff" />
               </View>
-            ) : userProfilePicture ? (
-              <Image
-                source={{ uri: userProfilePicture }}
-                style={styles.profilePicture}
-              />
             ) : (
               <View style={styles.defaultProfilePicture}>
                 <Text style={styles.initials}>{getUserInitials(userName)}</Text>

@@ -25,19 +25,6 @@ const buttonsData = [
   { id: 3, text: "Mental Health" },
   { id: 4, text: "Chronic Diseases" },
   { id: 5, text: "Preventive Care" },
-  { id: 6, text: "Women's Health" },
-  { id: 7, text: "Men's Health" },
-  { id: 8, text: "Children's Health" },
-  { id: 9, text: "Elderly Care" },
-  { id: 10, text: "Health Tech" },
-  { id: 12, text: "Public Health" },
-  { id: 13, text: "Health Policy" },
-  { id: 15, text: "Pandemics" },
-  { id: 16, text: "Vaccines" },
-  { id: 17, text: "Health Education" },
-  { id: 18, text: "Health Innovations" },
-  { id: 19, text: "Health Disparities" },
-  { id: 20, text: "Health Equity" },
 ];
 
 // Normalize font size across different screen sizes
@@ -58,7 +45,6 @@ const HEADER_HEIGHT = Platform.OS === 'ios' ? vh * 5.5 : vh * 7;
 const News = () => {
   const [selectedButton, setSelectedButton] = useState(buttonsData[0]);
   const [refreshing, setRefreshing] = useState(false);
-  const [dimensions, setDimensions] = useState({ screenWidth, screenHeight });
   const [recommendedArticles, setRecommendedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -128,46 +114,42 @@ const News = () => {
         </View>
 
         <View style={styles.mainContent}>
-          <View style={[styles.buttonsContainer, { height: vh * 20 }]}>
+          {/* Single row categories section */}
+          <View style={styles.buttonsContainer}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={styles.multiRowScrollView}
+              contentContainerStyle={styles.categoriesScrollContent}
             >
-              <View style={styles.buttonRowsContainer}>
-                {Array.from({ length: 3 }, (_, rowIndex) => (
-                  <View key={rowIndex} style={styles.buttonRow}>
-                    {buttonsData
-                      .slice(rowIndex * 7, (rowIndex + 1) * 7)
-                      .map((button) => (
-                        <TouchableOpacity
-                          key={button.id}
-                          style={[
-                            styles.smallButton,
-                            selectedButton.id === button.id && styles.selectedSmallButton,
-                            { minWidth: vw * 20 },
-                          ]}
-                          onPress={() => setSelectedButton(button)}
-                        >
-                          <Text
-                            style={[
-                              styles.smallButtonText,
-                              selectedButton.id === button.id && { color: "#fff" },
-                              { fontSize: normalizeFont(12) },
-                            ]}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {button.text}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                  </View>
-                ))}
-              </View>
+              {buttonsData.map((button) => (
+                <TouchableOpacity
+                  key={button.id}
+                  style={[
+                    styles.smallButton,
+                    selectedButton.id === button.id && styles.selectedSmallButton,
+                  ]}
+                  onPress={() => setSelectedButton(button)}
+                >
+                  <Text
+                    style={[
+                      styles.smallButtonText,
+                      selectedButton.id === button.id && { color: "#fff" },
+                      { fontSize: normalizeFont(12) },
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {button.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           </View>
-          <View style={styles.contentContainer}>{renderContent()}</View>
+
+          {/* Main content area */}
+          <View style={styles.contentContainer}>
+            {renderContent()}
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -218,6 +200,7 @@ const ForYouContent = ({
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
+      contentContainerStyle={forYouStyles.scrollContent}
     >
       {articles.length > 0 ? (
         <>
@@ -325,24 +308,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   buttonsContainer: {
-    paddingVertical: vh * 1.5,
+    paddingVertical: vh * 1,
     paddingHorizontal: vw * 4,
-    marginBottom: vh * 1,
   },
-  buttonRowsContainer: {
-    flexDirection: "column",
-  },
-  buttonRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: vh * 1,
-  },
-  multiRowScrollView: {
-    width: "100%",
+  categoriesScrollContent: {
+    paddingRight: vw * 4,
   },
   smallButton: {
     marginRight: vw * 2,
-    marginBottom: vh * 1,
     paddingHorizontal: vw * 4,
     paddingVertical: vh * 1,
     borderRadius: 8,
@@ -356,7 +329,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    padding: vw * 4,
+    paddingHorizontal: vw * 4,
   },
   categoryContent: {
     flex: 1,
@@ -381,9 +354,12 @@ const forYouStyles = StyleSheet.create({
   forYouContainer: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: vh * 2,
+  },
   editorsPickContainer: {
-    marginBottom: vh * 4,
-    marginTop: vh * 0.5,
+    marginTop: vh * 2,
+    marginBottom: vh * 2,
   },
   editorsPickTitle: {
     fontWeight: "bold",

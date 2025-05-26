@@ -93,7 +93,7 @@ export default function Library() {
     // "Deafness": 1,
     // "Dengue": 1,
     // "Depression": 4,
-    // "Diabetes (Type 1)": 2,
+    "Diabetes": 2,
     // "Diabetes (Type 2)": 2,
     // "Diarrhoea": 1,
     // "Digestion Problems": 1,
@@ -306,8 +306,8 @@ export default function Library() {
         "Deafness",
         "Dengue",
         "Depression",
-        "Diabetes (Type 1)",
-        "Diabetes (Type 2)",
+        "Diabetes",
+        // "Diabetes (Type 2)",
         "Diarrhoea",
         "Digestion Problems",
         "Dizziness",
@@ -513,7 +513,7 @@ export default function Library() {
         style={styles.listItemContainer}
       >
         <Text style={styles.listItemText}>{item}</Text>
-        {index < array.length - 1 && <Text style={styles.listItemDot}>•</Text>}
+        {index < array.length - 1 && <Text style={styles.listItemDot}></Text>}
       </TouchableOpacity>
     );
   };

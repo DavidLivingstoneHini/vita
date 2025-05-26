@@ -1,70 +1,42 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
-  Image,
-  TouchableOpacity,
   StyleSheet,
-  StatusBar,
-  Platform,
   SafeAreaView,
+  TouchableOpacity,
+  Image,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import SearchBox from "../components/searchBox";
-import { useRouter } from 'expo-router';
+import { useRouter } from "expo-router";
+import SearchBox from "./searchBox";
 
-const LogoImage = require("../assets/images/ozizawhite.png");
-
-const searchIcon = require("../assets/images/search.png");
 const notificationsIcon = require("../assets/images/notification.png");
 
-const Header = ({ onSearchPress, isSearchVisible, onSearchClose }) => {
-  // Get status bar height for proper padding
-  const statusBarHeight = Platform.OS === 'ios' ? 20 : StatusBar.currentHeight;
+const Header = () => {
   const router = useRouter();
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#000000' }]}>
-      <View style={[
-        styles.header,
-        isSearchVisible ? styles.headerSearchMode : null,
-      ]}>
-        {isSearchVisible ? (
-          <View style={styles.searchBoxContainer}>
-            <SearchBox onClose={onSearchClose} style={styles.searchBox} />
-            <TouchableOpacity
-              onPress={onSearchClose}
-              style={styles.closeButton}
-            >
-              <Feather name="x" size={24} color="#fff" />
-            </TouchableOpacity>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <View style={styles.searchRow}>
+          <View style={styles.searchContainer}>
+            <SearchBox
+              onClose={() => setIsSearchVisible(false)}
+              onFocus={() => setIsSearchVisible(true)}
+            />
           </View>
-        ) : (
-          <>
-            <TouchableOpacity
-              onPress={onSearchPress}
-              style={styles.iconButton}
-            >
-              <Image
-                source={searchIcon}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => router.push("notification")}
+          >
             <Image
-              source={LogoImage}
-              style={styles.logo}
+              source={notificationsIcon}
+              style={styles.notificationIcon}
               resizeMode="contain"
             />
-
-            <TouchableOpacity style={styles.iconButton} onPress={() => router.push("notification")}>
-              <Image
-                source={notificationsIcon}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </>
-        )}
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -72,56 +44,33 @@ const Header = ({ onSearchPress, isSearchVisible, onSearchClose }) => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    width: '100%',
+    width: "100%",
+    backgroundColor: "#ffffff",
+    zIndex: 1000,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginTop: Platform.OS === 'ios' ? 2 : StatusBar.currentHeight,
+    paddingHorizontal: 12,
+    backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "#000000",
-    backgroundColor: "#000000",
-    minHeight: 60,
+    borderBottomColor: "#f0f0f0",
+    zIndex: 1000,
   },
-  headerSearchMode: {
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  searchBoxContainer: {
+  searchRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    width: "100%",
-    paddingRight: 50,
   },
-  searchBox: {
-    flex: 1,
-    marginRight: 8,
+  searchContainer: {
+    flex: 1.4,
   },
-  closeButton: {
-    position: 'absolute',
-    right: 16,
+  notificationButton: {
     padding: 8,
+    marginLeft: 12,
   },
-  iconButton: {
-    padding: 8,
-    minWidth: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: {
+  notificationIcon: {
     width: 24,
     height: 24,
-    tintColor: "#fff",
-  },
-  logo: {
-    height: 32,
-    width: 120,
-    maxWidth: '40%',
+    tintColor: "#333",
   },
 });
 

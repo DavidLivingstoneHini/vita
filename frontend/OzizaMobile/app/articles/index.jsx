@@ -10,15 +10,18 @@ import {
   Dimensions,
   Platform,
   Share,
+  FlatList,
+  RefreshControl,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { getArticleById } from "../../services/api";
+import { getArticleById, getRecommendedArticles } from "../../services/api";
 import RenderHTML from "react-native-render-html";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -57,6 +60,9 @@ const ArticleScreen = () => {
   const [error, setError] = useState(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [similarArticles, setSimilarArticles] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
 
   // Handle undefined/invalid articleId immediately
   if (!articleId || articleId === "undefined") {
@@ -77,31 +83,51 @@ const ArticleScreen = () => {
     );
   }
 
-  useEffect(() => {
-    const fetchArticle = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await getArticleById(articleId);
+  const fetchArticleAndSimilar = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        if (response.status === "success") {
-          setArticle(response.data);
-          const bookmarks = await AsyncStorage.getItem('bookmarks');
-          const bookmarksArray = bookmarks ? JSON.parse(bookmarks) : [];
-          setIsBookmarked(bookmarksArray.some(item => item.id === response.data.id));
-        } else {
-          throw new Error(response.message || "Failed to load article");
+      // Fetch the main article
+      const response = await getArticleById(articleId);
+
+      if (response.status === "success") {
+        setArticle(response.data);
+
+        // Fetch similar articles based on categories
+        const similarResponse = await getRecommendedArticles(
+          response.data.id,
+          response.data.categories?.map(c => c.id) || []
+        );
+
+        if (similarResponse.status === "success") {
+          setSimilarArticles(similarResponse.data);
         }
-      } catch (err) {
-        console.error("Failed to fetch article:", err);
-        setError(err.message || "Failed to load article");
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchArticle();
+        // Check bookmarks
+        const bookmarks = await AsyncStorage.getItem('bookmarks');
+        const bookmarksArray = bookmarks ? JSON.parse(bookmarks) : [];
+        setIsBookmarked(bookmarksArray.some(item => item.id === response.data.id));
+      } else {
+        throw new Error(response.message || "Failed to load article");
+      }
+    } catch (err) {
+      console.error("Failed to fetch article:", err);
+      setError(err.message || "Failed to load article");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArticleAndSimilar();
   }, [articleId]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchArticleAndSimilar();
+  };
 
   const handleShare = async () => {
     if (!article) return;
@@ -114,6 +140,12 @@ const ArticleScreen = () => {
     } catch (error) {
       console.log("Error sharing:", error.message);
     }
+  };
+
+  const handleArticlePress = (articleId) => {
+    navigation.navigate("articles/index", {
+      articleId: articleId.toString()
+    });
   };
 
   const handlePrint = async () => {
@@ -234,7 +266,23 @@ const ArticleScreen = () => {
     );
   };
 
-  if (loading) {
+  const renderSimilarArticleItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.similarArticleItem}
+      onPress={() => handleArticlePress(item.id)}
+    >
+      <Image
+        source={{ uri: item.header_image || require("../../assets/images/placeholder-image.jpg") }}
+        style={styles.similarArticleImage}
+        defaultSource={require("../../assets/images/placeholder-image.jpg")}
+      />
+      <Text style={styles.similarArticleTitle} numberOfLines={2}>
+        {item.title}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  if (loading && !refreshing) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -287,14 +335,6 @@ const ArticleScreen = () => {
         </Text>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.actionIcon} onPress={toggleSpeech}>
-            <MaterialIcons
-              name={isSpeaking ? "volume-off" : "volume-up"}
-              size={responsiveFontSize(20)}
-              color="#000"
-            />
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.actionIcon} onPress={toggleBookmark}>
             <MaterialIcons
               name={isBookmarked ? "bookmark" : "bookmark-border"}
@@ -303,7 +343,15 @@ const ArticleScreen = () => {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionIcon} onPress={handlePrint}>
+          <TouchableOpacity style={styles.actionIcon} onPress={toggleSpeech}>
+            <MaterialIcons
+              name={isSpeaking ? "volume-off" : "volume-up"}
+              size={responsiveFontSize(20)}
+              color="#000"
+            />
+          </TouchableOpacity>
+
+          {/* <TouchableOpacity style={styles.actionIcon} onPress={handlePrint}>
             <Feather
               name="download"
               size={responsiveFontSize(20)}
@@ -317,11 +365,17 @@ const ArticleScreen = () => {
               size={responsiveFontSize(20)}
               color="#000"
             />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {article.header_image && (
           <Image
             source={{ uri: article.header_image }}
@@ -342,6 +396,21 @@ const ArticleScreen = () => {
                 </View>
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Similar Articles Section */}
+        {similarArticles.length > 0 && (
+          <View style={styles.similarArticlesContainer}>
+            <Text style={styles.similarArticlesTitle}>Similar Articles</Text>
+            <FlatList
+              data={similarArticles}
+              renderItem={renderSimilarArticleItem}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.similarArticlesList}
+            />
           </View>
         )}
 
@@ -459,6 +528,35 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: responsiveFontSize(16),
     fontWeight: '600',
+  },
+  similarArticlesContainer: {
+    marginTop: height * 0.03,
+    marginBottom: height * 0.02,
+  },
+  similarArticlesTitle: {
+    fontSize: responsiveFontSize(18),
+    fontWeight: "700",
+    marginBottom: height * 0.02,
+    color: "#000000",
+  },
+  similarArticlesList: {
+    paddingRight: width * 0.04,
+  },
+  similarArticleItem: {
+    width: width * 0.4,
+    marginRight: width * 0.04,
+  },
+  similarArticleImage: {
+    width: "100%",
+    height: width * 0.3,
+    borderRadius: 8,
+    marginBottom: height * 0.01,
+  },
+  similarArticleTitle: {
+    fontSize: responsiveFontSize(14),
+    fontWeight: "600",
+    color: "#0C1549",
+    textAlign: "left",
   },
 });
 

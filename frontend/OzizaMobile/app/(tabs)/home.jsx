@@ -28,7 +28,7 @@ const images = [
     description: "Ghana has launched a drone system that seeks to facilitate the delivery of prescriptions, nationwide.",
   },
   {
-    image: require("../../assets/images/background.png"),
+    image: require("../../assets/images/background4.jpg"),
     title: "New Health Initiative",
     description: "A new health initiative aims to improve access to healthcare in rural areas.",
   },
@@ -374,11 +374,7 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      <Header
-        isSearchVisible={isSearchVisible}
-        onSearchPress={() => setIsSearchVisible(true)}
-        onSearchClose={() => setIsSearchVisible(false)}
-      />
+      <Header />
 
       {isLoading ? (
         <LoadingIndicator />
@@ -418,7 +414,7 @@ const Home = () => {
           <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>Health Conditions</Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Library")}>
+              <TouchableOpacity onPress={() => navigation.navigate("healthconditions/index")}>
                 <View style={styles.seeMoreContainer}>
                   <Text style={styles.seeMoreText}>SEE MORE</Text>
                   <Image
@@ -470,7 +466,7 @@ const Home = () => {
           <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>Health Tips</Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Library")}>
+              <TouchableOpacity onPress={() => navigation.navigate("healthtips/index")}>
                 <View style={styles.seeMoreContainer}>
                   <Text style={styles.seeMoreText}>SEE MORE</Text>
                   <Image source={chevronIcon} style={styles.chevronIcon} />
@@ -724,6 +720,7 @@ const styles = StyleSheet.create({
   },
   slide: {
     flex: 1,
+
   },
   backgroundImage: {
     width: "100%",

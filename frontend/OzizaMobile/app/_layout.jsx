@@ -108,12 +108,14 @@ export default function RootLayout() {
             <Stack.Screen name="contactsupport/index" />
             <Stack.Screen name="dataretention/index" />
             <Stack.Screen name="gym/index" />
+            <Stack.Screen name="healthconditions/index" />
+            <Stack.Screen name="healthtips/index" />
           </>
         ) : (
           <>
             <Stack.Screen name="index" />
             <Stack.Screen name="onboarding1/index" />
-            <Stack.Screen name="onboarding2/index" />
+            {/* <Stack.Screen name="onboarding2/index" /> */}
             <Stack.Screen name="login/index" />
             <Stack.Screen name="signup/index" />
             <Stack.Screen name="verifyemail/index" />

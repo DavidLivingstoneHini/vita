@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -68,6 +68,9 @@ export default function Discover() {
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Add ref for TextInput
+  const searchInputRef = useRef(null);
 
   const articlesPerPage = 4;
 
@@ -155,8 +158,8 @@ export default function Discover() {
     }));
   };
 
-  // Filter articles by category
-  const filterArticles = (category) => {
+  // Filter articles by category - memoized to prevent unnecessary re-renders
+  const filterArticles = useCallback((category) => {
     setSelectedCategory(category);
     if (category === 'All') {
       setFilteredArticles(allArticles);
@@ -165,12 +168,12 @@ export default function Discover() {
       setFilteredArticles(filtered);
     }
     setVisibleArticles(articlesPerPage);
-    Keyboard.dismiss(); // Dismiss keyboard when filtering
-  };
+  }, [allArticles, articlesPerPage]);
 
-  // Filter articles by search query
-  const searchArticles = (query) => {
+  // Filter articles by search query - memoized and debounced
+  const searchArticles = useCallback((query) => {
     setSearchQuery(query);
+
     if (query === '') {
       filterArticles(selectedCategory);
     } else {
@@ -180,7 +183,7 @@ export default function Discover() {
       );
       setFilteredArticles(filtered);
     }
-  };
+  }, [allArticles, selectedCategory, filterArticles]);
 
   // Open article in browser
   const openArticle = (url) => {
@@ -209,6 +212,7 @@ export default function Discover() {
         <View style={styles.searchBoxWrapper}>
           <Ionicons name="search" size={normalize(20)} color="#666" style={styles.searchIcon} />
           <TextInput
+            ref={searchInputRef}
             style={styles.searchBox}
             placeholder="Search health topics..."
             placeholderTextColor="#808080"
@@ -216,6 +220,9 @@ export default function Discover() {
             onChangeText={searchArticles}
             returnKeyType="search"
             onSubmitEditing={() => Keyboard.dismiss()}
+            autoCorrect={false}
+            autoCapitalize="none"
+            blurOnSubmit={false}
           />
         </View>
       </View>
@@ -286,6 +293,7 @@ export default function Discover() {
     <TouchableOpacity
       style={styles.articleContainer}
       onPress={() => openArticle(item.url)}
+      activeOpacity={0.7}
     >
       <View style={styles.articleContent}>
         <View style={styles.metadataContainer}>
@@ -303,7 +311,6 @@ export default function Discover() {
         source={{ uri: item.urlToImage }}
         style={styles.articleImage}
         resizeMode="cover"
-        defaultSource={require('../../assets/images/placeholder-image.jpg')} // Add a placeholder image in your assets
       />
     </TouchableOpacity>
   );
@@ -351,8 +358,12 @@ export default function Discover() {
         contentContainerStyle={styles.container}
         refreshing={loading}
         onRefresh={fetchHealthArticles}
-        keyboardShouldPersistTaps="always" // This fixes the keyboard issue
-        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        removeClippedSubviews={false}
+        getItemLayout={null}
+        maxToRenderPerBatch={10}
+        windowSize={10}
       />
     </SafeAreaView>
   );
