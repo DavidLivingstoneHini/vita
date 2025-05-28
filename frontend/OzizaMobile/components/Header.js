@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
@@ -59,17 +59,18 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   searchContainer: {
-    flex: 1.4,
+    flex: 1,
+    marginRight: 12,
   },
   notificationButton: {
-    padding: 8,
-    marginLeft: 12,
+    padding: 6,
   },
   notificationIcon: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     tintColor: "#333",
   },
 });

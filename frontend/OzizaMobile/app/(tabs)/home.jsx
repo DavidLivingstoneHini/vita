@@ -414,7 +414,7 @@ const Home = () => {
           <View style={[styles.listContainer, { marginTop: screenHeight * 0.02 }]}>
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>Health Conditions</Text>
-              <TouchableOpacity onPress={() => navigation.navigate("healthconditions/index")}>
+              <TouchableOpacity onPress={() => navigation.navigate("Library")}>
                 <View style={styles.seeMoreContainer}>
                   <Text style={styles.seeMoreText}>SEE MORE</Text>
                   <Image
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     // paddingTop: Platform.OS === 'ios' ? 2 : StatusBar.currentHeight, // Add paddingTop to shift content down
   },
   swiper: {
-    height: Dimensions.get('window').height * 0.25,
+    height: Dimensions.get('window').height * 0.30,
   },
   slide: {
     flex: 1,
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     width: "100%",
-    height: Dimensions.get('window').height * 0.25,
+    height: Dimensions.get('window').height * 0.30,
     justifyContent: "flex-end",
   },
   overlay: {

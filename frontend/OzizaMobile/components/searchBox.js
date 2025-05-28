@@ -9,14 +9,25 @@ import {
   Dimensions,
   StyleSheet,
   Platform,
+  PixelRatio,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { search } from "../utils/searchUtils";
 import { useRouter } from "expo-router";
 
-const { width } = Dimensions.get("window");
+// Normalize font size across different screen sizes
+const normalizeFont = (size) => {
+  const scale = Dimensions.get('window').width / 375;
+  const newSize = size * scale;
+  return Math.round(PixelRatio.roundToNearestPixel(newSize));
+};
 
-const SearchBox = ({ onClose }) => {
+// Get dynamic dimensions
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const vw = screenWidth / 100;
+const vh = screenHeight / 100;
+
+const SearchBox = ({ onClose, onFocus }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState([]);
   const [noResults, setNoResults] = useState(false);
@@ -74,6 +85,15 @@ const SearchBox = ({ onClose }) => {
     setNoResults(false);
   };
 
+  const handleInputFocus = () => {
+    setIsFocused(true);
+    if (onFocus) onFocus();
+  };
+
+  const handleInputBlur = () => {
+    setIsFocused(false);
+  };
+
   return (
     <View style={styles.wrapper}>
       <View
@@ -84,12 +104,12 @@ const SearchBox = ({ onClose }) => {
       >
         <View style={styles.searchIconContainer}>
           {isSearching ? (
-            <ActivityIndicator size="small" color="#4A90E2" />
+            <ActivityIndicator size="small" color="#1C3612" />
           ) : (
             <Feather
               name="search"
-              size={18}
-              color={isFocused ? "#4A90E2" : "#9CA3AF"}
+              size={normalizeFont(18)}
+              color={isFocused ? "#1C3612" : "#828282"}
             />
           )}
         </View>
@@ -97,12 +117,12 @@ const SearchBox = ({ onClose }) => {
         <TextInput
           style={styles.searchInput}
           placeholder="Search articles..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#828282"
           value={searchQuery}
           onChangeText={handleQueryChange}
           onSubmitEditing={handleSearch}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           returnKeyType="search"
           autoCorrect={false}
           spellCheck={false}
@@ -114,7 +134,7 @@ const SearchBox = ({ onClose }) => {
             onPress={clearSearch}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Feather name="x-circle" size={16} color="#9CA3AF" />
+            <Feather name="x-circle" size={normalizeFont(16)} color="#828282" />
           </TouchableOpacity>
         )}
       </View>
@@ -124,14 +144,14 @@ const SearchBox = ({ onClose }) => {
         <View style={styles.resultsOverlay}>
           {isSearching && results.length === 0 && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color="#4A90E2" />
+              <ActivityIndicator size="small" color="#1C3612" />
               <Text style={styles.loadingText}>Searching...</Text>
             </View>
           )}
 
           {noResults && !isSearching && (
             <View style={styles.noResultsContainer}>
-              <Feather name="search" size={24} color="#D1D5DB" />
+              <Feather name="search" size={normalizeFont(24)} color="#828282" />
               <Text style={styles.noResultsText}>
                 No results found for "{searchQuery}"
               </Text>
@@ -166,7 +186,7 @@ const SearchBox = ({ onClose }) => {
                       </View>
                     </View>
                   </View>
-                  <Feather name="chevron-right" size={16} color="#D1D5DB" />
+                  <Feather name="chevron-right" size={normalizeFont(16)} color="#828282" />
                 </TouchableOpacity>
               )}
               keyExtractor={(item) => `${item.type}-${item.id}`}
@@ -193,76 +213,75 @@ const getTypeBadgeColor = (type) => {
 const styles = StyleSheet.create({
   wrapper: {
     width: "100%",
-    paddingHorizontal: 16,
     zIndex: 1000,
   },
   container: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingHorizontal: vw * 3,
+    paddingVertical: vh * 1.2,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#D1D5DB", // deeper gray
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: "#828282",
+    width: "95%", // Made the search box longer by setting a specific width
+    minHeight: 40,
   },
   containerFocused: {
-    borderColor: "#4A90E2",
-    shadowColor: "#4A90E2",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: "#1C3612",
   },
   searchIconContainer: {
-    marginRight: 8,
-    width: 20,
-    height: 20,
+    marginRight: vw * 2,
+    width: normalizeFont(20),
+    height: normalizeFont(20),
     justifyContent: "center",
     alignItems: "center",
   },
   searchInput: {
     flex: 1,
-    height: 24,
-    fontSize: 15,
-    color: "#1F2937",
-    fontWeight: "400",
+    height: normalizeFont(24),
+    fontSize: normalizeFont(15),
+    color: "#000000",
+    fontWeight: Platform.OS === 'ios' ? "400" : "normal", // Android often prefers "normal"
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+        paddingVertical: 0,
+      }
+    })
   },
   clearButton: {
-    marginLeft: 8,
+    marginLeft: vw * 2,
     padding: 2,
   },
   resultsOverlay: {
     position: "absolute",
-    top: Platform.OS === "android" ? 54 : 60, // adjust depending on header height
-    left: 16,
-    right: 16,
+    top: Platform.OS === "android" ? vh * 6 : vh * 5.5,
+    left: 0,
+    right: 0,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "#828282",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 10,
     zIndex: 9999,
-    maxHeight: 320,
+    maxHeight: vh * 40,
+    width: "90%", // Match the search box width
   },
   resultsContainer: {
-    maxHeight: 280,
+    maxHeight: vh * 35,
   },
   resultItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: vw * 4,
+    paddingVertical: vh * 1.5,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: "#ddd",
   },
   lastResultItem: {
     borderBottomWidth: 0,
@@ -271,57 +290,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultTitle: {
-    fontSize: 15,
-    color: "#1F2937",
-    fontWeight: "500",
-    lineHeight: 20,
-    marginBottom: 4,
+    fontSize: normalizeFont(15),
+    color: "#000000",
+    fontWeight: "800",
+    lineHeight: normalizeFont(20),
+    marginBottom: vh * 0.5,
   },
   resultTypeContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   typeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: vw * 2,
+    paddingVertical: vh * 0.5,
     borderRadius: 12,
     alignSelf: "flex-start",
   },
   resultType: {
-    fontSize: 11,
+    fontSize: normalizeFont(11),
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   noResultsContainer: {
     alignItems: "center",
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    paddingVertical: vh * 3,
+    paddingHorizontal: vw * 4,
   },
   noResultsText: {
-    fontSize: 15,
-    color: "#6B7280",
+    fontSize: normalizeFont(15),
+    color: "#000000",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: vh * 1,
     fontWeight: "500",
   },
   noResultsSubtext: {
-    fontSize: 13,
-    color: "#9CA3AF",
+    fontSize: normalizeFont(13),
+    color: "#828282",
     textAlign: "center",
-    marginTop: 4,
+    marginTop: vh * 0.5,
   },
   loadingContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: vh * 2,
+    paddingHorizontal: vw * 4,
   },
   loadingText: {
-    marginLeft: 8,
-    color: "#6B7280",
-    fontSize: 14,
+    marginLeft: vw * 2,
+    color: "#000000",
+    fontSize: normalizeFont(14),
     fontWeight: "500",
   },
 });
