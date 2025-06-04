@@ -54,6 +54,28 @@ const SypmtomChecker4 = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const strictDeduplicate = (diseases) => {
+        const seen = new Map();
+
+        return diseases.filter(disease => {
+            const diseaseId = disease?.disease?.id;
+            if (!diseaseId) return false;
+
+            const existing = seen.get(diseaseId);
+            if (!existing) {
+                seen.set(diseaseId, disease);
+                return true;
+            }
+
+            if (disease.confidence_score > existing.confidence_score) {
+                seen.set(diseaseId, disease);
+                return true;
+            }
+
+            return false;
+        });
+    };
+
     useEffect(() => {
         const diagnose = async () => {
             try {
@@ -72,9 +94,11 @@ const SypmtomChecker4 = () => {
                 }
 
                 const response = await submitSymptoms(symptomIds);
+                console.log('Raw API response:', response);
 
-                // Handle different response structures
-                const potentialDiseases = response.data?.potential_diseases || response.potential_diseases || [];
+                let potentialDiseases = response.data?.potential_diseases || response.potential_diseases || [];
+                potentialDiseases = strictDeduplicate(potentialDiseases);
+                console.log('After deduplication:', potentialDiseases);
 
                 if (potentialDiseases.length === 0) {
                     throw new Error('No matching conditions found for your symptoms');
@@ -171,11 +195,11 @@ const SypmtomChecker4 = () => {
 
                 {conditions.length > 0 ? (
                     <View style={styles.conditionsList}>
-                        {conditions.map((item, index) => (
+                        {conditions.map((item) => (
                             <TouchableOpacity
-                                key={item?.disease?.id || index}
+                                key={`disease-${item.disease.id}`}
                                 style={styles.conditionItem}
-                                onPress={() => handleContinue(item?.disease)}
+                                onPress={() => handleContinue(item.disease)}
                             >
                                 <View style={styles.conditionContent}>
                                     <Text style={styles.conditionName}>

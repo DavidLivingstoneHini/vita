@@ -16,16 +16,172 @@ logger = logging.getLogger(__name__)
 nlp = spacy.load("en_core_web_md")
 
 
-class SymptomListView(generics.ListAPIView):
-    queryset = Symptom.objects.all()
-    serializer_class = SymptomSerializer
+class SymptomCheckerView(generics.CreateAPIView):
+    serializer_class = DiagnosisSerializer
 
-    def get_queryset(self):
+    def post(self, request, *args, **kwargs):
         try:
-            return super().get_queryset()
+            symptom_ids = request.data.get('symptoms', [])
+
+            if not symptom_ids:
+                return Response(
+                    {"error": "At least one symptom is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            symptoms = Symptom.objects.filter(id__in=symptom_ids)
+            if not symptoms.exists():
+                return Response(
+                    {"error": "None of the provided symptoms exist"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            diagnosis = Diagnosis.objects.create(user=request.user)
+
+            # Add symptoms to diagnosis
+            for symptom in symptoms:
+                DiagnosisSymptom.objects.create(
+                    diagnosis=diagnosis,
+                    symptom=symptom,
+                    intensity=1
+                )
+
+            # Get potential diseases with strict deduplication
+            potential_diseases = self.find_potential_diseases(diagnosis)
+
+            # Format response
+            formatted_diseases = []
+            seen_disease_ids = set()
+
+            for disease_info in potential_diseases:
+                disease = disease_info['disease']
+                if disease.id in seen_disease_ids:
+                    continue
+
+                seen_disease_ids.add(disease.id)
+
+                serializer = DiseaseSerializer(disease)
+                formatted_diseases.append({
+                    "disease": serializer.data,
+                    "confidence_score": disease_info['confidence'],
+                    "matches": disease_info['matches']
+                })
+
+            return Response({
+                "diagnosis_id": diagnosis.id,
+                "potential_diseases": formatted_diseases,
+                "count": len(formatted_diseases)
+            })
+
         except Exception as e:
-            logger.error(f"Error fetching symptoms: {str(e)}")
-            return Symptom.objects.none()
+            logger.error(f"Error in symptom check: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while processing your request"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def find_potential_diseases(self, diagnosis):
+        diagnosis_symptoms = DiagnosisSymptom.objects.filter(diagnosis=diagnosis)
+        direct_mappings = SymptomDOTermMapping.objects.filter(
+            symptom__in=[ds.symptom for ds in diagnosis_symptoms]
+        ).select_related('do_term')
+
+        disease_scores = defaultdict(lambda: {
+            'disease': None,
+            'score': 0,
+            'matches': []
+        })
+
+        # Score diseases based on direct mappings
+        for mapping in direct_mappings:
+            diseases = Disease.objects.filter(do_term=mapping.do_term)
+            for disease in diseases:
+                disease_info = disease_scores[disease.id]
+                disease_info['disease'] = disease
+
+                symptom = mapping.symptom
+                diagnosis_symptom = next(
+                    (ds for ds in diagnosis_symptoms if ds.symptom_id == symptom.id),
+                    None
+                )
+
+                intensity = diagnosis_symptom.intensity if diagnosis_symptom else 1
+                score = intensity * mapping.confidence * symptom.weight
+
+                disease_info['score'] += score
+                disease_info['matches'].append({
+                    'symptom': symptom.name,
+                    'do_term': mapping.do_term.name,
+                    'contribution': score,
+                    'type': 'direct'
+                })
+
+        # Consider related DO terms
+        for mapping in direct_mappings:
+            relationships = DO_Relationship.objects.filter(
+                Q(do_term=mapping.do_term) | Q(related_do_term=mapping.do_term)
+            ).select_related('do_term', 'related_do_term')
+
+            for rel in relationships:
+                related_do = rel.related_do_term if rel.do_term == mapping.do_term else rel.do_term
+                diseases = Disease.objects.filter(do_term=related_do)
+
+                for disease in diseases:
+                    disease_info = disease_scores[disease.id]
+                    disease_info['disease'] = disease
+
+                    rel_weight = {
+                        'is_a': 0.7,
+                        'part_of': 0.6,
+                        'subclass_of': 0.5,
+                        'related_to': 0.4
+                    }.get(rel.relationship_type, 0.3)
+
+                    symptom = mapping.symptom
+                    diagnosis_symptom = next(
+                        (ds for ds in diagnosis_symptoms if ds.symptom_id == symptom.id),
+                        None
+                    )
+
+                    intensity = diagnosis_symptom.intensity if diagnosis_symptom else 1
+                    score = intensity * mapping.confidence * symptom.weight * rel_weight
+
+                    disease_info['score'] += score
+                    disease_info['matches'].append({
+                        'symptom': symptom.name,
+                        'do_term': mapping.do_term.name,
+                        'relationship': rel.get_relationship_type_display(),
+                        'related_do_term': related_do.name,
+                        'contribution': score,
+                        'type': 'related'
+                    })
+
+        # Normalize and sort results
+        max_score = max([d['score'] for d in disease_scores.values()]) if disease_scores else 1
+        potential_diseases = []
+
+        for disease_id, disease_info in disease_scores.items():
+            confidence = (disease_info['score'] / max_score) * 100
+            if confidence >= 10:  # Threshold to filter out low confidence matches
+                potential_diseases.append({
+                    'disease': disease_info['disease'],
+                    'confidence': min(confidence, 100),
+                    'matches': disease_info['matches']
+                })
+
+        # Sort by confidence descending and deduplicate
+        seen_ids = set()
+        unique_diseases = []
+
+        for disease in sorted(potential_diseases, key=lambda x: -x['confidence']):
+            disease_id = disease['disease'].id
+            if disease_id not in seen_ids:
+                seen_ids.add(disease_id)
+                unique_diseases.append(disease)
+                if len(unique_diseases) >= 15:  # Limit to top 15 unique matches
+                    break
+
+        return unique_diseases
 
 
 class DiseaseListView(generics.ListAPIView):

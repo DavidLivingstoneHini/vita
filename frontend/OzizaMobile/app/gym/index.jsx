@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  BackHandler,
 } from "react-native";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
@@ -25,38 +26,21 @@ const API_URL = "https://www.ozizabackapp.in/api/v1";
 
 // Responsive Font Size Function   
 const responsiveFontSize = (size) => {
-  const scaleFactor = width / 375; // Base width of 375 (iPhone SE)
+  const scaleFactor = width / 375;
   const newSize = size * scaleFactor;
-  return Math.ceil(newSize); // Round to nearest whole number
+  return Math.ceil(newSize);
 };
 
 // Function to get safe area top padding
 const getSafeAreaTop = () => {
   if (Platform.OS === "ios") {
-    return 40; // Adjust for iOS
+    return 40;
   }
-  return 20; // Default for Android
+  return 20;
 };
 
 const FindAGymScreen = () => {
-  if (Platform.OS === "web") {
-    return (
-      <View style={styles.container}>
-        <Text>Map is not supported on web.</Text>
-      </View>
-    );
-  }
-
-  // Conditional require to prevent crashes during development
-  let MapView, Marker;
-  try {
-    const maps = require("react-native-maps");
-    MapView = maps.default;
-    Marker = maps.Marker;
-  } catch (error) {
-    console.warn("react-native-maps not available:", error);
-  }
-
+  // State management
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +50,9 @@ const FindAGymScreen = () => {
   const [selectedTrainingType, setSelectedTrainingType] = useState(null);
   const [mapsAvailable, setMapsAvailable] = useState(false);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [appCrashPrevention, setAppCrashPrevention] = useState(false);
+  const [initializationComplete, setInitializationComplete] = useState(false);
+
   const router = useRouter();
 
   // Default coordinates (Accra, Ghana)
@@ -74,40 +61,108 @@ const FindAGymScreen = () => {
     longitude: -0.15150580326782948,
   };
 
-  useEffect(() => {
-    // Check if maps are available
-    setMapsAvailable(!!MapView);
-    getUserLocation();
+  // Error boundary for preventing crashes
+  const handleCriticalError = useCallback((error, context) => {
+    console.error(`Critical error in ${context}:`, error);
+    setAppCrashPrevention(true);
+    setIsLoading(false);
+
+    // Show user-friendly error without crashing
+    Alert.alert(
+      "Service Temporarily Unavailable",
+      "We're having trouble loading the gym finder. Please try again later or contact support.",
+      [
+        { text: "Go Back", onPress: () => router.back() },
+        { text: "Retry", onPress: () => handleRetry() }
+      ]
+    );
+  }, [router]);
+
+  // Safe map component loading
+  const loadMapComponent = useCallback(() => {
+    try {
+      // Only load maps if platform supports it
+      if (Platform.OS === "web") {
+        setMapsAvailable(false);
+        return { MapView: null, Marker: null };
+      }
+
+      const maps = require("react-native-maps");
+      setMapsAvailable(true);
+      return {
+        MapView: maps.default,
+        Marker: maps.Marker
+      };
+    } catch (error) {
+      console.warn("react-native-maps not available:", error);
+      setMapsAvailable(false);
+      return { MapView: null, Marker: null };
+    }
   }, []);
 
-  // Fetch nearby gyms from your backend
-  const fetchNearbyGyms = async (latitude, longitude) => {
+  // Enhanced gym fetching with better error handling
+  const fetchNearbyGyms = useCallback(async (latitude, longitude) => {
     try {
       setIsLoading(true);
+
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 15000)
+      );
+
       const accessToken = await SecureStore.getItemAsync("access_token");
-      const response = await axios.get(`${API_URL}/users/gyms/`, {
+
+      if (!accessToken) {
+        throw new Error("Authentication required");
+      }
+
+      const apiCall = axios.get(`${API_URL}/users/gyms/`, {
         params: {
           lat: latitude,
           lng: longitude,
-          radius: 10 // 10km radius
+          radius: 10
         },
         headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
       });
 
-      setGyms(response.data);
+      const response = await Promise.race([apiCall, timeoutPromise]);
+
+      // Validate response data
+      if (response.data && Array.isArray(response.data)) {
+        setGyms(response.data);
+      } else {
+        console.warn("Invalid gym data received:", response.data);
+        setGyms([]);
+      }
+
     } catch (error) {
       console.error("Error fetching gyms:", error);
       setGyms([]);
-      Alert.alert("Error", "Could not fetch gyms. Please try again later.");
+
+      // Don't show error alert if we're in crash prevention mode
+      if (!appCrashPrevention) {
+        const errorMessage = error.response?.status === 401
+          ? "Please log in again to view gyms"
+          : "Could not fetch gyms. Using cached data.";
+
+        // For Android, be more gentle with error handling
+        if (Platform.OS === 'android') {
+          console.warn("Gym fetch failed:", errorMessage);
+        } else {
+          Alert.alert("Notice", errorMessage);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [appCrashPrevention]);
 
-  // Enhanced location permission check
-  const checkLocationPermission = async () => {
+  // Enhanced location permission handling for Android
+  const checkLocationPermission = useCallback(async () => {
     try {
       const { status } = await Location.getForegroundPermissionsAsync();
       return status === 'granted';
@@ -115,22 +170,36 @@ const FindAGymScreen = () => {
       console.error("Error checking location permission:", error);
       return false;
     }
-  };
+  }, []);
 
-  // Request location permission with better error handling
-  const requestLocationPermission = async () => {
+  // Android-specific permission request
+  const requestLocationPermission = useCallback(async () => {
     try {
+      // For Android, check if location services are enabled
+      if (Platform.OS === 'android') {
+        const serviceEnabled = await Location.hasServicesEnabledAsync();
+        if (!serviceEnabled) {
+          Alert.alert(
+            "Location Services Disabled",
+            "Please enable location services in your device settings to find nearby gyms.",
+            [
+              { text: "Open Settings", onPress: openSettings },
+              { text: "Use Default Location", onPress: useDefaultLocation }
+            ]
+          );
+          return false;
+        }
+      }
+
       const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
 
       if (status === 'granted') {
         return true;
       } else if (status === 'denied' && !canAskAgain) {
-        // User has permanently denied permission
         setPermissionDenied(true);
         setShowLocationPrompt(true);
         return false;
       } else {
-        // User denied permission but can ask again
         setPermissionDenied(true);
         return false;
       }
@@ -139,24 +208,25 @@ const FindAGymScreen = () => {
       setPermissionDenied(true);
       return false;
     }
-  };
+  }, []);
 
-  // Get user location with comprehensive error handling
-  const getUserLocation = async () => {
+  // Safe location retrieval
+  const getUserLocation = useCallback(async () => {
+    if (appCrashPrevention) {
+      useDefaultLocation();
+      return;
+    }
+
     setIsLoading(true);
     setLocationError(false);
     setErrorMsg(null);
 
     try {
-      // First check if we already have permission
       const hasPermission = await checkLocationPermission();
 
       if (!hasPermission) {
-        // Try to request permission
         const permissionGranted = await requestLocationPermission();
-
         if (!permissionGranted) {
-          // Permission denied - use fallback
           console.log("Location permission denied, using default coordinates");
           setLocation({ coords: defaultCoords });
           await fetchNearbyGyms(defaultCoords.latitude, defaultCoords.longitude);
@@ -164,32 +234,39 @@ const FindAGymScreen = () => {
         }
       }
 
-      // Permission granted - try to get location
       setPermissionDenied(false);
       let currentLocation = null;
 
       try {
-        // Try to get current position with timeout
-        currentLocation = await Promise.race([
-          Location.getCurrentPositionAsync({
+        // Android-specific location options
+        const locationOptions = Platform.OS === 'android'
+          ? {
             accuracy: Location.Accuracy.Balanced,
-            maximumAge: 30000, // Accept cached location up to 30 seconds old
-          }),
+            maximumAge: 60000, // 1 minute cache for Android
+            timeout: 8000 // Shorter timeout for Android
+          }
+          : {
+            accuracy: Location.Accuracy.Balanced,
+            maximumAge: 30000,
+            timeout: 10000
+          };
+
+        currentLocation = await Promise.race([
+          Location.getCurrentPositionAsync(locationOptions),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Location timeout')), 10000)
+            setTimeout(() => reject(new Error('Location timeout')), locationOptions.timeout)
           )
         ]);
       } catch (currentLocationError) {
         console.warn("Error getting current location:", currentLocationError.message);
 
         try {
-          // Fallback to last known position
           currentLocation = await Location.getLastKnownPositionAsync({
-            maxAge: 300000, // Accept positions up to 5 minutes old
+            maxAge: 600000, // 10 minutes for Android
           });
         } catch (lastKnownError) {
           console.warn("Error getting last known location:", lastKnownError.message);
-          throw new Error("Could not retrieve any location data");
+          throw new Error("Could not retrieve location data");
         }
       }
 
@@ -197,7 +274,6 @@ const FindAGymScreen = () => {
         throw new Error("No location data available");
       }
 
-      // Validate coordinates
       const { latitude, longitude } = currentLocation.coords;
       if (typeof latitude !== 'number' || typeof longitude !== 'number' ||
         Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
@@ -212,28 +288,68 @@ const FindAGymScreen = () => {
       setLocationError(true);
       setErrorMsg(`Location error: ${error.message}`);
 
-      // Always fallback to default coordinates
-      console.log("Using fallback coordinates");
+      // Fallback to default coordinates
       setLocation({ coords: defaultCoords });
       await fetchNearbyGyms(defaultCoords.latitude, defaultCoords.longitude);
 
-      // Show user-friendly message
-      Alert.alert(
-        "Location Unavailable",
-        "We couldn't get your exact location. Showing gyms in Accra as default. You can manually search for gyms in your area.",
-        [{ text: "OK" }]
-      );
+      // Gentle notification for Android
+      if (Platform.OS === 'android') {
+        console.warn("Using default location due to error:", error.message);
+      } else {
+        Alert.alert(
+          "Location Unavailable",
+          "Using default location (Accra). You can search for gyms in your area.",
+          [{ text: "OK" }]
+        );
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [appCrashPrevention, checkLocationPermission, requestLocationPermission, fetchNearbyGyms]);
 
-  const handleRetryLocation = async () => {
+  // Safe initialization
+  const initializeScreen = useCallback(async () => {
+    try {
+      setInitializationComplete(false);
+
+      // Load map component safely
+      const { MapView, Marker } = loadMapComponent();
+
+      // Set up Android back handler
+      if (Platform.OS === 'android') {
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+          router.back();
+          return true;
+        });
+
+        // Cleanup function will be called when component unmounts
+        return () => backHandler.remove();
+      }
+
+      // Get user location
+      await getUserLocation();
+
+    } catch (error) {
+      handleCriticalError(error, 'initialization');
+    } finally {
+      setInitializationComplete(true);
+    }
+  }, [loadMapComponent, getUserLocation, handleCriticalError, router]);
+
+  // Retry functionality
+  const handleRetry = useCallback(() => {
+    setAppCrashPrevention(false);
+    setShowLocationPrompt(false);
+    initializeScreen();
+  }, [initializeScreen]);
+
+  // Helper functions
+  const handleRetryLocation = useCallback(async () => {
     setShowLocationPrompt(false);
     await getUserLocation();
-  };
+  }, [getUserLocation]);
 
-  const openSettings = async () => {
+  const openSettings = useCallback(async () => {
     try {
       if (Platform.OS === 'ios') {
         await Linking.openURL('app-settings:');
@@ -246,15 +362,29 @@ const FindAGymScreen = () => {
         "Please manually enable location permissions in your device settings."
       );
     }
-  };
+  }, []);
 
-  const useDefaultLocation = () => {
+  const useDefaultLocation = useCallback(() => {
     setShowLocationPrompt(false);
     setPermissionDenied(false);
     setLocation({ coords: defaultCoords });
     fetchNearbyGyms(defaultCoords.latitude, defaultCoords.longitude);
-  };
+  }, [fetchNearbyGyms]);
 
+  // Initialize screen on mount
+  useEffect(() => {
+    let cleanup;
+    const init = async () => {
+      cleanup = await initializeScreen();
+    };
+    init();
+
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [initializeScreen]);
+
+  // Training types data
   const trainingTypes = [
     {
       id: 1,
@@ -286,27 +416,109 @@ const FindAGymScreen = () => {
     },
   ];
 
-  const handleTrainingTypeSelect = (type) => {
+  const handleTrainingTypeSelect = useCallback((type) => {
     setSelectedTrainingType(type);
-  };
+  }, []);
 
-  const initialRegion = {
-    latitude: location?.coords?.latitude || defaultCoords.latitude,
-    longitude: location?.coords?.longitude || defaultCoords.longitude,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
-  };
+  // Safe navigation to gym details
+  const navigateToGymDetails = useCallback((gymId) => {
+    try {
+      router.push({
+        pathname: "/gymdetails",
+        params: { gymId: gymId }
+      });
+    } catch (error) {
+      console.error("Navigation error:", error);
+      Alert.alert("Error", "Could not open gym details. Please try again.");
+    }
+  }, [router]);
 
-  const renderItem = (gym) => (
+  // Render functions
+  const renderMapView = useCallback(() => {
+    if (!mapsAvailable) {
+      return (
+        <View style={styles.mapFallback}>
+          <Text style={styles.mapFallbackText}>
+            {Platform.OS === 'web' ? 'Maps not supported on web' : 'Maps not available on this device'}
+          </Text>
+        </View>
+      );
+    }
+
+    try {
+      const maps = require("react-native-maps");
+      const MapView = maps.default;
+      const Marker = maps.Marker;
+
+      const initialRegion = {
+        latitude: location?.coords?.latitude || defaultCoords.latitude,
+        longitude: location?.coords?.longitude || defaultCoords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+
+      return (
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            initialRegion={initialRegion}
+            showsUserLocation={!permissionDenied && !locationError}
+            showsMyLocationButton={true}
+            onError={(error) => {
+              console.warn("Map error:", error);
+              setMapsAvailable(false);
+            }}
+          >
+            {/* User location marker */}
+            {!permissionDenied && !locationError && location && (
+              <Marker
+                coordinate={{
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                }}
+                title="Your Location"
+                pinColor="blue"
+              />
+            )}
+
+            {/* Gym markers */}
+            {gyms.map((gym) => (
+              <Marker
+                key={gym.id}
+                coordinate={{
+                  latitude: gym.latitude,
+                  longitude: gym.longitude,
+                }}
+                title={gym.name}
+                description={gym.address}
+                onPress={() => navigateToGymDetails(gym.id)}
+              >
+                <View style={styles.markerContainer}>
+                  <View style={styles.markerBubble}>
+                    <Text style={styles.markerText}>{gym.name}</Text>
+                  </View>
+                  <View style={styles.markerArrow} />
+                </View>
+              </Marker>
+            ))}
+          </MapView>
+        </View>
+      );
+    } catch (error) {
+      console.error("Map rendering error:", error);
+      return (
+        <View style={styles.mapFallback}>
+          <Text style={styles.mapFallbackText}>Map temporarily unavailable</Text>
+        </View>
+      );
+    }
+  }, [mapsAvailable, location, permissionDenied, locationError, gyms, navigateToGymDetails]);
+
+  const renderItem = useCallback((gym) => (
     <TouchableOpacity
       style={styles.gymListitem}
       key={gym.id}
-      onPress={() => {
-        router.push({
-          pathname: "/gymdetails",
-          params: { gymId: gym.id }
-        });
-      }}
+      onPress={() => navigateToGymDetails(gym.id)}
     >
       <View style={styles.gymInfo}>
         <Text style={styles.gymName}>{gym.name}</Text>
@@ -318,28 +530,57 @@ const FindAGymScreen = () => {
         )}
       </View>
       <View>
-        <Text style={styles.gymWorkingHours}>Open until {gym.opening_hours[0]?.close || "10:00pm"}</Text>
+        <Text style={styles.gymWorkingHours}>
+          Open until {gym.opening_hours?.[0]?.close || "10:00pm"}
+        </Text>
         <View style={styles.ratingContainer}>
           <Image
             source={require("../../assets/images/star.jpg")}
             style={styles.starIcon}
           />
-          <Text style={styles.ratingText}>{gym.rating.toFixed(1)}</Text>
+          <Text style={styles.ratingText}>{gym.rating?.toFixed(1) || "N/A"}</Text>
         </View>
       </View>
     </TouchableOpacity>
-  );
+  ), [navigateToGymDetails]);
 
-  if (isLoading) {
+  // Crash prevention fallback
+  if (appCrashPrevention) {
     return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Finding gyms near you...</Text>
+      <View style={[styles.container, styles.errorContainer]}>
+        <Text style={styles.errorTitle}>Service Temporarily Unavailable</Text>
+        <Text style={styles.errorMessage}>
+          We're having trouble loading the gym finder. This might be due to:
+        </Text>
+        <Text style={styles.errorList}>
+          • Network connectivity issues{'\n'}
+          • Location services problems{'\n'}
+          • App permissions{'\n'}
+          • Server maintenance
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  // Show location prompt modal
+  // Loading state
+  if (isLoading || !initializationComplete) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#0000ff" />
+        <Text style={styles.loadingText}>
+          {Platform.OS === 'android' ? 'Loading gyms...' : 'Finding gyms near you...'}
+        </Text>
+      </View>
+    );
+  }
+
+  // Location prompt modal
   if (showLocationPrompt) {
     return (
       <View style={[styles.container, styles.modalContainer]}>
@@ -371,6 +612,7 @@ const FindAGymScreen = () => {
     );
   }
 
+  // Main render
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -444,61 +686,10 @@ const FindAGymScreen = () => {
           {permissionDenied ? "Gyms in Accra" : "Gyms near you"}
         </Text>
 
-        {/* Map View - Only render if maps are available */}
-        {mapsAvailable ? (
-          <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              initialRegion={initialRegion}
-              showsUserLocation={!permissionDenied && !locationError}
-              showsMyLocationButton={true}
-            >
-              {/* User location marker */}
-              {!permissionDenied && !locationError && location && (
-                <Marker
-                  coordinate={{
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                  }}
-                  title="Your Location"
-                  pinColor="blue"
-                />
-              )}
+        {/* Map View */}
+        {renderMapView()}
 
-              {/* Gym markers */}
-              {gyms.map((gym) => (
-                <Marker
-                  key={gym.id}
-                  coordinate={{
-                    latitude: gym.latitude,
-                    longitude: gym.longitude,
-                  }}
-                  title={gym.name}
-                  description={gym.address}
-                  onPress={() => {
-                    router.push({
-                      pathname: "/gym-details",
-                      params: { gymId: gym.id }
-                    });
-                  }}
-                >
-                  <View style={styles.markerContainer}>
-                    <View style={styles.markerBubble}>
-                      <Text style={styles.markerText}>{gym.name}</Text>
-                    </View>
-                    <View style={styles.markerArrow} />
-                  </View>
-                </Marker>
-              ))}
-            </MapView>
-          </View>
-        ) : (
-          <View style={styles.mapFallback}>
-            <Text style={styles.mapFallbackText}>Maps not available on this device</Text>
-          </View>
-        )}
-
-        {/* ScrollView for Gym list */}
+        {/* Gym list */}
         <ScrollView style={styles.gymList}>
           {gyms.length > 0 ? (
             gyms.map(renderItem)
@@ -509,7 +700,7 @@ const FindAGymScreen = () => {
                 style={styles.noGymsImage}
               />
               <Text style={styles.noGymsText}>
-                No gyms found in your area. Try zooming out on the map.
+                No gyms found in your area. Try adjusting your location or check back later.
               </Text>
             </View>
           )}
@@ -531,6 +722,56 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 20,
+    fontSize: responsiveFontSize(16),
+  },
+  errorContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: responsiveFontSize(20),
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  errorMessage: {
+    fontSize: responsiveFontSize(16),
+    textAlign: "center",
+    marginBottom: 15,
+    color: "#666",
+  },
+  errorList: {
+    fontSize: responsiveFontSize(14),
+    textAlign: "left",
+    marginBottom: 20,
+    color: "#666",
+  },
+  retryButton: {
+    backgroundColor: "#1976D2",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    minWidth: 200,
+  },
+  retryButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: responsiveFontSize(16),
+  },
+  backButton: {
+    backgroundColor: "transparent",
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#1976D2",
+    minWidth: 200,
+  },
+  backButtonText: {
+    color: "#1976D2",
+    textAlign: "center",
+    fontWeight: "bold",
     fontSize: responsiveFontSize(16),
   },
   modalContainer: {

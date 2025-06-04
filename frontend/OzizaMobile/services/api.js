@@ -287,23 +287,36 @@ export const submitSymptoms = async (symptoms) => {
       body: JSON.stringify({ symptoms: symptomIds }),
     });
 
+    // Add validation
     if (!response) throw new Error('No response received from server');
 
-    // Handle error response
-    if (response.error) {
-      throw new Error(response.error || 'Invalid response structure');
+    let diseases = response.data?.potential_diseases || response.potential_diseases || [];
+
+    // Basic validation of disease objects
+    if (!Array.isArray(diseases)) {
+      throw new Error('Invalid diseases format - expected array');
     }
 
-    // Handle different response structures
-    if (response.potential_diseases) {
-      return { data: { potential_diseases: response.potential_diseases } };
-    }
+    // Ensure each disease has required fields
+    diseases = diseases.filter(d => d?.disease?.id && d?.disease?.name);
 
-    if (response.data?.potential_diseases) {
-      return response;
-    }
+    return { data: { potential_diseases: diseases } };
 
-    throw new Error('Invalid response structure from diagnosis API');
+    // // Handle error response
+    // if (response.error) {
+    //   throw new Error(response.error || 'Invalid response structure');
+    // }
+
+    // // Handle different response structures
+    // if (response.potential_diseases) {
+    //   return { data: { potential_diseases: response.potential_diseases } };
+    // }
+
+    // if (response.data?.potential_diseases) {
+    //   return response;
+    // }
+
+    // throw new Error('Invalid response structure from diagnosis API');
   } catch (error) {
     console.error('API Error:', { error: error.message, symptoms });
     throw error;
